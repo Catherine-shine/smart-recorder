@@ -19,14 +19,14 @@ function App() {
     <Provider store={store}>
       <div style={{ padding: '20px' }}>
         <Card 
-          title="🎉 项目脚手架搭建成功！" 
+          title="项目脚手架搭建成功！" 
           style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}
         >
           <h2>技术栈验证清单：</h2>
           <ul style={{ lineHeight: '2' }}>
             <li>✅ React - 核心框架</li>
             <li>✅ TypeScript - 类型安全</li> 
-            <li>✅ Vite - 构建工具（当前正在运行）</li>
+            <li>✅ Vite - 构建工具</li>
             <li>✅ Redux Toolkit - 状态管理</li>
             <li>✅ Ant Design - UI组件库</li>
             <li>✅ ESLint + Prettier - 代码规范</li>
