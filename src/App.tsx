@@ -8,7 +8,7 @@ function App() {
       <div
         style={{
           width: "100vw",
-          height: "100vh",
+          height: "24px",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
