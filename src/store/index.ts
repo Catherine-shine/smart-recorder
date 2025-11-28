@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
-
+import recordingReducer from './recordingSlice.ts'
+import mousemoveReducer from './mousemoveSlice.ts'
 const placeholderReducer = (state = {}, action: any) => state;
 
 export const store = configureStore({
   reducer: {
-    // 注册占位 reducer，避免空对象导致低版本 RTK 报错
-    placeholder: placeholderReducer,
+    placeholder: placeholderReducer,// 注册占位 reducer，避免空对象导致低版本 RTK 报错
+    recording: recordingReducer,
+    mousemove: mousemoveReducer,
   },
 });
 
