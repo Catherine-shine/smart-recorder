@@ -1,0 +1,42 @@
+/* src/components/common/Button.css */
+.custom-button {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.custom-button--primary {
+  background: #1890ff;
+  border-color: #1890ff;
+}
+
+.custom-button--secondary {
+  background: #f5f5f5;
+  border-color: #d9d9d9;
+  color: #333;
+}
+
+.custom-button--danger {
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+.custom-button--small {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.custom-button--medium {
+  padding: 6px 16px;
+  font-size: 14px;
+}
+
+.custom-button--large {
+  padding: 8px 20px;
+  font-size: 16px;
+}
+
+.custom-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
