@@ -1,0 +1,152 @@
+/* 全局容器：让组件在页面中垂直+水平居中 */
+.playback-container {
+  width: 100%;
+  min-height: 100vh; /* 占满视口高度，实现垂直居中 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0; /* 上下内边距，避免贴边 */
+  box-sizing: border-box;
+  /* 移动端去掉垂直居中，避免小屏内容被挤压 */
+  min-height: calc(100vh - 40px);
+}
+
+/* 内容容器：限制最大宽度，适配大屏/移动端 */
+.playback-content {
+  width: 95%; /* 移动端占95%宽度，更紧凑 */
+  max-width: 1000px; /* 大屏最大宽度 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* Card容器：移除默认边距，适配内容 */
+.playback-card {
+  width: 100%;
+  margin-top: 10px !important; /* 移动端减小上边距 */
+  border-radius: 8px !important; /* 可选：圆角优化 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important; /* 轻微阴影提升质感 */
+}
+
+/* 视频容器：水平居中，适配Card宽度 */
+.video-wrapper {
+   /* border: 1px solid #e61818; */
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px; /* 移动端减小底部间距 */
+  width: 100%;
+  padding: 0 8px; /* 移动端左右内边距，避免贴边 */
+  box-sizing: border-box;
+}
+
+/* 视频样式：完全自适应，优先保证移动端展示 */
+.playback-video {
+ 
+  width: 100%;
+  max-width: 800px; /* 大屏最大宽度 */
+  height: auto; /* 移动端高度自适应，抛弃固定高度 */
+  aspect-ratio: 16/9; /* 核心：16:9比例，适配所有屏幕 */
+  border-radius: 8px;
+  border: 5px solid #effcff93;
+  object-fit: contain; /* 避免视频拉伸 */
+  background-color: #000; /* 视频加载前显示黑色背景，更美观 */
+}
+
+/* 控制栏父容器：固定800px宽度（大屏），移动端自适应 */
+.playback-controls-parent {
+  width: 800px; /* 大屏固定宽度 */
+  margin: 0 auto; /* 水平居中 */
+  box-sizing: border-box; /* 宽高包含内边距/边框，避免溢出 */
+  padding: 0 8px; /* 左右内边距，避免贴边 */
+  /* 移动端适配：宽度100% */
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+}
+
+/* 控制栏Row：与视频宽度对齐，水平居中 */
+.playback-controls {
+  width: 100%;
+  max-width: 800px; /* 和视频最大宽度一致 */
+  margin: 0 auto;
+  align-items: center;
+  justify-content: space-around; /* 子元素分布均匀 */
+  row-gap: 8px; /* 移动端换行后增加行间距 */
+  /* 移动端减小列间距 */
+  @media (max-width: 576px) {
+    --antd-row-grid-gutter: 8px !important; /* 覆盖Antd的gutter变量 */
+  }
+}
+
+/* 控制项通用样式 */
+.control-item {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* 移动端子组件居中，方便点击 */
+  width: 100%;
+  min-height: 36px; 
+  box-sizing: border-box;
+}
+
+
+
+
+/* 播放按钮移动端适配：扩大点击区域 */
+.playback-button-container {
+  width: 50px !important; /* 移动端适当减小宽度，保持比例 */
+  height: 30px !important;
+  @media (max-width: 576px) {
+    width: 44px !important; /* 移动端标准点击尺寸 */
+    height: 28px !important;
+  }
+}
+
+
+/* 进度条移动端适配：增加内边距 */
+.progress-bar-container {
+ 
+  height: 40px !important; /* 取消固定高度 */
+  padding: 4px 0; /* 增加上下内边距 */
+  @media (max-width: 576px) {
+    padding: 2px 0;
+  }
+}
+
+/* 适配小屏（平板/手机）：细化断点 */
+/* 平板断点（768px以下） */
+@media (max-width: 768px) {
+  .playback-container {
+    padding: 10px 0;
+  }
+  .playback-content {
+    width: 98%;
+  }
+  .playback-card {
+    margin-top: 5px !important;
+  }
+}
+
+/* 手机断点（576px以下，核心移动端适配） */
+@media (max-width: 576px) {
+  .video-wrapper {
+    margin-bottom: 8px;
+    padding: 0 4px;
+  }
+  .playback-video {
+    border-radius: 4px; /* 移动端减小圆角 */
+    border: none; /* 移动端去掉边框，扩大显示区域 */
+  }
+  /* 进度条、倍速、音量控件移动端字体/尺寸优化 */
+  .ant-typography,
+  .ant-slider,
+  .ant-select-selector {
+    font-size: 12px !important; /* 移动端减小字体 */
+  }
+  .ant-select-selector {
+    padding: 0 8px !important; /* 移动端减小选择器内边距 */
+    height: 28px !important; /* 移动端减小选择器高度 */
+  }
+}
