@@ -7,6 +7,7 @@ export interface PlaybackState {
   currentTime: number;
   recordList: Array<{ id: string; name: string }>;
   status: 'idle' | 'recording' | 'playing';
+  playbackUrl: string;
 }
 
 // 2. 初始状态
@@ -15,6 +16,7 @@ const initialState: PlaybackState = {
   currentTime: 0,
   recordList: [],
   status: 'idle',
+  playbackUrl: '',
 };
 
 // 3. 创建切片
