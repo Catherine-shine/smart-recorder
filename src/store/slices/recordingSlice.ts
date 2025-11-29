@@ -1,7 +1,7 @@
 //录制状态：正在录制中=1，录制暂停中=2，不在录制=0
 import { createSlice } from '@reduxjs/toolkit';
-import type { RecordingState } from '../types/RecordingState';
-import {RECORDING_STATUS} from '../types/common'
+import type { RecordingState } from '../../types/RecordingState';
+import {RECORDING_STATUS} from '../../types/common'
 
 // 初始状态
 const initialState = {

@@ -1,7 +1,7 @@
 import { createSlice, } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { mousemove, TrajectoryPoint } from '../types/mousemove';
-import { RECORDING_STATUS } from '../types/common';
+import type { mousemove, TrajectoryPoint } from '../../types/mousemove';
+import { RECORDING_STATUS } from '../../types/common';
 
 // 从 recordingSlice 导入相关的 actions
 import { 
