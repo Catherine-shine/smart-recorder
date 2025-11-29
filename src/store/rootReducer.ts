@@ -2,6 +2,9 @@
 import { combineReducers } from '@reduxjs/toolkit';
 // 导入业务切片的 Reducer（按需添加）
 import playbackReducer from './slices/playbackSlice';
+import mousemoveReducer from './slices/mousemoveSlice';
+import recordingReducer from './slices/recordingSlice';
+
 // 示例：其他业务切片 Reducer
 // import userReducer from './slices/userSlice';
 // import settingReducer from './slices/settingSlice';
@@ -9,6 +12,9 @@ import playbackReducer from './slices/playbackSlice';
 // 🔴 聚合所有 Reducer 为根 Reducer
 const rootReducer = combineReducers({
   playback: playbackReducer,
+  mousemove: mousemoveReducer,
+  recording: recordingReducer,
+
   // user: userReducer,
   // setting: settingReducer,
 });
