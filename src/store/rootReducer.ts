@@ -4,6 +4,7 @@ import { combineReducers } from '@reduxjs/toolkit';
 import playbackReducer from './slices/playbackSlice';
 import mousemoveReducer from './slices/mousemoveSlice';
 import recordingReducer from './slices/recordingSlice';
+import mediastreamReducer from './slices/mediastreamSlice';
 
 // 示例：其他业务切片 Reducer
 // import userReducer from './slices/userSlice';
@@ -14,6 +15,7 @@ const rootReducer = combineReducers({
   playback: playbackReducer,
   mousemove: mousemoveReducer,
   recording: recordingReducer,
+  mediastream: mediastreamReducer,
 
   // user: userReducer,
   // setting: settingReducer,

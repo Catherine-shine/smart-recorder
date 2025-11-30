@@ -58,12 +58,12 @@ export const mousemoveSlice = createSlice({
       state.playbackSpeed = action.payload;
     },
     
-    // 设置轨迹颜色
+    // 设置激光笔颜色
     setTrailColor: (state, action: PayloadAction<string>) => {
       state.trailColor = action.payload;
     },
     
-    // 设置轨迹宽度
+    // 设置激光笔粗细
     setTrailWidth: (state, action: PayloadAction<number>) => {
       state.trailWidth = action.payload;
     },
