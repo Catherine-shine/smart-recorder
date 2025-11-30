@@ -6,6 +6,7 @@ import mousemoveReducer from './slices/mousemoveSlice';
 import recordingReducer from './slices/recordingSlice';
 import mediastreamReducer from './slices/mediastreamSlice';
 import whiteboardReducer from './slices/whiteboardSlice';
+import layoutReducer from './slices/layoutSlice';
 
 
 // 🔴 聚合所有 Reducer 为根 Reducer
@@ -15,7 +16,7 @@ const rootReducer = combineReducers({
   recording: recordingReducer,
   mediastream: mediastreamReducer,
   whiteboard: whiteboardReducer,
-
+  layout:layoutReducer,
  
 });
 
