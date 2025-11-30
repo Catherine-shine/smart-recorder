@@ -1,0 +1,17 @@
+/* 进度条外层容器样式 */
+.progress-bar-container {
+  width: 100%;
+  height: 20px;
+  /* padding: 0 8px; */
+}
+
+/* 进度条滑块样式 */
+.progress-bar-slider {
+  margin: 0;
+}
+
+/* 时间显示容器样式 */
+.progress-bar-time-wrapper {
+  width: 100%;
+  justify-content: space-between;
+}

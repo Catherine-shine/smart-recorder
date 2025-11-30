@@ -19,6 +19,7 @@ function App() {
         smart recorder
       </div>
     </Provider>
+    
   );
 }
 

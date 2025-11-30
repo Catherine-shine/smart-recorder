@@ -1,0 +1,8 @@
+.ant-btn.playback-button-container {
+  width: 60px !important; /* 仅在必要时使用，这里先保留，后续可去掉 */
+  height: 30px;
+  min-width: 60px; /* 重置 Antd 内置的 min-width，关键！ */
+  padding: 0; /* 重置内置的 padding，避免内容撑宽按钮 */
+  display: inline-block; /* 确保块级特性，可选 */
+  box-sizing: border-box; /* 宽高包含边框和内边距，可选 */
+}
