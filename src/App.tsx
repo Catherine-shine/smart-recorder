@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+// src/App.tsx
 import React from 'react';
 import { Provider } from 'react-redux';
 import { ConfigProvider, theme, Card, Spin, Button, Space, Typography, Empty } from 'antd';
@@ -11,36 +11,32 @@ import {
   PauseOutlined, StopOutlined, QuestionCircleOutlined 
 } from '@ant-design/icons';
 
-// 引入全局样式（后续可抽离到单独的CSS文件，这里先内联基础样式）
+// 引入全局样式
 const GlobalStyle = () => (
   <style>
     {`
-      /* 全局布局重置 */
       body {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
-        background-color: #f7f8fa; /* 飞书经典浅灰背景 */
+        background-color: #f7f8fa;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
 
-      /* 工作区网格布局 */
       .workspace-grid {
         width: 100%;
-        height: calc(100vh - 64px); /* 适配Header高度，避免滚动 */
+        height: calc(100vh - 64px);
         display: grid;
         grid-template-columns: 3fr 1fr;
-        gap: 20px !important; /* 飞书风格的宽松间距 */
+        gap: 20px !important;
         padding: 24px !important;
         overflow: hidden;
       }
 
-      /* 白板区域样式 */
       .whiteboard-section {
         height: 100%;
       }
 
-      /* 视频+控制区域样式 */
       .video-section {
         display: flex;
         flex-direction: column;
@@ -48,9 +44,8 @@ const GlobalStyle = () => (
         height: 100%;
       }
 
-      /* 飞书风格卡片hover动画 */
       .lark-card {
-        border-radius: 12px !important; /* 飞书大圆角 */
+        border-radius: 12px !important;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02) !important;
         border: none !important;
         transition: all 0.2s ease-in-out;
@@ -62,7 +57,6 @@ const GlobalStyle = () => (
         transform: translateY(-1px);
       }
 
-      /* 飞书风格按钮覆盖 */
       .lark-btn {
         border-radius: 8px !important;
         border: none !important;
@@ -71,7 +65,7 @@ const GlobalStyle = () => (
       }
 
       .lark-btn-primary {
-        background-color: #007bff !important; /* 飞书蓝主色 */
+        background-color: #007bff !important;
       }
 
       .lark-btn-primary:hover {
@@ -87,9 +81,8 @@ const GlobalStyle = () => (
         background-color: #ff3333 !important;
       }
 
-      /* 占位虚线框样式 */
       .placeholder-dashed {
-        border: 1px dashed #e5e6eb !important; /* 飞书浅灰虚线 */
+        border: 1px dashed #e5e6eb !important;
         border-radius: 8px;
       }
     `}
@@ -108,7 +101,7 @@ const Whiteboard = () => (
         </Typography.Title>
       </div>
     }
-    style={{ height: '100%' }} // 自适应父容器高度，替代固定600px
+    style={{ height: '100%' }}
     headStyle={{ padding: '16px 20px', borderBottom: '1px solid #f0f2f5' }}
     bodyStyle={{ padding: '24px', height: 'calc(100% - 60px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
   >
@@ -139,7 +132,7 @@ const VideoRecorder = () => (
         </Typography.Title>
       </div>
     }
-    style={{ flex: 1 }} // 自适应父容器高度，替代固定300px
+    style={{ flex: 1 }}
     headStyle={{ padding: '16px 20px', borderBottom: '1px solid #f0f2f5' }}
     bodyStyle={{ padding: '24px', height: 'calc(100% - 60px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
   >
@@ -158,20 +151,20 @@ const ControlPanel = () => (
         录制控制面板
       </Typography.Title>
     }
-    style={{ flex: 0 }} // 内容自适应高度
+    style={{ flex: 0 }}
     headStyle={{ padding: '16px 20px', borderBottom: '1px solid #f0f2f5' }}
     bodyStyle={{ padding: '24px' }}
   >
     <Space 
-      style={{ width: '100%', justifyContent: 'center', gap: 16 }} // 增大按钮间距
+      style={{ width: '100%', justifyContent: 'center', gap: 16 }}
     >
       <Button 
         className="lark-btn lark-btn-primary"
         type="primary" 
         icon={<PlayCircleOutlined style={{ fontSize: 16 }} />} 
-        size="large" // 放大按钮更醒目
+        size="large"
         disabled 
-        style={{ width: 56, height: 56, borderRadius: 28 }} // 圆形按钮
+        style={{ width: 56, height: 56, borderRadius: 28 }}
       />
       <Button 
         className="lark-btn"
@@ -203,7 +196,6 @@ function AppContent() {
       <ConfigProvider
         theme={{
           algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-          // 覆盖Ant Design默认主题变量，统一为飞书风格
           token: {
             colorPrimary: '#007bff',
             colorSuccess: '#52c41a',
@@ -240,34 +232,8 @@ function App() {
   return (
     <Provider store={store}>
       <AppContent />
-=======
-import { Provider } from "react-redux";
-import { store } from "./store";
-
-
-function App() {
-  return (
-    <Provider store={store}>
-      <div
-        style={{
-          width: "100vw",
-          height: "24px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          fontSize: "24px",
-          fontWeight: "bold",
-        }}
-      >
-        smart recorder
-      </div>
-       
->>>>>>> main
     </Provider>
-    
   );
 }
 
 export default App;
-
-
