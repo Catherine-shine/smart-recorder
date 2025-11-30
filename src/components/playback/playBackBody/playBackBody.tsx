@@ -1,6 +1,6 @@
 import type { RootState } from '../../../store';
 import { setPlaybackUrl } from '../../../store/slices/playbackSlice';
-import { useSelector,useDispatch  } from 'react-redux';
+import { useSelector } from 'react-redux';
 import PlayButton from './playButton/playButton';
 import type { PlayStatus, PlaybackVideoItem } from '../../../types/playback';
 import ProgressBar from './progressBar/progressBar';
@@ -12,13 +12,6 @@ import './index.css';
 
 
 const PlayBackBody: React.FC = () => {
- 
-  const controlItemStyle = {
-    minWidth: '80px',
-    display: 'flex',
-    justifyContent: 'flex-start',
-  };
-
     const [listLoading, setListLoading] = useState<boolean>(false);
     const { playbackUrl } = useSelector((state: RootState) => state.playback);
     // 优先使用Redux的地址，兜底用测试地址（建议替换为本地视频）
@@ -187,18 +180,18 @@ const PlayBackBody: React.FC = () => {
         message.error(errorMsg);
         console.error('视频错误详情：', error);
       };
-       // 核心副作用：事件绑定/初始化/资源释放
+      
         useEffect(() => {
           const video = videoRef.current;
           if (!video) return;
       
-          // 事件映射（避免重复绑定）
+         
           const eventHandlers = {
             timeupdate: handleTimeUpdate,
             loadedmetadata: handleLoadedMetadata,
             ended: handleVideoEnded,
             volumechange: handleVolumeChange,
-            error: handleVideoError, // 新增错误监听
+            error: handleVideoError,
             loadstart: () => setVideoLoading(true), // 视频开始加载
             canplay: () => setVideoLoading(false), // 视频可播放
           };
@@ -208,7 +201,7 @@ const PlayBackBody: React.FC = () => {
             video.addEventListener(event, handler);
           });
       
-          // 初始化视频属性（仅当值不一致时设置，避免重复操作）
+          // 初始化视频属性
           if (video.playbackRate !== playbackRate) video.playbackRate = playbackRate;
           if (video.volume !== volume) video.volume = volume;
           if (video.muted !== isMuted) video.muted = isMuted;
@@ -229,24 +222,26 @@ const PlayBackBody: React.FC = () => {
               URL.revokeObjectURL(playbackUrl);
             }
           };
-      }, [playbackUrl, playbackRate, volume, isMuted, videoSrc]); // 移除冗余的duration依赖
+      }, [playbackUrl, playbackRate, volume, isMuted, videoSrc]); 
 
       return (
         <div>
            <Card
               title="录屏回放"
-              bordered={true}
+              variant="outlined"
               className="playback-card"
-              headStyle={{
-                textAlign: 'center',
-                fontSize: 20,
-                fontWeight: 'bold',
-                padding: '12px 0'
-              }}
+             styles={{
+                header: {
+                   textAlign: 'center',
+                   fontSize: 20,
+                   fontWeight: 'bold',
+                   padding: '12px 0'
+                }
+             }}
             >
-              {/* 视频容器：增加加载遮罩 */}
+          
               <div className="video-wrapper">
-                <Spin spinning={videoLoading} tip="视频加载中..." className="video-loading">
+                <Spin spinning={videoLoading}  className="video-loading">
                   </Spin>
                   <video
                     ref={videoRef}

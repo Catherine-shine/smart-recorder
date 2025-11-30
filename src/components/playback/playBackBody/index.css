@@ -6,7 +6,7 @@
 
 :root {
   --video-border-radius: 8px;
-  --video-border-color: #1890ff; /* Ant Design 主色示例 */
+  --video-border-color: #979797; /* Ant Design 主色示例 */
   --video-max-width: 1200px;
 }
 
@@ -33,6 +33,8 @@
 
 /* ===================== 视频容器：适配+加载状态 ===================== */
 .video-wrapper {
+    border: 5px solid #979797;
+      border-radius: var(--video-border-radius);
   position: relative; 
   display: flex;
   justify-content: center;
@@ -42,6 +44,9 @@
   width: 100%;
   box-sizing: border-box;
   position: relative; /* 为加载遮罩做准备 */
+}
+.video-wrapper:hover {
+  border-color: #1890ff;
 }
 
 /* 视频加载遮罩样式 */
@@ -64,16 +69,12 @@
   height: 450px;
   max-width: var(--video-max-width);
   aspect-ratio: 16/9; /* 16:9固定比例 */
-  border-radius: var(--video-border-radius);
-  border: 3px solid var(--video-border-color);
+  border: none !important;
   object-fit: contain; /* 避免视频拉伸 */
   background-color: #000; /* 加载前黑色背景 */
   outline: none; /* 去掉焦点边框 */
   transition: border-color 0.2s ease;
-}
-
-.playback-video:hover {
-  border-color: #1890ff; /* hover时边框变色，提升交互 */
+   pointer-events: auto;
 }
 
 /* ===================== 控制栏布局优化 ===================== */

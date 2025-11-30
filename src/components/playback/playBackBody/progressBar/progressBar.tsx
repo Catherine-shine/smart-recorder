@@ -41,7 +41,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const sliderValue = Math.max(0, Math.min(currentTime, duration));
 
   return (
-   <Space direction="vertical" className="progress-bar-container">
+   <Space orientation="vertical" className="progress-bar-container">
       <Slider
         min={0}
         max={sliderMax}
