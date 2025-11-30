@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, ReloadOutlined } from '@ant-design/icons';
-import type { PlayButtonProps } from '../../../types/playback';
+import type { PlayButtonProps } from '../../../../types/playback';
 import './index.css';
 
 const PlayButton: React.FC<PlayButtonProps> = ({

@@ -1,0 +1,39 @@
+.playback-list-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.playback-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 500px; /* 限制列表最大高度，超出滚动 */
+}
+
+.playback-list-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.playback-list-item.active {
+  background-color: #e6f7ff;
+  border-left: 3px solid #1890ff;
+}
+
+.video-title {
+  display: block;
+  width: 100%;
+  font-weight: 500;
+}
+
+.video-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.duration-tag {
+  background-color: #f0f2f5;
+  color: #666;
+}

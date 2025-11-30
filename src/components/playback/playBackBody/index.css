@@ -1,0 +1,122 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* 让宽高包含边框和内边距，核心修复盒模型偏差 */
+}
+
+:root {
+  --video-border-radius: 8px;
+  --video-border-color: #1890ff; /* Ant Design 主色示例 */
+  --video-max-width: 1200px;
+}
+
+.playback-card {
+  width: 100%;
+  border-radius: var(--card-border-radius) !important;
+  box-shadow: 0 2px 8px var(--card-shadow-color) !important;
+  padding: var(--spacing-md) !important;
+  box-sizing: border-box;
+}
+
+.playback-card .ant-card-head {
+  padding: var(--spacing-sm) 0 !important;
+  margin-bottom: var(--spacing-md) !important;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.playback-card .ant-card-head-title {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  padding: 0;
+}
+
+/* ===================== 视频容器：适配+加载状态 ===================== */
+.video-wrapper {
+  position: relative; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+   max-width: var(--video-max-width);
+  margin-bottom: var(--spacing-md);
+  width: 100%;
+  box-sizing: border-box;
+  position: relative; /* 为加载遮罩做准备 */
+}
+
+/* 视频加载遮罩样式 */
+.video-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: var(--video-border-radius);
+  z-index: 1;
+}
+
+.playback-video {
+  width: 100%;
+  height: 450px;
+  max-width: var(--video-max-width);
+  aspect-ratio: 16/9; /* 16:9固定比例 */
+  border-radius: var(--video-border-radius);
+  border: 3px solid var(--video-border-color);
+  object-fit: contain; /* 避免视频拉伸 */
+  background-color: #000; /* 加载前黑色背景 */
+  outline: none; /* 去掉焦点边框 */
+  transition: border-color 0.2s ease;
+}
+
+.playback-video:hover {
+  border-color: #1890ff; /* hover时边框变色，提升交互 */
+}
+
+/* ===================== 控制栏布局优化 ===================== */
+.playback-controls-parent {
+  width: 100%;
+  max-width: var(--video-max-width); /* 与视频最大宽度一致 */
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 0 var(--spacing-xs);
+}
+
+.playback-controls {
+  width: 100%;
+  max-width: var(--video-max-width);
+  margin: 0 auto;
+  align-items: center;
+  justify-content: space-between; /* 子元素两端分布，更紧凑 */
+  row-gap: var(--spacing-sm); /* 移动端换行间距 */
+  column-gap: var(--spacing-xs); /* 列间距 */
+}
+
+/* 控制项通用样式 */
+.control-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-item-height);
+  box-sizing: border-box;
+  flex: 1; /* 移动端控件自适应宽度 */
+  min-width: 60px; /* 最小宽度，避免挤压 */
+}
+
+/* 进度条容器 */
+.progress-bar-container {
+  flex: 1 1 100%; /* 移动端独占一行，大屏占比最大 */
+  min-height: 40px;
+  padding: var(--spacing-xs) 0;
+  box-sizing: border-box;
+}
+
+/* 播放按钮样式优化 */
+.playback-button-container {
+  width: 50px;
+  height: 30px;
+  flex: 0 0 auto; /* 按钮不伸缩 */
+}
