@@ -7,7 +7,13 @@ import { initDB } from './db';
 const app = new Koa();
 
 app.use(cors());
-app.use(koaBody({ multipart: true }));
+app.use(koaBody({ 
+  multipart: true,
+  formidable: {
+    allowEmptyFiles: true,
+    minFileSize: 0,
+  }
+}));
 app.use(router.routes());
 app.use(router.allowedMethods());
 
