@@ -1,10 +1,7 @@
-
-//顶部导航组件
-// src/components/layout/Header.tsx
 import React from 'react';
 import { Layout, Typography, Space, Button, Switch } from 'antd';
 import { BulbOutlined, BulbFilled, QuestionCircleOutlined } from '@ant-design/icons';
-import { useAppDispatch, useAppSelector } from '../../store/hooks'; // 改用自定义Hook
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { toggleTheme } from '../../store/slices/layoutSlice';
 
 const { Header: AntHeader } = Layout;
@@ -15,68 +12,124 @@ const Header: React.FC = () => {
   const { theme } = useAppSelector((state) => state.layout);
   const { status } = useAppSelector((state) => state.recording);
 
-  // 录制状态：0=未录制, 1=录制中, 2=暂停
   const isRecording = status === 1;
   const isPaused = status === 2;
   const isDarkMode = theme === 'dark';
+
+  // 事件处理函数
+  const handleHelpBtnEnter = (e: React.MouseEvent<HTMLElement>, isDark: boolean) => {
+    const target = e.currentTarget as HTMLButtonElement;
+    target.style.borderColor = isDark ? '#3a3f47' : '#e5e6eb';
+    target.style.backgroundColor = isDark ? '#2a2e36' : '#f7f8fa';
+    target.style.transform = 'scale(1.05)'; // 新增：hover缩放
+  };
+
+  const handleHelpBtnLeave = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.currentTarget as HTMLButtonElement;
+    target.style.borderColor = 'transparent';
+    target.style.backgroundColor = 'transparent';
+    target.style.transform = 'scale(1)'; // 新增：恢复缩放
+  };
 
   return (
     <AntHeader 
       className="header" 
       style={{ 
-        height: 64,
+        height: 70, // 加高顶栏，更舒展
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        padding: '0 24px',
-        background: isDarkMode ? '#1d2129' : '#ffffff', // 飞书明暗主题背景
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)', // 飞书柔和阴影
-        borderBottom: isDarkMode ? '1px solid #2a2e36' : '1px solid #f0f2f5',
+        padding: '0 32px',
+        // 新增：渐变色背景（根据暗黑模式切换）
+        background: isDarkMode 
+          ? 'linear-gradient(135deg, #1a1f28 0%, #2d3748 100%)' 
+          : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+        // 新增：精致阴影+多层圆角
+        boxShadow: isDarkMode 
+          ? '0 4px 20px rgba(0, 0, 0, 0.3)' 
+          : '0 4px 20px rgba(0, 0, 0, 0.08)',
+        borderBottom: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0',
         position: 'sticky',
         top: 0,
         zIndex: 100,
+        borderRadius: '0 0 20px 20px', // 加大底部圆角
+        transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)', // 更丝滑的过渡
+        overflow: 'hidden', // 防止渐变溢出
       }}
     >
-      <Space align="center" size="middle">
-        {/* 飞书风格logo+标题 */}
+      <Space align="center" size="large">
+        {/* 新增：Logo容器美化（圆形渐变+悬浮动效） */}
         <div 
           style={{ 
-            width: 36, 
-            height: 36, 
-            borderRadius: 8, 
-            backgroundColor: '#007bff',
+            width: 48, 
+            height: 48, 
+            borderRadius: '50%', // 圆形Logo
+            background: isDarkMode 
+              ? 'linear-gradient(135deg, #7d96beff 0%, #8b5cf6 100%)' 
+              : 'linear-gradient(135deg, #007bff 0%, #8687d3ff 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            marginRight: 12,
+            marginRight: 20,
+            boxShadow: isDarkMode 
+              ? '0 0 20px rgba(59, 130, 246, 0.4)' 
+              : '0 0 20px rgba(0, 123, 255, 0.3)',
+            transition: 'all 0.3s ease',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = isDarkMode 
+              ? '0 0 25px rgba(59, 130, 246, 0.6)' 
+              : '0 0 25px rgba(0, 123, 255, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = isDarkMode 
+              ? '0 0 20px rgba(59, 130, 246, 0.4)' 
+              : '0 0 20px rgba(0, 123, 255, 0.3)';
           }}
         >
-          <Text style={{ color: 'white', fontSize: 18, fontWeight: 600 }}>Visionaries</Text>
+          <Text style={{ color: 'white', fontSize: 18, fontWeight: 700, letterSpacing: 1 }}>VS</Text>
         </div>
         <Title level={5} style={{ 
-          color: isDarkMode ? '#ffffff' : '#1d2129', 
+          color: isDarkMode ? '#f9fafb' : '#1e293b', 
           margin: 0, 
-          fontSize: 18,
-          fontWeight: 600
+          fontSize: 22,
+          fontWeight: 600,
+          letterSpacing: 0.8,
+          textShadow: isDarkMode ? '0 0 10px rgba(255, 255, 255, 0.1)' : 'none'
         }}>
-          智能录课工具
+          Visionaries智能录课工具
         </Title>
 
-        {/* 录制状态标签（飞书风格胶囊标签） */}
+        {/* 录制状态标签：美化胶囊样式+发光效果 */}
         {isRecording && (
           <div 
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: 6,
-              padding: '4px 12px',
-              backgroundColor: '#ff4d4f10',
-              borderRadius: 16,
-              border: '1px solid #ff4d4f20',
+              gap: 8,
+              padding: '8px 20px',
+              backgroundColor: isDarkMode ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)',
+              borderRadius: 30, // 超大圆角胶囊
+              border: isDarkMode ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(239, 68, 68, 0.2)',
+              transition: 'all 0.3s ease',
+              boxShadow: isDarkMode 
+                ? '0 0 15px rgba(239, 68, 68, 0.2)' 
+                : '0 0 15px rgba(239, 68, 68, 0.1)',
+              backdropFilter: 'blur(10px)', // 毛玻璃效果
             }}
           >
-            <div style={{ width: 8, height: 8, borderRadius: 50, backgroundColor: '#ff4d4f', animation: 'pulse 1.5s infinite' }} />
-            <Text style={{ color: '#ff4d4f', fontSize: 12, fontWeight: 500 }}>录制中</Text>
+            <div style={{ 
+              width: 12, 
+              height: 12, 
+              borderRadius: '50%', 
+              backgroundColor: '#ef4444', 
+              animation: 'pulse 1.5s infinite',
+              boxShadow: '0 0 10px rgba(239, 68, 68, 0.6)',
+            }} />
+            <Text style={{ color: isDarkMode ? '#fca5a5' : '#dc2626', fontSize: 14, fontWeight: 500 }}>录制中</Text>
           </div>
         )}
         {isPaused && (
@@ -84,54 +137,85 @@ const Header: React.FC = () => {
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: 6,
-              padding: '4px 12px',
-              backgroundColor: '#faad1410',
-              borderRadius: 16,
-              border: '1px solid #faad1420',
+              gap: 8,
+              padding: '8px 20px',
+              backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)',
+              borderRadius: 30,
+              border: isDarkMode ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(245, 158, 11, 0.2)',
+              transition: 'all 0.3s ease',
+              boxShadow: isDarkMode 
+                ? '0 0 15px rgba(245, 158, 11, 0.2)' 
+                : '0 0 15px rgba(245, 158, 11, 0.1)',
+              backdropFilter: 'blur(10px)',
             }}
           >
-            <Text style={{ color: '#faad14', fontSize: 12, fontWeight: 500 }}>已暂停</Text>
+            <div style={{ 
+              width: 12, 
+              height: 12, 
+              borderRadius: '50%', 
+              backgroundColor: '#f59e0b', 
+              boxShadow: '0 0 10px rgba(245, 158, 11, 0.6)',
+            }} />
+            <Text style={{ color: isDarkMode ? '#fcd34d' : '#d97706', fontSize: 14, fontWeight: 500 }}>已暂停</Text>
           </div>
         )}
       </Space>
-      
 
       <Space align="center" size="middle">
-        {/* 主题切换开关（飞书风格） */}
-        <Switch
-          checked={isDarkMode}
-          onChange={() => dispatch(toggleTheme())}
-          checkedChildren={<BulbFilled style={{ color: '#fff' }} />}
-          unCheckedChildren={<BulbOutlined style={{ color: '#86909c' }} />}
-          size="small"
-        />
-        {/* 帮助按钮（修正ghost属性） */}
-        <Button 
-          ghost={true}
-          size="small" 
-          icon={<QuestionCircleOutlined />}
+        {/* 主题切换开关：美化样式 */}
+        <div 
           style={{ 
-            color: isDarkMode ? '#c9cdd4' : '#86909c',
-            padding: '0 12px',
-            height: 32,
+            padding: 4,
+            backgroundColor: isDarkMode ? '#374151' : '#e2e8f0',
+            borderRadius: 20,
+            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)',
           }}
         >
-          帮助
+          <Switch
+            checked={isDarkMode}
+            onChange={() => dispatch(toggleTheme())}
+            checkedChildren={<BulbFilled style={{ color: '#fcd34d', fontSize: 16 }} />}
+            unCheckedChildren={<BulbOutlined style={{ color: '#64748b', fontSize: 16 }} />}
+            size="default"
+            style={{ 
+              backgroundColor: isDarkMode ? '#3b82f6' : 'transparent',
+              borderRadius: 16,
+              boxShadow: isDarkMode ? '0 2px 8px rgba(59, 130, 246, 0.4)' : 'none',
+            }}
+          />
+        </div>
+        {/* 帮助按钮：美化+hover动效 */}
+        <Button 
+          ghost={true}
+          size="middle" 
+          icon={<QuestionCircleOutlined style={{ fontSize: 18 }} />}
+          style={{ 
+            color: isDarkMode ? '#e2e8f0' : '#334155',
+            padding: '0 20px',
+            height: 40,
+            borderRadius: 20,
+            border: '1px solid transparent',
+            transition: 'all 0.3s ease',
+            backdropFilter: 'blur(10px)',
+            fontWeight: 500,
+          }}
+          onMouseEnter={(e) => handleHelpBtnEnter(e, isDarkMode)}
+          onMouseLeave={handleHelpBtnLeave}
+        >
+          帮助中心
         </Button>
       </Space>
-
     </AntHeader>
   );
 };
 
-// 添加强制闪烁动画（录制中状态）
+// 闪烁动画优化
 const style = document.createElement('style');
 style.innerHTML = `
   @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
   }
 `;
 document.head.appendChild(style);

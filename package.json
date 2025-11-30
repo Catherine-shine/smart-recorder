@@ -12,10 +12,14 @@
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@reduxjs/toolkit": "^2.11.0",
+    "@types/styled-components": "^5.1.36",
     "antd": "^6.0.0",
+    "framer-motion": "^12.23.24",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-redux": "^9.2.0",
+    "react-router-dom": "^7.9.6",
+    "styled-components": "^6.1.19",
     "tldraw": "^4.2.0"
   },
   "devDependencies": {
@@ -23,6 +27,7 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^5.1.1",
     "eslint": "^9.39.1",
     "eslint-plugin-prettier": "^5.5.4",

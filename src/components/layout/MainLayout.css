@@ -8,13 +8,17 @@
 .main-layout.theme-light .header {
   background: #001529;
 }
+.main-layout.theme-dark {
+  background: #1f2937 !important;
+  color: #f9fafb;
+}
 
 .main-layout.theme-dark .header {
   background: #141414;
 }
 
 .main-layout.theme-dark .content-area {
-  background: #000;
+  background: #272e3b;
 }
 
 .main-layout.theme-dark .whiteboard-section,

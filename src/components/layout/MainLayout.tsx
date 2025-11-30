@@ -1,34 +1,27 @@
-// src/components/layout/MainLayout.tsx
 import React from 'react';
 import { Layout } from 'antd';
-import { useSelector } from 'react-redux';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import type { RootState } from '../../store';
-import './MainLayout.css';
 
 const { Content } = Layout;
 
-interface MainLayoutProps {
+export interface MainLayoutProps {
   children: React.ReactNode;
+  currentPage: 'record' | 'playback';
+  onPageChange: (page: 'record' | 'playback') => void;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { status } = useSelector((state: RootState) => state.recording);
-  const { theme } = useSelector((state: RootState) => state.layout);
-  
-  // 根据status设置不同的class
-  const isRecording = status === 1;
-  const isPaused = status === 2;
-  
-  const layoutClass = `main-layout ${isRecording ? 'recording' : ''} ${isPaused ? 'paused' : ''} theme-${theme}`;
-
+const MainLayout: React.FC<MainLayoutProps> = ({ children, currentPage, onPageChange }) => {
   return (
-    <Layout className={layoutClass}>
+    <Layout style={{ minHeight: '100vh', background: '#f1f5f9' }}> {/* 新增：页面背景色 */}
       <Header />
-      <Layout className="main-content">
-        <Sidebar />
-        <Content className="content-area">
+      <Layout style={{ height: 'calc(100vh - 70px)' }}> {/* 适配顶栏高度70px */}
+        <Sidebar currentPage={currentPage} onPageChange={onPageChange} />
+        <Content style={{ 
+          padding: 0, 
+          background: 'transparent', // 透明背景，继承页面背景
+          overflow: 'auto' 
+        }}>
           {children}
         </Content>
       </Layout>
