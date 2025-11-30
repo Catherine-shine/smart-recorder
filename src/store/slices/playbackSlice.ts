@@ -30,14 +30,17 @@ const playbackSlice = createSlice({
     setCurrentTime: (state, action: PayloadAction<number>) => {
       state.currentTime = action.payload;
     },
+    setPlaybackUrl: (state, action: PayloadAction<string>) => {
+      state.playbackUrl = action.payload;
+    },
   },
 });
 
 // 导出 Action Creator
-export const { setPlaying, setCurrentTime } = playbackSlice.actions;
+export const { setPlaying, setCurrentTime, setPlaybackUrl } = playbackSlice.actions;
 
 // 导出切片 Reducer（供 rootReducer 聚合）
 export default playbackSlice.reducer;
 
 // 可选：导出切片 Action 类型
-export type PlaybackAction = ReturnType<typeof setPlaying> | ReturnType<typeof setCurrentTime>;
+export type PlaybackAction = ReturnType<typeof setPlaying> | ReturnType<typeof setCurrentTime> | ReturnType<typeof setPlaybackUrl>;

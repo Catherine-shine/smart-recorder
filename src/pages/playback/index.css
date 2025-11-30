@@ -1,152 +1,162 @@
-/* 全局容器：让组件在页面中垂直+水平居中 */
+/* ===================== 全局 CSS 变量：统一管理样式参数 ===================== */
+:root {
+  /* 间距变量 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  /* 尺寸变量 */
+  --video-max-width: 800px;
+  --list-max-height: 500px;
+  --control-item-height: 36px;
+  --card-border-radius: 8px;
+  --video-border-radius: 8px;
+  /* 颜色变量 */
+  --card-shadow-color: rgba(0, 0, 0, 0.1);
+  --video-border-color: #effcff93;
+  --active-item-bg: #e6f7ff;
+  --active-item-border: #1890ff;
+  /* 响应式断点 */
+  --breakpoint-xs: 414px; /* 小屏手机（iPhone SE/安卓小屏） */
+  --breakpoint-sm: 576px; /* 普通手机 */
+  --breakpoint-md: 768px; /* 平板 */
+  --breakpoint-lg: 1200px; /* 大屏桌面端 */
+}
+
+/* ===================== 全局容器：居中+自适应视口 ===================== */
 .playback-container {
   width: 100%;
-  min-height: 100vh; /* 占满视口高度，实现垂直居中 */
+  min-height: calc(100vh - var(--spacing-xl)); /* 预留上下间距，避免贴边 */
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 20px 0; /* 上下内边距，避免贴边 */
+  justify-content: flex-start; /* 改为顶部对齐，避免小屏内容被挤压 */
+  padding: var(--spacing-xl) var(--spacing-md);
   box-sizing: border-box;
-  /* 移动端去掉垂直居中，避免小屏内容被挤压 */
-  min-height: calc(100vh - 40px);
+  overflow-x: hidden; /* 防止横向滚动 */
 }
 
-/* 内容容器：限制最大宽度，适配大屏/移动端 */
+/* ===================== 内容容器：列表+播放器的整体布局 ===================== */
 .playback-content {
-  width: 95%; /* 移动端占95%宽度，更紧凑 */
-  max-width: 1000px; /* 大屏最大宽度 */
+  width: 100%;
+  max-width: var(--breakpoint-lg); /* 大屏最大宽度，适配1200px+屏幕 */
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  gap: var(--spacing-lg); /* 列表与播放器的间距，替代margin */
   box-sizing: border-box;
 }
 
-/* Card容器：移除默认边距，适配内容 */
-.playback-card {
-  width: 100%;
-  margin-top: 10px !important; /* 移动端减小上边距 */
-  border-radius: 8px !important; /* 可选：圆角优化 */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important; /* 轻微阴影提升质感 */
-}
-
-/* 视频容器：水平居中，适配Card宽度 */
-.video-wrapper {
-   /* border: 1px solid #e61818; */
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px; /* 移动端减小底部间距 */
-  width: 100%;
-  padding: 0 8px; /* 移动端左右内边距，避免贴边 */
-  box-sizing: border-box;
-}
-
-/* 视频样式：完全自适应，优先保证移动端展示 */
-.playback-video {
- 
-  width: 100%;
-  max-width: 800px; /* 大屏最大宽度 */
-  height: auto; /* 移动端高度自适应，抛弃固定高度 */
-  aspect-ratio: 16/9; /* 核心：16:9比例，适配所有屏幕 */
-  border-radius: 8px;
-  border: 5px solid #effcff93;
-  object-fit: contain; /* 避免视频拉伸 */
-  background-color: #000; /* 视频加载前显示黑色背景，更美观 */
-}
-
-/* 控制栏父容器：固定800px宽度（大屏），移动端自适应 */
-.playback-controls-parent {
-  width: 800px; /* 大屏固定宽度 */
-  margin: 0 auto; /* 水平居中 */
-  box-sizing: border-box; /* 宽高包含内边距/边框，避免溢出 */
-  padding: 0 8px; /* 左右内边距，避免贴边 */
-  /* 移动端适配：宽度100% */
-  @media (max-width: 768px) {
-    width: 100%;
-  }
-}
-
-/* 控制栏Row：与视频宽度对齐，水平居中 */
-.playback-controls {
-  width: 100%;
-  max-width: 800px; /* 和视频最大宽度一致 */
-  margin: 0 auto;
-  align-items: center;
-  justify-content: space-around; /* 子元素分布均匀 */
-  row-gap: 8px; /* 移动端换行后增加行间距 */
-  /* 移动端减小列间距 */
-  @media (max-width: 576px) {
-    --antd-row-grid-gutter: 8px !important; /* 覆盖Antd的gutter变量 */
-  }
-}
-
-/* 控制项通用样式 */
-.control-item {
-  display: flex;
-  align-items: center;
-  justify-content: center; /* 移动端子组件居中，方便点击 */
-  width: 100%;
-  min-height: 36px; 
-  box-sizing: border-box;
-}
-
-
-
-
-/* 播放按钮移动端适配：扩大点击区域 */
-.playback-button-container {
-  width: 50px !important; /* 移动端适当减小宽度，保持比例 */
-  height: 30px !important;
-  @media (max-width: 576px) {
-    width: 44px !important; /* 移动端标准点击尺寸 */
-    height: 28px !important;
-  }
-}
-
-
-/* 进度条移动端适配：增加内边距 */
-.progress-bar-container {
- 
-  height: 40px !important; /* 取消固定高度 */
-  padding: 4px 0; /* 增加上下内边距 */
-  @media (max-width: 576px) {
-    padding: 2px 0;
-  }
-}
-
-/* 适配小屏（平板/手机）：细化断点 */
-/* 平板断点（768px以下） */
-@media (max-width: 768px) {
-  .playback-container {
-    padding: 10px 0;
-  }
+/* 桌面端：列表+播放器横向布局 */
+@media (min-width: var(--breakpoint-md)) {
   .playback-content {
-    width: 98%;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  /* 回放列表容器：桌面端固定宽度，占比更合理 */
+  .playback-list-col {
+    flex: 0 0 200px; /* 缩小固定宽度，不伸缩 */
+    height: var(--list-max-height);
+  }
+  /* 播放器容器：桌面端占剩余宽度 */
+  .playback-player-col {
+    flex: 1;
+    min-width: 0; /* 解决flex子元素溢出问题 */
+  }
+}
+
+/* ===================== 响应式断点细化：按设备适配 ===================== */
+/* 小屏手机（414px以下，如iPhone SE、安卓小屏） */
+@media (max-width: var(--breakpoint-xs)) {
+  :root {
+    --video-max-width: 100%; /* 小屏视频占满宽度 */
+  }
+  .playback-container {
+    padding: var(--spacing-sm) var(--spacing-xs);
+    min-height: calc(100vh - var(--spacing-sm));
   }
   .playback-card {
-    margin-top: 5px !important;
+    padding: var(--spacing-xs) !important;
+  }
+  .playback-button-container {
+    width: 44px;
+    height: 28px;
+  }
+  .playback-video {
+    border: none; /* 小屏去掉边框，扩大显示 */
+    border-radius: 4px;
   }
 }
 
-/* 手机断点（576px以下，核心移动端适配） */
-@media (max-width: 576px) {
-  .video-wrapper {
-    margin-bottom: 8px;
-    padding: 0 4px;
+/* 普通手机（576px以下） */
+@media (max-width: var(--breakpoint-sm)) {
+  .playback-list-col {
+    height: 200px; /* 移动端列表高度降低，避免占屏过多 */
   }
-  .playback-video {
-    border-radius: 4px; /* 移动端减小圆角 */
-    border: none; /* 移动端去掉边框，扩大显示区域 */
-  }
-  /* 进度条、倍速、音量控件移动端字体/尺寸优化 */
   .ant-typography,
   .ant-slider,
   .ant-select-selector {
-    font-size: 12px !important; /* 移动端减小字体 */
+    font-size: 12px !important;
   }
   .ant-select-selector {
-    padding: 0 8px !important; /* 移动端减小选择器内边距 */
-    height: 28px !important; /* 移动端减小选择器高度 */
+    padding: 0 var(--spacing-sm) !important;
+    height: 28px !important;
   }
+  .progress-bar-container {
+    min-height: 36px;
+    padding: var(--spacing-xs) 0;
+  }
+  .video-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+}
+
+/* 平板（768px以下） */
+@media (max-width: var(--breakpoint-md)) {
+  .playback-content {
+    gap: var(--spacing-md);
+  }
+  .playback-list-col {
+    width: 100%;
+    height: 250px; /* 平板列表高度适中 */
+  }
+  .playback-card {
+    margin-top: 0 !important;
+  }
+  .video-wrapper {
+    margin-bottom: var(--spacing-sm);
+  }
+}
+
+/* 大屏桌面端（1200px以上） */
+@media (min-width: var(--breakpoint-lg)) {
+  .playback-content {
+    max-width: 1200px;
+  }
+  .playback-list-col {
+    flex: 0 0 320px; /* 大屏列表宽度增加 */
+  }
+  .playback-video {
+    max-width: 900px; /* 大屏视频宽度加大 */
+  }
+}
+
+/* ===================== 通用优化：禁用选中文本、修复点击反馈 ===================== */
+.playback-list-item,
+.playback-button-container,
+.ant-select,
+.ant-slider {
+  user-select: none; /* 禁止选中文本，提升交互 */
+}
+
+.ant-slider-handle {
+  cursor: pointer;
+  transform: scale(1);
+  transition: transform 0.2s ease;
+}
+
+.ant-slider-handle:hover {
+  transform: scale(1.2); /* 滑块hover放大，提升触控体验 */
 }
