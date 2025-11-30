@@ -8,21 +8,28 @@ import {
 	SelectToolbarItem,
 	Tldraw,
 	TldrawUiMenuGroup,
-	TLStore
+	TLStore,
+	useEditor,
+	useValue
 } from 'tldraw'
 import { Provider } from 'react-redux'
 import { store } from '../src/store/store'
 import { useAppDispatch } from '../src/store/hooks'
 import { addAction, setIsDrawing } from '../src/store/whiteboardSlice'
 import 'tldraw/tldraw.css'
+import { useSyncDemo } from '@tldraw/sync'
+import {useState} from 'react'
+import { muti_components } from './muti_menu'
+import './sync-custom-people-menu.css'
 
 // 白板内容组件，用于与Redux集成
 function WhiteboardContent() {
 	const dispatch = useAppDispatch()
 
-	// 只保留必要的工具：选择、画笔、橡皮、文字
+	// 合并工具条组件和多人同步菜单组件
 	const components = useMemo(() => {
 		return {
+			// 自定义工具栏
 			Toolbar: () => (
 				<DefaultToolbar orientation="horizontal">
 					<TldrawUiMenuGroup id="basic-tools">
@@ -33,11 +40,14 @@ function WhiteboardContent() {
 					</TldrawUiMenuGroup>
 				</DefaultToolbar>
 			),
+			// 集成多人同步菜单
+			...muti_components
 		}
+		
 	}, [])
 
 	// 处理白板变更事件，将操作数据发送到Redux store
-	const handleStoreChange = (prevStore: TLStore, nextStore: TLStore) => {
+	const handleStoreChange = (prevStore, nextStore) => {
 		// 获取最近的变更操作
 		const changes = nextStore.getChangesSince(prevStore)
 		
@@ -45,7 +55,7 @@ function WhiteboardContent() {
 		if (changes.shapesCreated.length > 0 || changes.shapesUpdated.length > 0 || changes.shapesDeleted.length > 0) {
 			// 为每个创建的形状创建操作记录
 			changes.shapesCreated.forEach(shape => {
-				let actionType: 'draw' | 'erase' | 'text' | 'select' = 'draw'
+				let actionType = 'draw'
 				
 				// 根据形状类型确定操作类型
 				if (shape.type === 'text') {
@@ -74,15 +84,18 @@ function WhiteboardContent() {
 	}
 
 	// 处理工具变化事件，更新绘制状态
-	const handleToolChange = (prevToolId: string, nextToolId: string) => {
+	const handleToolChange = (prevToolId, nextToolId) => {
 		// 更新绘制状态
 		dispatch(setIsDrawing(nextToolId === 'draw'))
 	}
+	// 多人协作设置
+	const muti_store = useSyncDemo({roomId : "ginka"})
 
 	return (
 		<div className="tldraw__editor" style={{ position:'fixed', inset:'0' }}>
 			<Tldraw 
-				components={components}
+				store={muti_store}
+				components={components} 
 				hideMenu
 				hideZoomTool
 				hidePanel
