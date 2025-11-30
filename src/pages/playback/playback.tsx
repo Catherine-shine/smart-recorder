@@ -1,16 +1,13 @@
-import type { RootState } from '../../store';
-import { setPlaybackUrl } from '../../store/slices/playbackSlice';
-import { useSelector,useDispatch  } from 'react-redux';
-import type { PlayStatus, PlaybackVideoItem } from '../../types/playback';
+
 import PlaybackList from "../../components/playback/playBackList/playBackList";
-import { Card, Row, Col, message, Spin } from 'antd';
-import React, { useState, useRef, useEffect } from "react";
+import {  Row, Col, } from 'antd';
+import React from "react";
 import './index.css';
 import PlayBackBody from "../../components/playback/playBackBody/playBackBody";
 
 
 
-const PlaybackModule: React.FC = () => { // 组件名改为大驼峰（React规范）
+const PlaybackModule: React.FC = () => { 
   return (
 <div className="playback-container">
       <div className="playback-content">

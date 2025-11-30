@@ -1,5 +1,7 @@
 import { Provider } from "react-redux";
 import { store } from "./store";
+import PlaybackModule from "./pages/playback/playback";
+
 
 
 function App() {
@@ -18,7 +20,7 @@ function App() {
       >
         smart recorder
       </div>
-       
+      <PlaybackModule />
     </Provider>
     
   );
