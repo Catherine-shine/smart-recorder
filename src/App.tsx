@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 import { Provider } from 'react-redux';
 import { ConfigProvider, theme, Card, Spin, Button, Space, Typography, Empty } from 'antd';
@@ -239,7 +240,31 @@ function App() {
   return (
     <Provider store={store}>
       <AppContent />
+=======
+import { Provider } from "react-redux";
+import { store } from "./store";
+
+
+function App() {
+  return (
+    <Provider store={store}>
+      <div
+        style={{
+          width: "100vw",
+          height: "24px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          fontSize: "24px",
+          fontWeight: "bold",
+        }}
+      >
+        smart recorder
+      </div>
+       
+>>>>>>> main
     </Provider>
+    
   );
 }
 

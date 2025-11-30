@@ -10,7 +10,7 @@ import {
   SaveOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { setActiveTool } from '../../store/layoutSlice';
+import { setActiveTool } from '../../store/slices/layoutSlice';
 import type { RootState } from '../../store';
 
 const { Sider } = Layout;

@@ -5,7 +5,7 @@ import React from 'react';
 import { Layout, Typography, Space, Button, Switch } from 'antd';
 import { BulbOutlined, BulbFilled, QuestionCircleOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store/hooks'; // 改用自定义Hook
-import { toggleTheme } from '../../store/layoutSlice';
+import { toggleTheme } from '../../store/slices/layoutSlice';
 
 const { Header: AntHeader } = Layout;
 const { Title, Text } = Typography;

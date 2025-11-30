@@ -1,7 +1,83 @@
-//录制状态：正在录制中=1，录制暂停中=2，不在录制=0
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import type { RecordingState } from '../../types/RecordingState';
+import { RECORDING_STATUS } from '../../types/common';
+
+// 初始状态
+const initialState: RecordingState = {
+  status: RECORDING_STATUS.NOT_RECORDING,
+  startTime: null,
+  pauseDuration: 0,
+  lastPauseTime: null,
+  lastRecordingDuration: null,
+};
+
+export const recordingSlice = createSlice({
+  name: 'recording',
+  initialState,
+  reducers: {
+    // 重置状态
+    resetRecordingState: (state) => {
+      Object.assign(state, initialState);
+    },
+    
+    // 设置录制状态
+    setRecordingStatus: (state, action: PayloadAction<typeof RECORDING_STATUS[keyof typeof RECORDING_STATUS]>) => {
+      state.status = action.payload;
+    },
+    
+    // 设置开始时间
+    setStartTime: (state, action: PayloadAction<number | null>) => {
+      state.startTime = action.payload;
+    },
+    
+    // 设置暂停时长
+    setPauseDuration: (state, action: PayloadAction<number>) => {
+      state.pauseDuration = action.payload;
+    },
+    
+    // 设置最后暂停时间
+    setLastPauseTime: (state, action: PayloadAction<number | null>) => {
+      state.lastPauseTime = action.payload;
+    },
+    
+    // 设置最后录制时长
+    setLastRecordingDuration: (state, action: PayloadAction<number | null>) => {
+      state.lastRecordingDuration = action.payload;
+    },
+  },
+});
+
+// 导出 Action Creator
+export const {
+  resetRecordingState,
+  setRecordingStatus,
+  setStartTime,
+  setPauseDuration,
+  setLastPauseTime,
+  setLastRecordingDuration,
+} = recordingSlice.actions;
+
+// 导出切片 Reducer
+export default recordingSlice.reducer;
+
+// 可选：导出切片 Action 类型
+export type RecordingAction = 
+  | ReturnType<typeof resetRecordingState>
+  | ReturnType<typeof setRecordingStatus>
+  | ReturnType<typeof setStartTime>
+  | ReturnType<typeof setPauseDuration>
+  | ReturnType<typeof setLastPauseTime>
+  | ReturnType<typeof setLastRecordingDuration>;
+
+
+
+
+
+
+/*//录制状态：正在录制中=1，录制暂停中=2，不在录制=0
 import { createSlice } from '@reduxjs/toolkit';
-import type { RecordingState } from '../types/RecordingState';
-import {RECORDING_STATUS} from '../types/common'
+import type { RecordingState } from '../../types/RecordingState';
+import {RECORDING_STATUS} from '../../types/common'
 
 // 初始状态
 const initialState = {
@@ -105,4 +181,4 @@ export const recordingSlice = createSlice({
 // 为每个 case reducer 函数生成 Action creators
 export const { resetRecordingState, startRecording, pauseRecording, resumeRecording, stopRecording, setRecordingStatus} = recordingSlice.actions;
 
-export default recordingSlice.reducer;
+export default recordingSlice.reducer;*/
