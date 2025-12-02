@@ -6,10 +6,10 @@ import './index.css';
 import PlayBackBody from "../../components/playback/playBackBody/playBackBody";
 
 
-
+//注明组件的 ts 类型是 React 函数式组件（React.FC）
 const PlaybackModule: React.FC = () => { 
   return (
-<div className="playback-container">
+    <div className="playback-container">
       <div className="playback-content">
         {/* 整体布局：桌面端左列表右播放器，移动端上列表下播放器 */}
         <Row gutter={[20, 20]} className="playback-layout">

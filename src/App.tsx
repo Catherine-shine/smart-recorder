@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; //通过组件内状态 useState 控制当前页面（录制页或回放页），而非基于 URL 的路由 React Router
 import { Provider } from 'react-redux';
 import { ConfigProvider, theme, Card, Spin, Button, Space, Typography, Empty, List, Avatar } from 'antd';
 import { MainLayout } from './components/layout';
@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 
 // 全局样式（增强版：动画+响应式+深度）
+// 通过 <style>标签注入全局 CSS，定义响应式网格布局、卡片悬停动画、按钮交互效果等样式
 const GlobalStyle = () => (
   <style>
     {`
@@ -142,7 +143,7 @@ const GlobalStyle = () => (
 );
 
 // ===================== 录制页组件（保留你原有逻辑） =====================
-// 白板组件
+// 1. 白板组件
 const Whiteboard = () => (
   <Card 
     className="lark-card"
@@ -191,7 +192,7 @@ const Whiteboard = () => (
   </Card>
 );
 
-// 视频预览组件
+// 2. 视频预览组件
 const VideoRecorder = () => (
   <Card 
     className="lark-card"
@@ -229,7 +230,7 @@ const VideoRecorder = () => (
   </Card>
 );
 
-// 录制控制面板
+// 3. 录制控制面板
 const ControlPanel = () => {
   const [recordStatus, setRecordStatus] = useState(0); // 0=未录制,1=录制中,2=暂停
 
@@ -299,7 +300,7 @@ const ControlPanel = () => {
   );
 };
 
-// ===================== 回放页组件（修复图标：改用PlayCircleOutlined） =====================
+// ===================== 4. 回放页组件（修复图标：改用PlayCircleOutlined） =====================
 // 模拟录制的视频数据
 const videoData = [
   { id: 1, title: '2025-11-30 数学网课录制', time: '10:00', duration: '25:30', cover: 'https://via.placeholder.com/80x60/007bff/ffffff?text=数学' },
@@ -352,9 +353,11 @@ const PlaybackPage = () => {
 
 // ===================== 应用核心逻辑（双页面切换） =====================
 function AppContent() {
+  //从 Redux store 的 layout状态获取当前主题（亮色/暗色），并传递给 <ConfigProvider/>
   const { theme: currentTheme } = useSelector((state: RootState) => state.layout);
   const isDark = currentTheme === 'dark';
-  // 双页面状态管理
+
+  // 当前页面保存和双页面切换
   const [currentPage, setCurrentPage] = useState<'record' | 'playback'>('record');
   const handlePageChange = (page: 'record' | 'playback') => {
     setCurrentPage(page);
@@ -362,7 +365,9 @@ function AppContent() {
 
   return (
     <>
+    {/*通过 <GlobalStyle />定义响应式布局和动画效果*/}
       <GlobalStyle />
+      {/*通过 ConfigProvider配置 Ant Design 主题*/}
       <ConfigProvider
         theme={{
           algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
@@ -382,6 +387,7 @@ function AppContent() {
           },
         }}
       >
+        {/* 把上述4个组件放在页面的相应位置 */}
         {/* 核心修复：确保MainLayout组件已正确导出Props接口 */}
         <MainLayout currentPage={currentPage} onPageChange={handlePageChange}>
           {currentPage === 'record' ? (
@@ -410,6 +416,6 @@ function App() {
       <AppContent />
     </Provider>
   );
-}
+}//用 redux 的 Provider包裹应用，使所有子组件可访问 Redux store
 
 export default App;

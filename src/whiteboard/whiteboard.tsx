@@ -15,7 +15,7 @@ import {
 import { Provider } from 'react-redux'
 import { store } from '../src/store/store'
 import { useAppDispatch } from '../src/store/hooks'
-import { addAction, setIsDrawing } from '../src/store/whiteboardSlice'
+import { addAction, setIsDrawing } from '../src/store/slices/whiteboardSlice'
 import 'tldraw/tldraw.css'
 import { useSyncDemo } from '@tldraw/sync'
 import {useState} from 'react'
