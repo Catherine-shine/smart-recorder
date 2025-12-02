@@ -2,7 +2,7 @@ import type { RootState } from '../../../store';
 import { setPlaybackUrl } from '../../../store/slices/playbackSlice';
 import { useSelector } from 'react-redux';
 import PlayButton from './playButton/playButton';
-import type { PlayStatus, PlaybackVideoItem } from '../../../types/playback';
+import type { PlayStatus, PlaybackVideoItem } from '../../../types/playback/playbackbody';
 import ProgressBar from './progressBar/progressBar';
 import VolumeControl from './volumeControl/volumeControl';
 import PlaybackRate from './playBackRate/playBackRate';
