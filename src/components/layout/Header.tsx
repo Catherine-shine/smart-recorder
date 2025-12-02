@@ -21,7 +21,7 @@ const Header: React.FC = () => {
     const target = e.currentTarget as HTMLButtonElement;
     target.style.borderColor = isDark ? '#3a3f47' : '#e5e6eb';
     target.style.backgroundColor = isDark ? '#2a2e36' : '#f7f8fa';
-    target.style.transform = 'scale(1.05)'; // 新增：hover缩放
+    target.style.transform = 'scale(1.05)'; // hover缩放
   };
 
   const handleHelpBtnLeave = (e: React.MouseEvent<HTMLElement>) => {
@@ -40,11 +40,11 @@ const Header: React.FC = () => {
         justifyContent: 'space-between', 
         alignItems: 'center',
         padding: '0 32px',
-        // 新增：渐变色背景（根据暗黑模式切换）
+        // 渐变色背景（根据暗黑模式切换）
         background: isDarkMode 
           ? 'linear-gradient(135deg, #1a1f28 0%, #2d3748 100%)' 
           : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-        // 新增：精致阴影+多层圆角
+        // 阴影+多层圆角
         boxShadow: isDarkMode 
           ? '0 4px 20px rgba(0, 0, 0, 0.3)' 
           : '0 4px 20px rgba(0, 0, 0, 0.08)',
@@ -58,7 +58,7 @@ const Header: React.FC = () => {
       }}
     >
       <Space align="center" size="large">
-        {/* 新增：Logo容器美化（圆形渐变+悬浮动效） */}
+        {/* Logo容器美化（圆形渐变+悬浮动效） */}
         <div 
           style={{ 
             width: 48, 

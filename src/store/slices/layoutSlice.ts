@@ -13,7 +13,7 @@ const initialState: LayoutState = {
   activeTool: 'draw',
   theme: 'light',
 };
-
+ 
 const layoutSlice = createSlice({
   name: 'layout',
   initialState,
@@ -26,9 +26,14 @@ const layoutSlice = createSlice({
     },
     toggleTheme: (state) => {
       state.theme = state.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme',state.theme);
     },
+    loadTheme:(state)=>{
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+      if (savedTheme) state.theme = savedTheme;
+    }
   },
 });
 
-export const { toggleSidebar, setActiveTool, toggleTheme } = layoutSlice.actions;
+export const { toggleSidebar, setActiveTool, toggleTheme ,loadTheme} = layoutSlice.actions;
 export default layoutSlice.reducer;
