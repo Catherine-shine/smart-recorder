@@ -2,9 +2,9 @@
 import type { RootState } from '../../../store';
 import { useSelector,useDispatch  } from 'react-redux';
 import { setPlaybackUrl } from '../../../store/slices/playbackSlice';
-import type { PlayStatus } from '../../../types/playback';
+import type { PlayStatus } from '../../../types/playback/playbackbody';
 import { List, Card, Empty, Typography, Tag ,Spin} from 'antd';
-import type { PlaybackVideoItem } from '../../../types/playback';
+import type { PlaybackVideoItem } from '../../../types/playback/playbackbody';
 import {  message, } from 'antd';
 import React, { useState, useEffect } from "react";
 import { formatDuration } from '../../../utils/playback';

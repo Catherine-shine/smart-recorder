@@ -5,24 +5,23 @@ import Sidebar from './Sidebar';
 
 const { Content } = Layout;
 
+// 简化Props：仅保留children，移除页面切换相关属性
 export interface MainLayoutProps {
   children: React.ReactNode;
-  currentPage: 'record' | 'playback';
-  onPageChange: (page: 'record' | 'playback') => void;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children, currentPage, onPageChange }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f1f5f9' }}> {/* 新增：页面背景色 */}
+    <Layout style={{ minHeight: '100vh', background: '#f1f5f9' }}>
       <Header />
-      <Layout style={{ height: 'calc(100vh - 70px)' }}> {/* 适配顶栏高度70px */}
-        <Sidebar currentPage={currentPage} onPageChange={onPageChange} />
+      <Layout style={{ height: 'calc(100vh - 70px)' }}>
+        <Sidebar /> {/* 侧边栏内部通过路由联动，无需传递props */}
         <Content style={{ 
           padding: 0, 
-          background: 'transparent', // 透明背景，继承页面背景
+          background: 'transparent',
           overflow: 'auto' 
         }}>
-          {children}
+          {children} {/* 路由页面渲染在这里 */}
         </Content>
       </Layout>
     </Layout>
