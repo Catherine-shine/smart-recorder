@@ -6,7 +6,7 @@ import AppRoute from './router'; // 导入路由配置（含页面映射）
 import '../src/assets/styles/global.css'; // 引用外部全局样式（替代内嵌样式）
 import 'antd/dist/reset.css'; // Antd 重置样式
 
-// 主应用组件（顶层唯一配置）
+// 主应用组件（顶层唯一配置)
 function App() {
   return (
     <Provider store={store}>

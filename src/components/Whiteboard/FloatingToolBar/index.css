@@ -1,0 +1,147 @@
+/* 浮动工具栏容器 */
+.floating-toolbar-container {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+}
+
+/* 小屏幕适配 */
+@media (max-width: 768px) {
+  .floating-toolbar-container {
+    right: 12px;
+  }
+}
+
+/* 展开的工具栏 */
+.floating-expanded-toolbar {
+  width: 0;
+  height: auto;
+  background: var(--card-bg, #ffffff);
+  border-radius: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  gap: 16px;
+  transition: width 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
+}
+
+/* 工具栏激活（展开）状态 */
+.floating-expanded-toolbar.active {
+  width: 64px;
+  padding: 20px 0;
+}
+
+/* 工具组容器 */
+.floating-tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 分隔线 */
+.floating-divider {
+  width: 60%;
+  height: 1px;
+  background-color: var(--border-color, #e8e8e8);
+}
+
+/* 颜色选择组 */
+.floating-color-selector-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  width: 48px;
+}
+
+/* 颜色点基础样式 */
+.floating-color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid var(--border-color, #e8e8e8);
+  transition: box-shadow 0.2s ease;
+}
+
+/* 颜色点激活状态 */
+.floating-color-dot.active {
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #007bff;
+}
+
+/* 线条粗细选择组 */
+.floating-line-width-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+/* 线条粗细条基础样式 */
+.floating-line-width-bar {
+  width: 30px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border 0.2s ease;
+}
+
+/* 线条粗细条激活状态 */
+.floating-line-width-bar.active {
+  border: 2px solid #007bff;
+}
+
+/* 收放按钮样式 */
+.floating-toggle-button {
+  width: 56px;
+  height: 56px;
+  margin-left: 12px;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+/* 工具按钮基础样式 */
+.floating-tool-button {
+  transition: all 0.2s ease;
+  border: none !important;
+  background-color: transparent !important;
+  color: var(--text-primary, #333) !important;
+}
+
+/* 工具按钮激活状态 */
+.floating-tool-button.active {
+  background-color: rgba(0, 123, 255, 0.12) !important;
+  color: #007bff !important;
+  border: 1px solid #007bff !important;
+}
+
+/* 工具按钮不同激活色 */
+.floating-tool-button.active.eraser {
+  background-color: rgba(255, 77, 79, 0.12) !important;
+  color: #ff4d4f !important;
+  border-color: #ff4d4f !important;
+}
+
+.floating-tool-button.active.text {
+  background-color: rgba(82, 196, 26, 0.12) !important;
+  color: #52c41a !important;
+  border-color: #52c41a !important;
+}
+
+.floating-tool-button.active.clear {
+  background-color: rgba(250, 173, 20, 0.12) !important;
+  color: #faad14 !important;
+  border-color: #faad14 !important;
+}
+
+.floating-tool-button.active.device {
+  background-color: rgba(0, 123, 255, 0.12) !important;
+  color: #007bff !important;
+  border-color: #007bff !important;
+}

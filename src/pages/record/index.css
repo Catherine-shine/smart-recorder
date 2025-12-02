@@ -1,0 +1,251 @@
+ 
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+         background-color: var(--bg-color);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        overflow-x: hidden;
+        transition: background-color 0.3s ease;
+      }
+
+      /*主题变量定义：浅色/深色*/
+      :root {
+        --bg-color: #f7f8fa;
+        --card-bg: #ffffff;
+        --card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        --text-primary: #1d2129;
+        --text-secondary: #86909c;
+        --border-color: #e5e6eb;
+        --placeholder-bg: rgba(255, 255, 255, 0.8);
+        --dashed-border: #e5e6eb;
+      }
+
+      .dark-theme {
+        --bg-color: #1a1f28;
+        --card-bg: #2d3748;
+        --card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        --text-primary: #f9fafb;
+        --text-secondary: #94a3b8;
+        --border-color: #374151;
+        --placeholder-bg: rgba(45, 55, 72, 0.8);
+        --dashed-border: #374151;
+      }
+
+      /* 布局响应式适配 */
+      .workspace-grid {
+        width: 100%;
+        height: calc(100vh - 64px);
+        display: grid;
+        grid-template-columns: 3fr 1fr;
+        gap: 24px !important;
+        padding: 24px !important;
+        overflow: hidden;
+        @media (max-width: 1200px) {
+          grid-template-columns: 2fr 1fr;
+        }
+        @media (max-width: 992px) {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr 1fr;
+          height: auto;
+          min-height: calc(100vh - 70px);
+          gap: 16px !important;
+          padding: 16px !important;
+        }
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+          grid-template-rows: 2fr 1fr;
+          height: auto;
+          min-height: calc(100vh - 64px);
+        }
+      }
+
+      .playback-page {
+        width: 100%;
+        min-height: calc(100vh - 70px);
+        padding: 24px;
+        overflow: auto;
+        @media (max-width: 768px) {
+          padding: 12px;
+        }
+      }
+
+      .whiteboard-section {
+        height: 100%;
+        @media (max-width: 992px) {
+          height: 55vh;
+        }
+        @media (max-width: 768px) {
+          height: 45vh;
+        }
+      }
+
+      .video-section {
+        display: flex;
+        flex-direction: column;
+        gap: 24px !important;
+        height: 100%;
+         @media (max-width: 992px) {
+          height: 40vh;
+          gap: 16px !important;
+        }
+        @media (max-width: 768px) {
+          height: 35vh;
+        }
+      }
+
+      /* 卡片样式增强 与主题适配*/
+      .lark-card {
+        border-radius: 16px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        border: none !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        overflow: hidden;
+        position: relative;
+        background-color: var(--card-bg) !important;
+      }
+
+      .lark-card:hover {
+        box-shadow: var(--card-hover-shadow) !important;
+        transform: translateY(-2px);
+      }
+
+      .lark-card .ant-card-head {
+        border-bottom: 1px solid var(--border-color) !important;
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        .dark-theme & {
+          background-color: rgba(45, 55, 72, 0.9) !important;
+        }
+      }
+
+      /* 按钮样式增强 */
+      .lark-btn {
+        border-radius: 12px !important;
+        border: none !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.3s ease !important;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .lark-btn-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0066cc 100%) !important;
+      }
+
+      .lark-btn-primary:hover {
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
+        transform: translateY(-1px);
+      }
+
+      .lark-btn-danger {
+        background: linear-gradient(135deg, #ff4d4f 0%, #ff3333 100%) !important;
+      }
+
+      .lark-btn-danger:hover {
+        box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3) !important;
+        transform: translateY(-1px);
+      }
+
+      /* 占位虚线框 与主题适配*/
+      .placeholder-dashed {
+        border: 1px dashed var(--dashed-border) !important;
+        border-radius: 12px !important;
+        background-color: var(--placeholder-bg) !important;
+      }
+
+      /* 录制按钮圆形样式 */
+      .record-btn-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease !important;
+      }
+
+      .record-btn-circle:hover {
+        transform: scale(1.05) !important;
+      }
+
+      /* 加载动画优化 与主题适配 */
+      .ant-spin-dot {
+        color: #007bff !important;
+        .dark-theme & {
+          color: #3b82f6 !important;
+        }
+      }
+
+      /*文字颜色主题适配*/
+      .text-primary {
+        color: var(--text-primary) !important;
+      }
+
+      .text-secondary {
+        color: var(--text-secondary) !important;
+      }
+
+      /* 移动端侧边栏适配 */
+      @media (max-width: 768px) {
+        .sidebar {
+          width: 100% !important;
+          height: 60px !important;
+          border-radius: 12px 12px 0 0 !important;
+          position: fixed !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 999 !important;
+        }
+        .sidebar .ant-space {
+          flex-direction: row !important;
+          padding: 8px 0 !important;
+          justify-content: space-around !important;
+        }
+
+        /* 适配移动端底部侧边栏，调整主内容 padding */
+        .workspace-grid, .playback-page {
+          padding-bottom: 72px !important;
+        }
+      }
+
+      /* 图片上传组件适配 */
+      .upload-btn {
+        position: absolute !important;
+        top: 20px !important;
+        right: 24px !important;
+        z-index: 10 !important;
+      }
+
+      /* 白板图片样式 */
+      .whiteboard-image {
+        position: absolute !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(0, 123, 255, 0.3) !important;
+        overflow: hidden !important;
+        cursor: move !important;
+        transition: box-shadow 0.3s ease !important;
+      }
+
+      .whiteboard-image:hover {
+        box-shadow: 0 4px 16px rgba(0, 123, 255, 0.2) !important;
+      }
+
+      .whiteboard-image img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+      }
+
+       /* 图片缩放控制点 */
+      .resize-handle {
+        position: absolute !important;
+        right: 5px !important;
+        bottom: 5px !important;
+        width: 15px !important;
+        height: 15px !important;
+        background: #007bff !important;
+        border-radius: 50% !important;
+        cursor: se-resize !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+      }
