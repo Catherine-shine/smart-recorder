@@ -12,6 +12,8 @@
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@reduxjs/toolkit": "^2.11.0",
+    "@tldraw/sync": "^4.2.0",
+    "@tldraw/tldraw": "^4.2.0",
     "@types/styled-components": "^5.1.36",
     "antd": "^6.0.0",
     "framer-motion": "^12.23.24",
