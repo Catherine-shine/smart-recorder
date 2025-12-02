@@ -17,6 +17,7 @@ const rootReducer = combineReducers({
   mediastream: mediastreamReducer,
   whiteboard: whiteboardReducer,
   layout:layoutReducer,
+
  
 });
 

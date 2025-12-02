@@ -2,6 +2,7 @@
 import { Provider } from 'react-redux';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { store } from './store';
+
 import AppRoute from './router'; // 导入路由配置（含页面映射）
 import '../src/assets/styles/global.css'; // 引用外部全局样式（替代内嵌样式）
 import 'antd/dist/reset.css'; // Antd 重置样式
@@ -14,6 +15,7 @@ function App() {
       <Router>
         <AppRoute /> {/* 渲染路由配置（含布局+页面） */}
       </Router>
+
     </Provider>
   );
 }//用 redux 的 Provider包裹应用，使所有子组件可访问 Redux store
