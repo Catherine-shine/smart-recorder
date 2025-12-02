@@ -37,6 +37,11 @@ export const mousemoveSlice = createSlice({
     addPoint: (state, action: PayloadAction<TrajectoryPoint>) => {
       state.points.push(action.payload);
     },
+
+    // 批量添加轨迹点（性能优化）
+    addPointsBatch: (state, action: PayloadAction<TrajectoryPoint[]>) => {
+      state.points.push(...action.payload);
+    },
     
     // 设置播放状态
     setIsPlaying: (state, action: PayloadAction<boolean>) => {
@@ -82,6 +87,7 @@ export const mousemoveSlice = createSlice({
 export const {
   setPoints,
   addPoint,
+  addPointsBatch,
   setIsPlaying,
   setPlaybackStartTime,
   setCurrentPlaybackIndex,
@@ -95,9 +101,10 @@ export const {
 export default mousemoveSlice.reducer;
 
 // 可选：导出切片 Action 类型
-export type MouseMoveAction = 
+export type MouseMoveAction =
   | ReturnType<typeof setPoints>
   | ReturnType<typeof addPoint>
+  | ReturnType<typeof addPointsBatch>
   | ReturnType<typeof setIsPlaying>
   | ReturnType<typeof setPlaybackStartTime>
   | ReturnType<typeof setCurrentPlaybackIndex>

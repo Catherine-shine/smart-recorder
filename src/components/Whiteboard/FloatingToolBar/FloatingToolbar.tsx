@@ -9,7 +9,7 @@ import {
   AudioOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
-import type { ToolType, ColorType, LineWidthType, FloatingToolbarProps } from '../../../types/whiteboard/floatingToolbar';
+import type { ColorType, LineWidthType, FloatingToolbarProps } from '../../../types/whiteboard/floatingToolbar';
 import './index.css'; // 引入单独的 CSS 文件
 
 // 提取重复按钮逻辑（减少冗余，统一风格）

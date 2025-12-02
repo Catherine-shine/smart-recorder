@@ -13,9 +13,9 @@ import {
 	useValue
 } from 'tldraw'
 import { Provider } from 'react-redux'
-import { store } from '../src/store/store'
-import { useAppDispatch } from '../src/store/hooks'
-import { addAction, setIsDrawing } from '../src/store/whiteboardSlice'
+import { store } from '../../store'
+import { useAppDispatch } from '../../store/hooks'
+import { addAction, setIsDrawing } from '../../store/slices/whiteboardSlice'
 import 'tldraw/tldraw.css'
 import { useSyncDemo } from '@tldraw/sync'
 import {useState} from 'react'
@@ -55,7 +55,7 @@ function WhiteboardContent() {
 		if (changes.shapesCreated.length > 0 || changes.shapesUpdated.length > 0 || changes.shapesDeleted.length > 0) {
 			// 为每个创建的形状创建操作记录
 			changes.shapesCreated.forEach(shape => {
-				let actionType = 'draw'
+				let actionType: 'draw' | 'text' | 'erase' | 'select' = 'draw'
 				
 				// 根据形状类型确定操作类型
 				if (shape.type === 'text') {

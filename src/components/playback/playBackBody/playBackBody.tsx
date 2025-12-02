@@ -1,8 +1,7 @@
 import type { RootState } from '../../../store';
-import { setPlaybackUrl } from '../../../store/slices/playbackSlice';
 import { useSelector } from 'react-redux';
 import PlayButton from './playButton/playButton';
-import type { PlayStatus, PlaybackVideoItem } from '../../../types/playback/playbackbody';
+import type { PlayStatus } from '../../../types/playback/playbackbody';
 import ProgressBar from './progressBar/progressBar';
 import VolumeControl from './volumeControl/volumeControl';
 import PlaybackRate from './playBackRate/playBackRate';
@@ -12,7 +11,6 @@ import './index.css';
 
 
 const PlayBackBody: React.FC = () => {
-    const [listLoading, setListLoading] = useState<boolean>(false);
     const { playbackUrl } = useSelector((state: RootState) => state.playback);
     // 优先使用Redux的地址，兜底用测试地址（建议替换为本地视频）
     const videoSrc = playbackUrl || 'https://www.w3school.com.cn/i/movie.mp4';

@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import { Card, Typography } from 'antd';
-import type { Point, DrawPath, WhiteboardImage } from '../../../types/playback/playbackwhitebord';
 import type { WhiteboardPlaybackProps } from '../../../types/playback/playbackwhitebord';
 import './index.css'; // 引入提取的CSS
 
@@ -63,8 +62,8 @@ const WhiteboardPlayback: React.FC<WhiteboardPlaybackProps> = ({
     });
   }, [data.drawPaths, isDarkMode, isLaserPen]);
 
-  // 解构数据并设置默认值，避免数组遍历报错
-  const { images = [], drawPaths = [] } = data;
+  // 解构数据
+  const { images = [] } = data;
 
   return (
     <Card

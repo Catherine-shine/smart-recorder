@@ -1,25 +1,34 @@
 import React, { useState, useRef,useEffect } from 'react';
 import FloatingToolbar  from '../../components/Whiteboard/FloatingToolBar/FloatingToolbar';
-import { ConfigProvider, theme as AntdTheme, Card, Spin, Button, Space, Typography, 
-  Empty, List, Avatar ,message ,Upload,Slider,Select,Input,Tooltip
-} from 'antd'; 
-import { 
-  EditOutlined, CameraOutlined, PlayCircleOutlined, 
-  PauseOutlined, StopOutlined, DeleteOutlined,UndoOutlined,RedoOutlined,UploadOutlined,
-  ClearOutlined, AudioOutlined,CloseOutlined ,SoundOutlined, AudioMutedOutlined,FormOutlined,FontSizeOutlined
+import { Card, Spin, Button, Space, Typography,
+  Empty, message, Upload, Input
+} from 'antd';
+import {
+  EditOutlined, CameraOutlined, PlayCircleOutlined,
+  PauseOutlined, StopOutlined, UndoOutlined, RedoOutlined, UploadOutlined
 } from '@ant-design/icons';
-import { MainLayout } from '../../components/layout';
-import PlaybackPage1 from '../playback/playback';
 import { store } from '../../store';
 import type { ToolType, ColorType, LineWidthType } from '../../types/whiteboard/floatingToolbar';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store';
-import  './index.css'
+import  './index.css';
+import type { TrajectoryPoint } from '../../types/mousePoint';
+import { addPointsBatch, setPoints, resetTrajectoryState } from '../../store/slices/mousemoveSlice';
+import { rdpSimplify, distance, getSimplifyStats } from '../../utils/pathSimplify';
 // 修复：删除VideoPlayOutlined，改用PlayCircleOutlined（Antd内置，无导出错误）
 // 白板组件
 const Whiteboard = () => {
   const { theme } = useSelector((state: RootState) => state.layout);
   const isDarkMode = theme === 'dark';
+  const dispatch = useDispatch();
+
+  // 鼠标轨迹记录相关状态
+  const lastRecordedPoint = useRef<{ x: number; y: number; time: number } | null>(null);
+  const pointBuffer = useRef<TrajectoryPoint[]>([]);
+  const recordingStartTime = useRef<number | null>(null);
+  const SAMPLE_INTERVAL = 50; // 50ms采样一次
+  const MIN_DISTANCE = 5; // 最小移动距离5px
+  const BATCH_SIZE = 10; // 每10个点批量提交一次
 
   // 图片相关状态
   const [images, setImages] = useState<Array<{
@@ -143,7 +152,7 @@ const Whiteboard = () => {
       if (!isImage) message.error('请上传图片格式文件（JPG/PNG/GIF）！');
       return isImage;
     },
-    onSuccess: (res: any, file: any) => {
+    onSuccess: (_res: any, file: any) => {
       const imgUrl = URL.createObjectURL(file.originFileObj);
       const newImage = {
         id: Date.now().toString(),
@@ -176,6 +185,41 @@ const Whiteboard = () => {
    const handleMouseMove = (e: React.MouseEvent) => {
     if (!canvasRef.current) return;
     const canvasRect = canvasRef.current.getBoundingClientRect();
+
+    // 鼠标轨迹记录（带采样优化）
+    if (recordingStartTime.current !== null) {
+      const x = e.clientX - canvasRect.left;
+      const y = e.clientY - canvasRect.top;
+      const now = Date.now();
+      const relativeTimestamp = now - recordingStartTime.current;
+
+      let shouldRecord = false;
+
+      if (lastRecordedPoint.current === null) {
+        // 第一个点，直接记录
+        shouldRecord = true;
+      } else {
+        const timeDiff = now - lastRecordedPoint.current.time;
+        const dist = distance({ x, y }, lastRecordedPoint.current);
+
+        // 时间间隔足够 或 距离足够，则记录
+        if (timeDiff >= SAMPLE_INTERVAL || dist >= MIN_DISTANCE) {
+          shouldRecord = true;
+        }
+      }
+
+      if (shouldRecord) {
+        // 添加到缓冲区
+        pointBuffer.current.push({ x, y, timestamp: relativeTimestamp });
+        lastRecordedPoint.current = { x, y, time: now };
+
+        // 批量提交
+        if (pointBuffer.current.length >= BATCH_SIZE) {
+          dispatch(addPointsBatch([...pointBuffer.current]));
+          pointBuffer.current = [];
+        }
+      }
+    }
 
     // 拖拽逻辑
     if (isDragging && dragTarget) {
@@ -222,6 +266,67 @@ const Whiteboard = () => {
       saveHistory();
     }
   }, []);
+
+  // 监听录制事件
+  useEffect(() => {
+    const handleRecordStart = () => {
+      startTrajectoryRecording();
+    };
+
+    const handleRecordStop = () => {
+      stopTrajectoryRecording();
+    };
+
+    window.addEventListener('trajectoryRecordStart', handleRecordStart);
+    window.addEventListener('trajectoryRecordStop', handleRecordStop);
+
+    return () => {
+      window.removeEventListener('trajectoryRecordStart', handleRecordStart);
+      window.removeEventListener('trajectoryRecordStop', handleRecordStop);
+    };
+  }, []);
+
+  // 辅助函数：刷新缓冲区（批量提交剩余的点）
+  const flushPointBuffer = () => {
+    if (pointBuffer.current.length > 0) {
+      dispatch(addPointsBatch([...pointBuffer.current]));
+      pointBuffer.current = [];
+    }
+  };
+
+  // 辅助函数：开始录制轨迹
+  const startTrajectoryRecording = () => {
+    recordingStartTime.current = Date.now();
+    lastRecordedPoint.current = null;
+    pointBuffer.current = [];
+    dispatch(resetTrajectoryState());
+    message.info('鼠标轨迹记录已开始');
+  };
+
+  // 辅助函数：停止录制轨迹（应用RDP压缩）
+  const stopTrajectoryRecording = () => {
+    // 先刷新缓冲区
+    flushPointBuffer();
+
+    // 获取当前轨迹点
+    const currentPoints = store.getState().mousemove.points;
+
+    if (currentPoints.length > 0) {
+      // 应用RDP路径简化
+      const simplified = rdpSimplify(currentPoints, 2);
+      const stats = getSimplifyStats(currentPoints, simplified);
+
+      // 更新为简化后的轨迹
+      dispatch(setPoints(simplified));
+
+      message.success(
+        `轨迹记录完成！原始点数：${stats.originalCount}，优化后：${stats.simplifiedCount}，压缩率：${stats.reductionRate}`
+      );
+    }
+
+    recordingStartTime.current = null;
+    lastRecordedPoint.current = null;
+  };
 
    return (
     <Card 
@@ -448,17 +553,20 @@ const VideoRecorder = () => (
 );
 
 // 录制控制面板
-const ControlPanel = () => {
-  const [recordStatus, setRecordStatus] = useState(0); // 0=未录制,1=录制中,2=暂停
-
+const ControlPanel: React.FC<{
+  recordStatus: number;
+  onStart: () => void;
+  onPause: () => void;
+  onStop: () => void;
+}> = ({ recordStatus, onStart, onPause, onStop }) => {
   return (
-    <Card 
+    <Card
       className="lark-card"
       title={
-        <Typography.Title level={5} style={{ 
-          margin: 0, 
-          color: '#1d2129', 
-          fontSize: 17, 
+        <Typography.Title level={5} style={{
+          margin: 0,
+          color: '#1d2129',
+          fontSize: 17,
           fontWeight: 600,
           textAlign: 'center'
         }}>
@@ -466,12 +574,12 @@ const ControlPanel = () => {
         </Typography.Title>
       }
       style={{ flex: 0 }}
-      headStyle={{ 
-        padding: '20px 24px', 
+      headStyle={{
+        padding: '20px 24px',
         borderBottom: '1px solid #f5f7fa',
         backgroundColor: 'rgba(255, 255, 255, 0.95)'
       }}
-      bodyStyle={{ 
+      bodyStyle={{
         padding: '28px',
         display: 'flex',
         alignItems: 'center',
@@ -479,36 +587,36 @@ const ControlPanel = () => {
       }}
     >
       <Space style={{ width: '100%', justifyContent: 'center', gap: 20 }}>
-        <Button 
+        <Button
           className="lark-btn lark-btn-primary record-btn-circle"
-          type="primary" 
-          icon={<PlayCircleOutlined style={{ fontSize: 20 }} />} 
+          type="primary"
+          icon={<PlayCircleOutlined style={{ fontSize: 20 }} />}
           size="large"
-          onClick={() => setRecordStatus(1)}
+          onClick={onStart}
           disabled={recordStatus === 1}
           style={{ width: 64, height: 64, borderRadius: 32 }}
         />
-        <Button 
+        <Button
           className="lark-btn record-btn-circle"
-          icon={<PauseOutlined style={{ fontSize: 20 }} />} 
-          size="large" 
-          onClick={() => setRecordStatus(2)}
+          icon={<PauseOutlined style={{ fontSize: 20 }} />}
+          size="large"
+          onClick={onPause}
           disabled={recordStatus !== 1}
-          style={{ 
-            width: 64, 
-            height: 64, 
-            borderRadius: 32, 
-            backgroundColor: '#f7f8fa', 
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: '#f7f8fa',
             color: '#86909c',
             border: '1px solid #e5e6eb'
           }}
         />
-        <Button 
+        <Button
           className="lark-btn lark-btn-danger record-btn-circle"
-          danger 
-          icon={<StopOutlined style={{ fontSize: 20 }} />} 
-          size="large" 
-          onClick={() => setRecordStatus(0)}
+          danger
+          icon={<StopOutlined style={{ fontSize: 20 }} />}
+          size="large"
+          onClick={onStop}
           disabled={recordStatus === 0}
           style={{ width: 64, height: 64, borderRadius: 32 }}
         />
@@ -517,17 +625,43 @@ const ControlPanel = () => {
   );
 };
 
-const RecordPage = () => (
+const RecordPage = () => {
+  const [recordStatus, setRecordStatus] = useState(0); // 0=未录制,1=录制中,2=暂停
 
-            <div className="workspace-grid">
-              <div className="whiteboard-section">
-                <Whiteboard />
-              </div>
-              <div className="video-section">
-                <VideoRecorder />
-                <ControlPanel />
-              </div>
-            </div>
-);
+  // 录制状态管理
+  const handleStartRecording = () => {
+    setRecordStatus(1);
+    // 触发Whiteboard中的轨迹记录开始
+    // 通过自定义事件通信
+    window.dispatchEvent(new CustomEvent('trajectoryRecordStart'));
+  };
+
+  const handlePauseRecording = () => {
+    setRecordStatus(2);
+  };
+
+  const handleStopRecording = () => {
+    setRecordStatus(0);
+    // 触发Whiteboard中的轨迹记录停止
+    window.dispatchEvent(new CustomEvent('trajectoryRecordStop'));
+  };
+
+  return (
+    <div className="workspace-grid">
+      <div className="whiteboard-section">
+        <Whiteboard />
+      </div>
+      <div className="video-section">
+        <VideoRecorder />
+        <ControlPanel
+          recordStatus={recordStatus}
+          onStart={handleStartRecording}
+          onPause={handlePauseRecording}
+          onStop={handleStopRecording}
+        />
+      </div>
+    </div>
+  );
+};
 
 export default RecordPage;

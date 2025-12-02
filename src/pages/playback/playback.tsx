@@ -5,10 +5,11 @@ import React from "react";
 import './index.css';
 import PlayBackBody from "../../components/playback/playBackBody/playBackBody";
 import WhiteboardPlayback from "../../components/playback/playBackWhiteboard/playBackWhiteboard";
+import MouseCursor from "../../components/playback/MouseCursor/MouseCursor";
 
 
 //注明组件的 ts 类型是 React 函数式组件（React.FC）
-const PlaybackModule: React.FC = () => { 
+const PlaybackModule: React.FC = () => {
   return (
     <div className="playback-container">
       <div className="playback-content">
@@ -27,20 +28,22 @@ const PlaybackModule: React.FC = () => {
           <Col xs={24} sm={18} md={18} lg={19} className="playback-player-col">
            <PlayBackBody />
           </Col>
-          
+
         </Row>
         </Col>
          <Col xs={24}>
-          {/* 仅添加必要高度，避免布局塌陷 */}
-          <div style={{ height: 500 }}>
+          {/* 白板回放区域（添加相对定位容器以承载MouseCursor） */}
+          <div style={{ height: 500, position: 'relative' }}>
             <WhiteboardPlayback
              data={{ images: [], drawPaths: [] }} isDarkMode={false}
             />
+            {/* 鼠标轨迹回放组件 */}
+            <MouseCursor />
           </div>
         </Col>
         </Row>
       </div>
-       
+
     </div>
   );
 };

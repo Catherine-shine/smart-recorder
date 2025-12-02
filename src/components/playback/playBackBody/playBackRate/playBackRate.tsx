@@ -1,6 +1,5 @@
 import React from 'react';
 import { Select, Space } from 'antd';
-import { PlaySquareOutlined } from '@ant-design/icons';
 import type { SelectProps } from 'antd/es/select';
 import './index.css';
 

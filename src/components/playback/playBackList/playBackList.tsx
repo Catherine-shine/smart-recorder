@@ -1,11 +1,11 @@
 // src/components/playback/playbackList/PlaybackList.tsx
 import type { RootState } from '../../../store';
-import { useSelector,useDispatch  } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { setPlaybackUrl } from '../../../store/slices/playbackSlice';
 import type { PlayStatus } from '../../../types/playback/playbackbody';
-import { List, Card, Empty, Typography, Tag ,Spin} from 'antd';
+import { Card, Empty, Typography, Tag, Spin } from 'antd';
 import type { PlaybackVideoItem } from '../../../types/playback/playbackbody';
-import {  message, } from 'antd';
+import { message } from 'antd';
 import React, { useState, useEffect } from "react";
 import { formatDuration } from '../../../utils/playback';
 import './index.css';
@@ -39,23 +39,15 @@ const MOCK_VIDEO_LIST: PlaybackVideoItem[] = [
 const PlaybackList: React.FC = () => {
   const dispatch = useDispatch();
   const [selectedVideoIdProp, setSelectedVideoIdProp] = useState<string | null>(null);
-  const [videoListProp, setVideoListProp] = useState<PlaybackVideoItem[]>(MOCK_VIDEO_LIST);
-  const [listLoading, setListLoading] = useState<boolean>(false);
-  const [playStatus, setPlayStatus] = useState<PlayStatus>('stopped');
-  const [videoLoading, setVideoLoading] = useState<boolean>(false);
-  const { playbackUrl } = useSelector((state: RootState) => state.playback);
-  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  // 优先使用Redux的地址，兜底用测试地址（建议替换为本地视频）
-  const videoSrc = playbackUrl || 'https://www.w3school.com.cn/i/movie.mp4';
+  const [videoListProp] = useState<PlaybackVideoItem[]>(MOCK_VIDEO_LIST);
+  const listLoading = false;
+  const [_playStatus, setPlayStatus] = useState<PlayStatus>('stopped');
 
     const handleVideoSelect = (video: PlaybackVideoItem) => {
       setSelectedVideoIdProp(video.id);
-      setPlayStatus('stopped'); 
-      setVideoLoading(true);
+      setPlayStatus('stopped');
       // 分发Redux Action更新播放地址
-      dispatch(setPlaybackUrl(video.url)); 
-      // 视频加载完成后取消loading（可通过video的canplay事件优化）
-      setTimeout(() => setVideoLoading(false), 800);
+      dispatch(setPlaybackUrl(video.url));
       message.success(`已切换至：${video.title}`);
     };
 

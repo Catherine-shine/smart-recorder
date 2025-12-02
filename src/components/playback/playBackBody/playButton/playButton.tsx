@@ -10,9 +10,8 @@ const PlayButton: React.FC<PlayButtonProps> = ({
   onPlay,
   onPause,
   // 停止操作建议单独按钮，这里保留但调整逻辑
-  onStop,
   videoSrc = '',
-  isPlayEnded 
+  isPlayEnded
 }) => {
   // 禁用条件：停止态且无视频源
   const isButtonDisabled = status === 'stopped' && !videoSrc;
