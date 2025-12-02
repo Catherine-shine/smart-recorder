@@ -2,7 +2,7 @@
 import 'styled-components';
 
 declare module 'styled-components' {
-  export interface DefaultTheme {
+  export interface DefaultTheme {//扩展要导出的 DefaultTheme接口
     dark: boolean; // 新增 dark 布尔属性，用于控制深色/浅色模式
     // 可扩展其他主题属性，如主色、副色等
     // primaryColor?: string;

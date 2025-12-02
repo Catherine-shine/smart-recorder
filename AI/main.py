@@ -1,4 +1,3 @@
-# backend/start.py
 import subprocess
 import sys
 import time

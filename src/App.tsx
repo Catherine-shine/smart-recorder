@@ -1321,6 +1321,7 @@ function AppContent() {
       {/*通过 ConfigProvider配置 Ant Design 主题*/}
       <ConfigProvider
         theme={{
+          //：使用内置的算法实现切换亮/暗模式。
           algorithm: isDark ? AntdTheme.darkAlgorithm : AntdTheme.defaultAlgorithm,
           token: {
             colorPrimary: '#007bff',
