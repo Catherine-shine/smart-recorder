@@ -94,7 +94,6 @@ function WhiteboardContent() {
 	return (
 		<div className="tldraw__editor" style={{ width: '100%', height: '100%' }}>
 			<Tldraw 
-				store={muti_store}
 				components={components}
 			/>
 		</div>
