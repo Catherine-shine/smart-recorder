@@ -19,47 +19,115 @@ import type { RootState } from '../../store/index';
 import { RECORDING_STATUS } from '../../types/common';
 import './index.css';
 
-const VideoRecorder = () => (
-  <Card 
-    className="lark-card"
-    title={
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <CameraOutlined style={{ color: '#007bff', fontSize: 18 }} />
-        <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-primary)', fontSize: 17, fontWeight: 600 }}>
-          视频预览区
-        </Typography.Title>
-      </div>
-    }
-    style={{ flex: 1 }}
-    styles={{
-      header: { 
-        padding: '16px 24px', // 精简头部内边距
-        borderBottom: '1px solid var(--border-color)',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)'
-      },
-      body: { 
-        padding: '20px', // 精简body内边距
-        height: 'calc(100% - 56px)',
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
+const VideoRecorder = () => {
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    let currentStream: MediaStream | null = null;
+
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }, 
+          audio: false 
+        });
+        currentStream = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        setHasPermission(true);
+      } catch (err) {
+        console.error('Failed to access camera:', err);
+        setHasPermission(false);
       }
-    }}
-  >
-    <div className="placeholder-dashed" style={{ 
-      width: '100%', 
-      height: '100%', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      flexDirection: 'column',
-      gap: '16px'
-    }}>
-      <Spin size="large" />
-      <span>摄像头/麦克风加载中...</span>
-    </div>
-  </Card>
-);
+    };
+
+    startCamera();
+
+    return () => {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  return (
+    <Card 
+      className="lark-card"
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <CameraOutlined style={{ color: '#007bff', fontSize: 18 }} />
+          <Typography.Title level={5} style={{ margin: 0, color: 'var(--text-primary)', fontSize: 17, fontWeight: 600 }}>
+            视频预览区
+          </Typography.Title>
+        </div>
+      }
+      style={{ flex: 1 }}
+      styles={{
+        header: { 
+          padding: '16px 24px', // 精简头部内边距
+          borderBottom: '1px solid var(--border-color)',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)'
+        },
+        body: { 
+          padding: 0, // 视频铺满，去掉内边距
+          height: 'calc(100% - 56px)',
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          backgroundColor: '#000', // 视频背景黑底
+          overflow: 'hidden',
+          position: 'relative'
+        }
+      }}
+    >
+      {hasPermission === null ? (
+        <div className="placeholder-dashed" style={{ 
+          width: '100%', 
+          height: '100%', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: '16px',
+          border: 'none',
+          color: 'rgba(255,255,255,0.8)'
+        }}>
+          <Spin size="large" />
+          <span>摄像头启动中...</span>
+        </div>
+      ) : hasPermission === false ? (
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          color: 'rgba(255,255,255,0.8)' 
+        }}>
+          <StopOutlined style={{ fontSize: 24, marginBottom: 8, color: '#ff4d4f' }} />
+          <span>无法访问摄像头</span>
+          <span style={{ fontSize: 12, opacity: 0.7 }}>请检查设备权限</span>
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            transform: 'scaleX(-1)' // 镜像显示
+          }}
+        />
+      )}
+    </Card>
+  );
+};
 
 
 

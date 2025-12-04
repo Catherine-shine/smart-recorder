@@ -25,8 +25,51 @@ export function useRecordingScheduler() {
   // 存储视频分片数据
   const recordedBlobsRef = useRef<BlobPart[]>([]);
 
+  // 通用录制启动逻辑
+  const startRecordingSession = useCallback((stream: MediaStream, mimeType: string, filePrefix: string) => {
+    streamRef.current = stream;
+
+    // 创建MediaRecorder实例
+    const recorder = new MediaRecorder(stream, {
+      mimeType,
+    });
+    mediaRecorderRef.current = recorder;
+    recordedBlobsRef.current = [];
+
+    // 监听视频分片数据
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        recordedBlobsRef.current.push(e.data);
+      }
+    };
+
+    // 录制结束时：收集完整视频Blob到Redux
+    recorder.onstop = () => {
+      if (recordedBlobsRef.current.length === 0) return;
+      const blob = new Blob(recordedBlobsRef.current, { type: mimeType });
+      // 将视频Blob存入Redux
+      dispatch(collectData({ type: 'video', data: blob }));
+
+      // 自动下载（可选）
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${filePrefix}_${new Date().toLocaleString().replace(/[/: ]/g, '_')}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    };
+
+    // 启动录制
+    recorder.start(1000);
+  }, [dispatch]);
+
   // 开始录屏
-  const handleStart = useCallback(async () => {
+  const handleStartScreen = useCallback(async () => {
     try {
       // 1. 重置录制状态
       dispatch(resetRecordingState());
@@ -37,51 +80,44 @@ export function useRecordingScheduler() {
         video: { mediaSource: 'screen' },
         audio: true, // 可选：录制系统音频
       } as MediaStreamConstraints);
-      streamRef.current = captureStream;
-
-      // 4. 创建MediaRecorder实例
-      const recorder = new MediaRecorder(captureStream, {
-        mimeType: 'video/webm; codecs=vp9',
-      });
-      mediaRecorderRef.current = recorder;
-      recordedBlobsRef.current = [];
-
-      // 5. 监听视频分片数据
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          recordedBlobsRef.current.push(e.data);
-        }
-      };
-
-      // 6. 录制结束时：收集完整视频Blob到Redux
-      recorder.onstop = () => {
-        if (recordedBlobsRef.current.length === 0) return;
-        const videoBlob = new Blob(recordedBlobsRef.current, { type: 'video/webm' });
-        // 将视频Blob存入Redux
-        dispatch(collectData({ type: 'video', data: videoBlob }));
-
-        // 自动下载（可选）
-        const url = URL.createObjectURL(videoBlob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `录屏_${new Date().toLocaleString().replace(/[/: ]/g, '_')}.webm`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
-      };
-
-      // 7. 启动录制
-      recorder.start(1000);
+      
+      startRecordingSession(captureStream, 'video/webm; codecs=vp9', '录屏');
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : '录屏启动失败：用户拒绝授权或浏览器不支持';
       console.error('录屏错误：', errorMsg);
       dispatch(resetRecordingState()); // 失败时重置状态
     }
-  }, [dispatch]);
+  }, [dispatch, startRecordingSession]);
+
+  // 开始录音
+  const handleStartAudio = useCallback(async () => {
+    try {
+      dispatch(resetRecordingState());
+      dispatch(startRecording());
+      
+      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      startRecordingSession(audioStream, 'audio/webm', '录音');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : '录音启动失败：用户拒绝授权或浏览器不支持';
+      console.error('录音错误：', errorMsg);
+      dispatch(resetRecordingState());
+    }
+  }, [dispatch, startRecordingSession]);
+
+  // 开始摄像头录制
+  const handleStartCamera = useCallback(async () => {
+    try {
+      dispatch(resetRecordingState());
+      dispatch(startRecording());
+      
+      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      startRecordingSession(cameraStream, 'video/webm; codecs=vp9', '摄像头录制');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : '摄像头录制启动失败：用户拒绝授权或浏览器不支持';
+      console.error('摄像头录制错误：', errorMsg);
+      dispatch(resetRecordingState());
+    }
+  }, [dispatch, startRecordingSession]);
 
   // 暂停录屏
   const handlePause = useCallback(() => {
@@ -147,7 +183,10 @@ export function useRecordingScheduler() {
   return {
     recordingStatus,
     collectedData,
-    handleStart,
+    handleStart: handleStartScreen, // 保持兼容
+    handleStartScreen,
+    handleStartAudio,
+    handleStartCamera,
     handlePause,
     handleResume,
     handleEnd,
