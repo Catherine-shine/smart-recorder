@@ -1,3 +1,5 @@
+//布局组件，包装所有路由页面
+
 import React from 'react';
 import { ConfigProvider, theme } from 'antd';
 import { useSelector } from 'react-redux';
@@ -29,7 +31,7 @@ export const RouteLayout: React.FC<RouteLayoutProps> = ({ children }) => {
         },
       }}
     >
-      {/* 直接使用简化版MainLayout，路由内容渲染到Content区域 */}
+      {/* 直接使用MainLayout，路由内容渲染到Content区域 */}
       <MainLayout>
         <div style={{ flex: 1, overflow: 'auto' }}>
           {children}

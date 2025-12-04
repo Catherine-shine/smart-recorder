@@ -28,4 +28,4 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   );
 };
 
-export default MainLayout;
+export default MainLayout;//MainLayout组件在RouterLayout中被调用

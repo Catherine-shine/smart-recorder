@@ -1,3 +1,4 @@
+//路由配置文件，定义所有可访问的页面路径。
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { RouteLayout } from './RouteLayout';
@@ -12,7 +13,7 @@ import NotFoundPage from '../pages/error/404';
 // 路由配置（简化：仅2个核心路由）
 export const AppRouter: React.FC = () => {
   return (
-    <RouteLayout>
+    <RouteLayout>{/* 使用RouteLayout包裹所有路由，为所有路由页面提供一致的外观和主题 */}
       <Routes>
         {/* 录制页面（默认路由） */}
         <Route path="/" element={<RecordPage />} />

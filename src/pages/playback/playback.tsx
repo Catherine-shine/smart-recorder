@@ -13,31 +13,32 @@ const PlaybackModule: React.FC = () => {
     <div className="playback-container">
       <div className="playback-content">
           <Row gutter={[0, 20]}>
-        {/* 第一行：列表 + 播放器 */}
-        <Col xs={24}>
-        {/* 整体布局：桌面端左列表右播放器，移动端上列表下播放器 */}
-        <Row gutter={[20, 20]} className="playback-layout">
-          {/* 回放列表：桌面端占8列，平板占6列，移动端占24列 */}
-          <Col xs={24} sm={6} md={6} lg={5} className="playback-list-col">
-            <PlaybackList
-            />
-          </Col>
+            {/* 第一行：列表 + 播放器 */}
+            <Col xs={24}>
+            {/* 整体布局：桌面端左列表右播放器，移动端上列表下播放器 */}
+              <Row gutter={[20, 20]} className="playback-layout">
+                {/* 回放列表：桌面端占8列，平板占6列，移动端占24列 */}
+                <Col xs={24} sm={6} md={6} lg={5} className="playback-list-col">
+                  <PlaybackList
+                  />
+                </Col>
 
-          {/* 播放器区域：桌面端占16列，平板占18列，移动端占24列 */}
-          <Col xs={24} sm={18} md={18} lg={19} className="playback-player-col">
-           <PlayBackBody />
-          </Col>
-          
-        </Row>
-        </Col>
-         <Col xs={24}>
-          {/* 仅添加必要高度，避免布局塌陷 */}
-          <div style={{ height: 500 }}>
-            <WhiteboardPlayback
-             data={{ images: [], drawPaths: [] }} isDarkMode={false}
-            />
-          </div>
-        </Col>
+                {/* 播放器区域：桌面端占16列，平板占18列，移动端占24列 */}
+                <Col xs={24} sm={18} md={18} lg={19} className="playback-player-col">
+                <PlayBackBody />
+                </Col>
+                
+              </Row>
+            </Col>
+            {/* 第二行*/}
+            <Col xs={24}>
+              {/* 仅添加必要高度，避免布局塌陷 */}
+              <div style={{ height: 500 }}>
+                <WhiteboardPlayback
+                data={{ images: [], drawPaths: [] }} isDarkMode={false}
+                />
+              </div>
+            </Col>
         </Row>
       </div>
        
