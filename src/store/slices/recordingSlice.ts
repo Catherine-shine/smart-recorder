@@ -1,6 +1,8 @@
+// src/store/slices/recordingSlice.ts
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../index';
 import type { RecordingState } from '../../types/recording/RecordingState';
+import type { CollectDataPayload } from '../../types/recording/controlPanel';
 import { RECORDING_STATUS } from '../../types/common';
 
 // 初始状态
@@ -57,6 +59,8 @@ export const recordingSlice = createSlice({
       state.startTime = Date.now();
       state.pauseDuration = 0;
       state.lastPauseTime = null;
+      // 开始录制时清空历史收集数据（可选，根据业务需求）
+      state.collectedData = initialState.collectedData;
     },
     
     // 暂停录制
@@ -87,10 +91,31 @@ export const recordingSlice = createSlice({
       state.lastPauseTime = null;
     },
     
-    // 收集数据
-    collectData: (state, action: PayloadAction<any>) => {
-      // 根据数据类型更新相应的收集数据
-      // 这里简化处理，实际应该根据数据类型进行分类
+    // 完善收集数据逻辑：按类型分类存储
+    collectData: (
+      state, 
+      action: PayloadAction<{
+        type: 'video' | 'whiteboard' | 'mouse'; // 数据类型
+        data: any; // 对应类型的数据
+      }>
+    ) => {
+      const { type, data } = action.payload;
+      switch (type) {
+        // 存储视频Blob
+        case 'video':
+          state.collectedData.videoBlob = data;
+          break;
+        // 追加白板操作数据
+        case 'whiteboard':
+          state.collectedData.whiteboardData.push(data);
+          break;
+        // 追加鼠标轨迹数据
+        case 'mouse':
+          state.collectedData.mouseData.push(data);
+          break;
+        default:
+          break;
+      }
     },
   },
 });
@@ -114,6 +139,7 @@ export const {
 export const selectRecordingStatus = (state: RootState) => state.recording.status;
 export const selectStartTimestamp = (state: RootState) => state.recording.startTime;
 export const selectCollectedData = (state: RootState) => state.recording.collectedData;
+export const selectLastRecordingDuration = (state: RootState) => state.recording.lastRecordingDuration;
 
 // 导出切片 Reducer
 export default recordingSlice.reducer;
@@ -125,6 +151,9 @@ export type RecordingAction =
   | ReturnType<typeof setStartTime>
   | ReturnType<typeof setPauseDuration>
   | ReturnType<typeof setLastPauseTime>
-  | ReturnType<typeof setLastRecordingDuration>;
-
-
+  | ReturnType<typeof setLastRecordingDuration>
+  | ReturnType<typeof startRecording>
+  | ReturnType<typeof pauseRecording>
+  | ReturnType<typeof resumeRecording>
+  | ReturnType<typeof endRecording>
+  | ReturnType<typeof collectData>;

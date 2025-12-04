@@ -1,5 +1,5 @@
 "use client"
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import {
 	DefaultToolbar,
 	DrawToolbarItem,
@@ -16,15 +16,96 @@ import { Provider } from 'react-redux'
 import { store } from '../../../store'
 import { useAppDispatch } from '../../../store/hooks'
 import { addAction, setIsDrawing } from '../../../store/slices/whiteboardSlice'
+import { useRecordingScheduler } from '../../../utils/recording/RecordingScheduler'; // 核心Hook
+
 import 'tldraw/tldraw.css'
 import { useSyncDemo } from '@tldraw/sync'
-import {useState} from 'react'
 import { muti_components } from './muti_menu'
 import './sync-custom-people-menu.css'
 
 // 白板内容组件，用于与Redux集成
 function WhiteboardContent() {
 	const dispatch = useAppDispatch()
+	// 从录制Hook中解构：收集数据方法 + 录制状态
+	const { 
+		recordingStatus, 
+		collectWhiteboardData, 
+		collectMouseData 
+	} = useRecordingScheduler();
+
+	// 优化：抽离白板数据收集逻辑（复用 + 仅录制中执行）
+	const collectSingleWhiteboardAction = useCallback((shape: any, actionType: 'draw' | 'erase' | 'text' | 'select') => {
+		// 1. 原有逻辑：存入whiteboardSlice
+		dispatch(addAction({
+			id: shape.id,
+			type: actionType,
+			data: shape.type === 'erase' ? { shapeId: shape.id } : shape,
+			timestamp: Date.now()
+		}));
+		// 2. 新增逻辑：仅录制中，存入recordingSlice的collectedData
+		if (recordingStatus === 1) { // 匹配RECORDING_STATUS.RECORDING的值
+			collectWhiteboardData({
+				id: shape.id,
+				type: actionType,
+				data: shape.type === 'erase' ? { shapeId: shape.id } : shape,
+				timestamp: Date.now()
+			});
+		}
+	}, [dispatch, recordingStatus, collectWhiteboardData]);
+
+	// 处理白板变更事件（核心：同时同步到whiteboardSlice和recordingSlice）
+	const handleStoreChange = useCallback((prevStore: TLStore, nextStore: TLStore) => {
+		const changes = (nextStore as any).getChangesSince(prevStore);
+		
+		if (changes.shapesCreated.length > 0 || changes.shapesUpdated.length > 0 || changes.shapesDeleted.length > 0) {
+			// 处理创建/更新的形状
+			changes.shapesCreated.forEach((shape: any) => {
+				let actionType: 'draw' | 'text' | 'select' = 'draw';
+				if (shape.type === 'text') actionType = 'text';
+				collectSingleWhiteboardAction(shape, actionType);
+			});
+			
+			// 处理删除/擦除的形状
+			changes.shapesDeleted.forEach((shape: any) => {
+				collectSingleWhiteboardAction(shape, 'erase');
+			});
+		}
+	}, [collectSingleWhiteboardAction]);
+
+	// 处理工具变化事件，更新绘制状态
+	const handleToolChange = useCallback((prevToolId: string, nextToolId: string) => {
+		dispatch(setIsDrawing(nextToolId === 'draw'));
+	}, [dispatch]);
+
+	// 监听鼠标移动：仅录制中收集鼠标轨迹数据
+	const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+		if (recordingStatus !== 1) return;
+		collectMouseData({
+			x: e.clientX,
+			y: e.clientY,
+			timestamp: Date.now()
+		});
+	}, [recordingStatus, collectMouseData]);
+
+	// 多人协作设置
+	const muti_store = useSyncDemo({roomId : "ginka"});
+
+	// 创建一个自定义组件，在Tldraw内部使用useEditor
+	const EditorHooks = () => {
+		// 获取编辑器实例
+		const editor = useEditor();
+
+		// 用tldraw的useValue监听store变化（替代直接传onStoreChange，更稳定）
+		useValue('whiteboard-store-changes', () => handleStoreChange, [handleStoreChange]);
+		
+		// 用useValue监听工具变化
+		useValue('tool-change', () => {
+			const currentTool = editor.getCurrentToolId();
+			handleToolChange('', currentTool);
+		}, [handleToolChange, editor]);
+
+		return null;
+	};
 
 	// 合并工具条组件和多人同步菜单组件
 	const components = useMemo(() => {
@@ -41,69 +122,31 @@ function WhiteboardContent() {
 				</DefaultToolbar>
 			),
 			// 集成多人同步菜单
-			...muti_components
+			...muti_components,
+			// 添加自定义Hooks组件
+			EditorHooks
 		}
-		
-	}, [])
+	}, [handleStoreChange, handleToolChange]);
 
-	// 处理白板变更事件，将操作数据发送到Redux store
-	const handleStoreChange = (prevStore: TLStore, nextStore: TLStore) => {
-		// 获取最近的变更操作
-		const changes = (nextStore as any).getChangesSince(prevStore)
-		
-		// 如果有变更，将其发送到Redux store
-		if (changes.shapesCreated.length > 0 || changes.shapesUpdated.length > 0 || changes.shapesDeleted.length > 0) {
-			// 为每个创建的形状创建操作记录
-			changes.shapesCreated.forEach((shape: any) => {
-				let actionType = 'draw'
-				
-				// 根据形状类型确定操作类型
-				if (shape.type === 'text') {
-					actionType = 'text'
-				}
-				
-				// 发送到Redux store
-				dispatch(addAction({
-					id: shape.id,
-					type: actionType as 'draw' | 'erase' | 'text' | 'select',
-					data: shape,
-					timestamp: Date.now()
-				}))
-			})
-			
-			// 处理删除操作（橡皮功能）
-			changes.shapesDeleted.forEach((shape: any) => {
-				dispatch(addAction({
-					id: shape.id,
-					type: 'erase',
-					data: { shapeId: shape.id },
-					timestamp: Date.now()
-				}))
-			})
-		}
-	}
-
-	// 处理工具变化事件，更新绘制状态
-const handleToolChange = (prevToolId: string, nextToolId: string) => {
-	// 更新绘制状态
-	dispatch(setIsDrawing(nextToolId === 'draw'))
-}
-// 多人协作设置
-const muti_store = useSyncDemo({roomId : "ginka"})
-
-return (
-	<div className="tldraw__editor" style={{ 
-		width: '100%', 
-		height: '100%',
-		overflow: 'visible',
-		position: 'relative'
-	}}>
-		<Tldraw 
-			store={muti_store}
-			components={components}
-		/>
-	</div>
-)
+	return (
+		<div 
+			className="tldraw__editor" 
+			style={{ 
+				width: '100%', 
+				height: '100%',
+				overflow: 'visible',
+				position: 'relative'
+			}}
+			onMouseMove={handleMouseMove} // 监听鼠标轨迹
+		>
+			<Tldraw 
+				store={muti_store} // 取消注释即可恢复多人协作（需解决图片上传问题）
+				components={components}
+				// 兜底：同时绑定onStoreChange确保兼容性
+				// onStoreChange 已弃用，改为通过 useValue 监听 store 变化
+			/>
+		</div>
+	)
 }
 
 // 主应用组件，提供Redux Provider

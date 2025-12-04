@@ -18,16 +18,17 @@ export type CollectModuleType = typeof CollectModuleType[keyof typeof CollectMod
 
 /** 鼠标轨迹数据结构 */
 export interface MouseData {
-  x: number;
-  y: number;
-  timeOffset: number; // 相对开始时间的偏移量（ms）
+ x: number;
+    y: number;
+    timestamp: number;
 }
 
 /** 白板操作数据结构（示例） */
 export interface WhiteboardData {
-  action: string; // 如 'draw' | 'erase' | 'undo'
-  coordinates: { x: number; y: number }[];
-  timeOffset: number;
+   id: string;
+    type: 'draw' | 'erase' | 'text' | 'select' | 'image';
+    data: any;
+    timestamp: number;
 }
 
 /** 采集数据总结构 */

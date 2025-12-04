@@ -72,7 +72,7 @@ const Sidebar: React.FC = () => {
       }}
     >
       <Space 
-        direction="vertical" 
+        orientation="vertical" 
         size="large" 
         style={{ 
           width: '100%', 
@@ -89,14 +89,16 @@ const Sidebar: React.FC = () => {
             placement="right"
             color={isDarkMode ? '#2d3748' : '#f8fafc'}
             arrow={{ pointAtCenter: true, style: { color: isDarkMode ? '#374151' : '#e2e8f0' } }}
-            overlayStyle={{ 
-              borderRadius: 10, 
-              boxShadow: isDarkMode 
-                ? '0 4px 15px rgba(0, 0, 0, 0.3)' 
-                : '0 4px 15px rgba(0, 0, 0, 0.1)',
-              border: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0',
-              padding: '8px 16px',
-              fontSize: 14,
+            styles={{ 
+              root: { 
+                borderRadius: 10, 
+                boxShadow: isDarkMode 
+                  ? '0 4px 15px rgba(0, 0, 0, 0.3)' 
+                  : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                border: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0',
+                padding: '8px 16px',
+                fontSize: 14,
+              } 
             }}
           >
             <div

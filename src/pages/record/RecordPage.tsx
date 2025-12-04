@@ -31,17 +31,19 @@ const VideoRecorder = () => (
       </div>
     }
     style={{ flex: 1 }}
-    headStyle={{ 
-      padding: '16px 24px', // 精简头部内边距
-      borderBottom: '1px solid var(--border-color)',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)'
-    }}
-    bodyStyle={{ 
-      padding: '20px', // 精简body内边距
-      height: 'calc(100% - 56px)',
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center' 
+    styles={{
+      header: { 
+        padding: '16px 24px', // 精简头部内边距
+        borderBottom: '1px solid var(--border-color)',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)'
+      },
+      body: { 
+        padding: '20px', // 精简body内边距
+        height: 'calc(100% - 56px)',
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }
     }}
   >
     <div className="placeholder-dashed" style={{ 
@@ -49,9 +51,12 @@ const VideoRecorder = () => (
       height: '100%', 
       display: 'flex', 
       alignItems: 'center', 
-      justifyContent: 'center' 
+      justifyContent: 'center',
+      flexDirection: 'column',
+      gap: '16px'
     }}>
-      <Spin size="large" tip="摄像头/麦克风加载中..." />
+      <Spin size="large" />
+      <span>摄像头/麦克风加载中...</span>
     </div>
   </Card>
 );
@@ -71,16 +76,18 @@ const WhiteboardCard = () => (
       </div>
     }
     style={{ width: '100%', height: '100%' }}
-    headStyle={{ 
-      padding: '12px 24px', // 最小化头部内边距，释放高度
-      borderBottom: '1px solid var(--border-color)',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)'
-    }}
-    bodyStyle={{ 
-      padding: 0, // 完全去掉body内边距
-      height: 'calc(100% - 52px)', // 精准计算头部高度（12px*2 + 28px标题高度 = 52px）
-      overflow: 'visible',
-      position: 'relative'
+    styles={{
+      header: { 
+        padding: '12px 24px', // 最小化头部内边距，释放高度
+        borderBottom: '1px solid var(--border-color)',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)'
+      },
+      body: { 
+        padding: 0, // 完全去掉body内边距
+        height: 'calc(100% - 52px)', // 精准计算头部高度（12px*2 + 28px标题高度 = 52px）
+        overflow: 'visible',
+        position: 'relative'
+      }
     }}
   >
     {/* 原封不动引入白板组件，通过CSS适配大小 */}
