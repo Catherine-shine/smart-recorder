@@ -14,7 +14,7 @@ const rootReducer = combineReducers({
   playback: playbackReducer,
   mousemove: mousemoveReducer,
   recording: recordingReducer,
-  mediastream: mediastreamReducer,
+  mediastream: mediastreamReducer,                                                                                
   whiteboard: whiteboardReducer,
   layout:layoutReducer,
 

@@ -1,101 +1,75 @@
-/* 保留原有主题变量和基础样式，重点修改以下部分 */
+/* 保留原有主题变量和基础样式，只保留与白板组件相关的样式 */
 
-/* 1. 调整布局比例，增大白板占比 */
+/* 1. 工作区网格布局 - 确保使用grid布局而非flex */
 .workspace-grid {
-  width: 100%;
-  height: calc(100vh - 64px);
-  display: grid;
-  grid-template-columns: 3.5fr 1fr; /* 白板占比提升到3.5:1（比原来宽75%） */
-  gap: 16px !important; /* 减小卡片间距，避免浪费空间 */
-  padding: 16px !important; /* 减小页面内边距，扩大可用区域 */
+  display: grid !important;
+  grid-template-columns: 5fr 1fr !important;
+  gap: 16px !important;
+  height: calc(100vh - 70px) !important;
+  padding: 16px !important;
+  overflow: hidden !important;
+}
+
+/* 2. 白板区域：确保父容器100%高度，不挤压子组件 */
+.whiteboard-section {
+  height: 100%;
+  position: relative;
   overflow: hidden;
 }
 
-/* 2. 响应式优化：放宽白板高度约束 */
-@media (max-width: 1200px) {
-  .workspace-grid {
-    grid-template-columns: 3fr 1fr; /* 中等屏幕保持3:1比例 */
-  }
-}
-
-@media (max-width: 992px) {
-  .workspace-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto; /* 白板自适应高度，视频区域自动跟随 */
-    height: auto;
-    min-height: calc(100vh - 70px);
-    gap: 16px !important;
-    padding: 16px !important;
-  }
-  .whiteboard-section {
-    height: 65vh !important; /* 移动端白板高度提升到65%屏幕高度 */
-  }
-  .video-section {
-    height: auto !important; /* 视频区域不再固定高度，避免挤压 */
-  }
-}
-
-@media (max-width: 768px) {
-  .workspace-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-    height: auto;
-    min-height: calc(100vh - 64px);
-    padding-bottom: 72px !important;
-  }
-  .whiteboard-section {
-    height: 70vh !important; /* 竖屏时白板高度占70%，空间更充足 */
-  }
-}
-
-/* 3. 白板区域：确保父容器100%高度，不挤压子组件 */
-.whiteboard-section {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 4. 视频区域：精简间距，保持同级协调 */
+/* 3. 视频区域：精简间距，保持同级协调 */
 .video-section {
   display: flex;
   flex-direction: column;
-  gap: 16px !important; /* 减小视频与控制面板间距 */
+  gap: 16px !important;
   height: 100%;
+  width: 200px;
+  padding: 0 16px 16px 16px;
 }
 
-/* 5. 关键：适配tldraw的fixed定位，让它填充父容器（不修改组件内部） */
-.whiteboard-section .tldraw__editor {
-  position: absolute !important; /* 覆盖组件内部的fixed定位 */
-  inset: 0 !important; /* 填充父容器 */
+/* 4. 确保Card内容正确填充白板区域 */
+.whiteboard-section .lark-card {
   width: 100% !important;
   height: 100% !important;
-  z-index: 1 !important;
+  overflow: hidden;
 }
 
-/* 6. 优化tldraw工具栏位置，避免占用绘制空间 */
-.tldraw__editor .tlui-toolbar {
-  top: 10px !important; /* 上移工具栏，减少纵向占用 */
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  width: auto !important;
-  max-width: 95% !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+/* 5. 优化tldraw编辑器样式，确保与页面布局兼容 */
+.whiteboard-section .tldraw__editor {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  position: relative;
 }
 
-/* 7. 隐藏tldraw底部状态栏（释放高度，通过外部CSS实现，不侵入组件） */
-.tldraw__editor .tlui-status-bar {
+/* 6. 确保tldraw的主容器也正确填充 */
+.whiteboard-section .tldraw__editor .tlui-app {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* 7. 调整tldraw的画布区域，确保没有内部边距或填充影响显示 */
+.whiteboard-section .tldraw__editor .tlui-canvas-container {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 8. 调整tldraw的工作区，确保它填充可用空间 */
+.whiteboard-section .tldraw__editor .tlui-workspace {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 9. 隐藏tldraw底部状态栏（释放高度，通过外部CSS实现，不侵入组件） */
+.whiteboard-section .tldraw__editor .tlui-status-bar {
   display: none !important;
 }
 
-/* 8. 确保tldraw画布填充父容器，无冗余边距 */
-.tldraw__editor .tlui-canvas-container {
-  width: 100% !important;
-  height: 100% !important;
-  padding: 16px !important; /* 给画布加轻微内边距，避免贴边 */
-}
-
-/* 9. 多人菜单位置适配，避免与工具栏重叠 */
-.tldraw__editor .tlui-menu__group[data-testid="muti-menu-group"] {
+/* 10. 多人菜单位置适配，避免与工具栏重叠 */
+.whiteboard-section .tldraw__editor .tlui-menu__group[data-testid="muti-menu-group"] {
   margin-top: 4px !important;
   gap: 8px !important;
 }

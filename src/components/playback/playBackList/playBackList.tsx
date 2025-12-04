@@ -7,7 +7,7 @@ import { List, Card, Empty, Typography, Tag ,Spin} from 'antd';
 import type { PlaybackVideoItem } from '../../../types/playback/playbackbody';
 import {  message, } from 'antd';
 import React, { useState, useEffect } from "react";
-import { formatDuration } from '../../../utils/playback';
+import { formatDuration } from '../../../utils/playback/playback';
 import './index.css';
 
 const { Text, Title } = Typography;

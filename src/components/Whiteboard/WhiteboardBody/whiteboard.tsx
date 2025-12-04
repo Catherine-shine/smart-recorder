@@ -84,20 +84,26 @@ function WhiteboardContent() {
 	}
 
 	// 处理工具变化事件，更新绘制状态
-	const handleToolChange = (prevToolId: string, nextToolId: string) => {
-		// 更新绘制状态
-		dispatch(setIsDrawing(nextToolId === 'draw'))
-	}
-	// 多人协作设置
-	const muti_store = useSyncDemo({roomId : "ginka"})
+const handleToolChange = (prevToolId: string, nextToolId: string) => {
+	// 更新绘制状态
+	dispatch(setIsDrawing(nextToolId === 'draw'))
+}
+// 多人协作设置
+const muti_store = useSyncDemo({roomId : "ginka"})
 
-	return (
-		<div className="tldraw__editor" style={{ width: '100%', height: '100%' }}>
-			<Tldraw 
-				components={components}
-			/>
-		</div>
-	)
+return (
+	<div className="tldraw__editor" style={{ 
+		width: '100%', 
+		height: '100%',
+		overflow: 'visible',
+		position: 'relative'
+	}}>
+		<Tldraw 
+			store={muti_store}
+			components={components}
+		/>
+	</div>
+)
 }
 
 // 主应用组件，提供Redux Provider
