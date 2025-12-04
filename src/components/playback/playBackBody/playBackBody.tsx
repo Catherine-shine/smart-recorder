@@ -46,8 +46,15 @@ const PlayBackBody: React.FC = () => {
     const [videoLoading, setVideoLoading] = useState<boolean>(false);*/
     
     const videoRef = useRef<HTMLVideoElement>(null);
-    // 优先使用Redux的地址，兜底用测试地址（建议替换为本地视频）
+    // 优先使用Redux中保存的视频url，兜底用测试地址（建议替换为本地视频）
     const videoSrc = playbackUrl || 'https://www.w3school.com.cn/i/movie.mp4';
+
+    //保存最新的 volume，以在事件处理函数handleMuteToggle中使用
+    const volumeRef = useRef(volume);
+    // 当 volume 变化时更新 ref
+    useEffect(() => {
+      volumeRef.current = volume;
+    }, [volume]);
   
      // 视频进度更新
     const handleTimeUpdate = () => {
@@ -161,15 +168,12 @@ const PlayBackBody: React.FC = () => {
           video.muted = newisMuted;
       
           // 静音时记录当前音量，取消静音时恢复
-          // 2025.12.4优化：保留原音量状态（保存在 Redux 中）
-          if (newisMuted) {
-            const originalVolume = video.volume;
-            dispatch(setVolume(originalVolume));
-          } else {
-            const {volume} = useSelector((state: RootState) => state.playback);
-            console.log({volume});
-            video.volume = volume; // 恢复原音量
-          }
+          ///////// 2025.12.4优化///////////
+           if (!newisMuted) {
+              // 恢复原音量（使用 ref 中的 redux 状态值）
+              video.volume = volumeRef.current;
+              console.log(video.volume)
+           }
       };
     
       // 进度条拖动
