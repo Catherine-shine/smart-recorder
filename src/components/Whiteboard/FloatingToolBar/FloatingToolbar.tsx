@@ -10,6 +10,9 @@ import {
   CloseOutlined,
 } from '@ant-design/icons';
 import type { ToolType, ColorType, LineWidthType, FloatingToolbarProps } from '../../../types/whiteboard/floatingToolbar';
+import type { OpacityType, EraserSizeType } from '../../../types/whiteboard/floatingToolbar';
+// 新增透明度/橡皮擦大小状态
+
 import './index.css'; // 引入单独的 CSS 文件
 
 // 提取重复按钮逻辑（减少冗余，统一风格）
@@ -51,6 +54,13 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   onClearCanvas,
   onInsertText,
   theme = {},
+  //新增：笔迹透明度
+  opacity,
+  setOpacity,
+  //新增：橡皮擦大小
+  eraserSize,
+  setEraserSize,
+  
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -78,6 +88,9 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   // 固定配置项
   const colorOptions: ColorType[] = ['#007bff', '#ff4d4f', '#52c41a', '#faad14', '#722ed1', '#000000'];
   const lineWidthOptions: LineWidthType[] = [2, 4, 6, 8];
+  //透明度，橡皮擦大小配置
+  const opacityOptions: OpacityType[] = [0.2, 0.4, 0.6, 0.8, 1.0];
+  const eraserSizeOptions: EraserSizeType[] = [8, 16, 24, 32, 40];
 
   // 清空画布添加确认弹窗
   const handleClearCanvas = () => {
@@ -179,6 +192,48 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
               />
             ))}
           </div>
+
+          {/* 新增：笔迹透明度（仅画笔模式显示） */}
+          {tool === 'draw' && (
+            <div className="floating-opacity-group">
+              <span className="floating-tool-label">透明度</span>
+              <div className="floating-opacity-dot-group">
+                {opacityOptions.map((o) => (
+                  <div
+                    key={o}
+                    className={`floating-opacity-dot ${opacity === o ? 'active' : ''}`}
+                    style={{
+                      backgroundColor: color,
+                      opacity: o,
+                    }}
+                    onClick={() => setOpacity(o)}
+                    title={`透明度: ${o * 100}%`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 新增：橡皮擦大小（仅橡皮擦模式显示） */}
+          {tool === 'eraser' && (
+            <div className="floating-eraser-size-group">
+              <span className="floating-tool-label">橡皮大小</span>
+              <div className="floating-eraser-size-dot-group">
+                {eraserSizeOptions.map((s) => (
+                  <div
+                    key={s}
+                    className={`floating-eraser-size-dot ${eraserSize === s ? 'active' : ''}`}
+                    style={{
+                      width: s / 2,
+                      height: s / 2,
+                    }}
+                    onClick={() => setEraserSize(s)}
+                    title={`大小: ${s}px`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 分隔线 */}
