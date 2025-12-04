@@ -4,7 +4,18 @@ import {
   EditOutlined, CameraOutlined, PlayCircleOutlined, 
   PauseOutlined, StopOutlined 
 } from '@ant-design/icons';
-import WhiteboardApp from '../../components/Whiteboard/WhiteboardBody/whiteboard'; // 直接引入原白板组件
+import WhiteboardApp from '../../components/Whiteboard/WhiteboardBody/whiteboard'; // 引入白板组件
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+  resetRecordingState, 
+  setRecordingStatus, 
+  setStartTime,
+  setPauseDuration,
+  setLastPauseTime,
+  setLastRecordingDuration
+} from '../../store/slices/recordingSlice';
+import type { RootState } from '../../store/index';
+import { RECORDING_STATUS } from '../../types/common';
 import './index.css';
 
 const VideoRecorder = () => (
@@ -45,7 +56,55 @@ const VideoRecorder = () => (
 );
 
 const ControlPanel = () => {
-  const [recordStatus, setRecordStatus] = useState(0);
+  const dispatch = useDispatch();
+  const recordingStatus = useSelector((state: RootState) => state.recording.status);
+  const recordingState = useSelector((state: RootState) => state.recording);
+  //const [recordStatus, setRecordStatus] = useState(0);
+
+  //开始录制
+  const handleStartRecording = () => {
+    const now = Date.now();
+    dispatch(setRecordingStatus(RECORDING_STATUS.RECORDING));
+    dispatch(setStartTime(now));
+    dispatch(setPauseDuration(0));
+    dispatch(setLastPauseTime(null));
+    console.log("开始录制")
+  };
+
+  //暂停录制
+  const handlePauseRecording = () => {
+    const now = Date.now();
+    dispatch(setRecordingStatus(RECORDING_STATUS.PAUSED));
+    dispatch(setLastPauseTime(now));
+    console.log("暂停录制")
+  };
+
+  //停止录制
+  const handleStopRecording = () => {
+    const now = Date.now();
+    
+    // 计算总录制时长
+    if (recordingState.startTime) {
+      const totalDuration = now - recordingState.startTime - recordingState.pauseDuration;
+      dispatch(setLastRecordingDuration(totalDuration));
+    }
+    console.log("停止录制")
+    dispatch(resetRecordingState());
+  };
+
+  //恢复录制
+  const handleResumeRecording = () => {
+    const now = Date.now();
+    if (recordingState.lastPauseTime) {
+      const pauseDuration = now - recordingState.lastPauseTime;
+      const totalPauseDuration = recordingState.pauseDuration + pauseDuration;
+      dispatch(setPauseDuration(totalPauseDuration));
+    }
+    dispatch(setRecordingStatus(RECORDING_STATUS.RECORDING));
+    dispatch(setLastPauseTime(null));
+    console.log("恢复录制")
+  };
+
 
   return (
     <Card 
@@ -80,16 +139,16 @@ const ControlPanel = () => {
           type="primary" 
           icon={<PlayCircleOutlined style={{ fontSize: 20 }} />} 
           size="large"
-          onClick={() => setRecordStatus(1)}
-          disabled={recordStatus === 1}
+          onClick={recordingStatus === RECORDING_STATUS.PAUSED ? handleResumeRecording : handleStartRecording}
+          disabled={recordingStatus === RECORDING_STATUS.RECORDING}
           style={{ width: 64, height: 64, borderRadius: 32 }}
         />
         <Button 
           className="lark-btn record-btn-circle"
           icon={<PauseOutlined style={{ fontSize: 20 }} />} 
           size="large" 
-          onClick={() => setRecordStatus(2)}
-          disabled={recordStatus !== 1}
+          onClick={handlePauseRecording}
+          disabled={recordingStatus !== RECORDING_STATUS.RECORDING}
           style={{ 
             width: 64, 
             height: 64, 
@@ -104,8 +163,8 @@ const ControlPanel = () => {
           danger 
           icon={<StopOutlined style={{ fontSize: 20 }} />} 
           size="large" 
-          onClick={() => setRecordStatus(0)}
-          disabled={recordStatus === 0}
+          onClick={handleStopRecording}
+          disabled={recordingStatus === RECORDING_STATUS.NOT_RECORDING}
           style={{ width: 64, height: 64, borderRadius: 32 }}
         />
       </Space>
