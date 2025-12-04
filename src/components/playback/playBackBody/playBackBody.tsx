@@ -1,21 +1,41 @@
 import type { RootState } from '../../../store';
-import { setPlaybackUrl } from '../../../store/slices/playbackSlice';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  setCurrentTime,
+  setDuration,
+  setVolume,
+  setIsMuted,
+  setPlaybackRate,
+  setIsPlayEnded,
+  setVideoLoading,
+  setPlaybackStatus,
+  stopPlayback,
+} from '../../../store/slices/playbackSlice';
 import PlayButton from './playButton/playButton';
-import type { PlayStatus, PlaybackVideoItem } from '../../../types/playback/playbackbody';
+import type { PlayStatus } from '../../../types/playback/playbackbody';
 import ProgressBar from './progressBar/progressBar';
 import VolumeControl from './volumeControl/volumeControl';
 import PlaybackRate from './playBackRate/playBackRate';
 import { Card, Row, Col, message, Spin } from 'antd';
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import './index.css';
 
-
 const PlayBackBody: React.FC = () => {
-    const [listLoading, setListLoading] = useState<boolean>(false);
+    const dispatch = useDispatch();
+  // 从 Redux 中获取所有状态
+    const {
+      playbackUrl,
+      status: playStatus,
+      volume,
+      isMuted,
+      currentTime,
+      duration,
+      playbackRate,
+      isPlayEnded,
+      videoLoading,
+    } = useSelector((state: RootState) => state.playback);
+    /*const [listLoading, setListLoading] = useState<boolean>(false);
     const { playbackUrl } = useSelector((state: RootState) => state.playback);
-    // 优先使用Redux的地址，兜底用测试地址（建议替换为本地视频）
-    const videoSrc = playbackUrl || 'https://www.w3school.com.cn/i/movie.mp4';
     const [playStatus, setPlayStatus] = useState<PlayStatus>('stopped');
     const [volume, setVolume] = useState<number>(1);
     const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -23,66 +43,71 @@ const PlayBackBody: React.FC = () => {
     const [duration, setDuration] = useState<number>(0);
     const [playbackRate, setPlaybackRate] = useState<number>(1);
     const [isPlayEnded, setIsPlayEnded] = useState<boolean>(false);
-     const [videoLoading, setVideoLoading] = useState<boolean>(false);
+    const [videoLoading, setVideoLoading] = useState<boolean>(false);*/
+    
     const videoRef = useRef<HTMLVideoElement>(null);
+    // 优先使用Redux的地址，兜底用测试地址（建议替换为本地视频）
+    const videoSrc = playbackUrl || 'https://www.w3school.com.cn/i/movie.mp4';
   
      // 视频进度更新
-      const handleTimeUpdate = () => {
-        videoRef.current && setCurrentTime(videoRef.current.currentTime);
-      };
+    const handleTimeUpdate = () => {
+      const video = videoRef.current;
+      if (video) {
+        dispatch(setCurrentTime(video.currentTime));
+      }
+    };
     
-      // 视频元数据加载完成（获取总时长）
-      const handleLoadedMetadata = () => {
-        const video = videoRef.current;
-        if (video) {
-          setDuration(video.duration);
-          setPlayStatus('stopped');
-          setVideoLoading(false); 
-        }
-      };
+    // 视频元数据加载完成（获取总时长）
+    const handleLoadedMetadata = () => {
+      const video = videoRef.current;
+      if (video) {
+        dispatch(setDuration(video.duration));
+        dispatch(setPlaybackStatus('stopped'));
+        dispatch(setVideoLoading(false));
+      }
+    };
     
-      // 倍速变更（安全处理ref）
-      const handleRateChange = (rate: number) => {
-        setPlaybackRate(rate);
-        if (videoRef.current) {
-          videoRef.current.playbackRate = rate;
-        }
-      };
+    // 倍速变更（安全处理ref）
+    const handleRateChange = (rate: number) => {
+      dispatch(setPlaybackRate(rate));
+      if (videoRef.current) {
+        videoRef.current.playbackRate = rate;
+      }
+    };
     
-      // 视频自身音量变化同步到状态
-      const handleVolumeChange = () => {
-        const video = videoRef.current;
-        if (video) {
-          setVolume(video.volume);
-          setIsMuted(video.muted);
-        }
-      };
+    // 视频自身音量变化同步到状态
+    const handleVolumeChange = () => {
+      const video = videoRef.current;
+      if (video) {
+        dispatch(setVolume(video.volume));
+        dispatch(setIsMuted(video.muted));
+      }
+    };
     
-      // 播放结束处理
-      const handleVideoEnded = () => {
-        const video = videoRef.current;
-        if (video) {
+    // 播放结束处理
+    const handleVideoEnded = () => {
+      const video = videoRef.current;
+      if (video) {
           video.currentTime = 0;
           setCurrentTime(0);
-          setPlayStatus('stopped');
-          setIsPlayEnded(true);
+          dispatch(setPlaybackStatus('stopped'));
+          dispatch(setIsPlayEnded(true));
           message.success('视频播放结束！');
-        }
-      };
+      }
+    };
     
-      // 播放操作（异步处理）
-      const handlePlay = () => {
-         const video = videoRef.current;
+    // 播放操作（异步处理）
+    const handlePlay = () => {
+      const video = videoRef.current;
       if (!video) {
         message.warning('视频播放器尚未加载完成，请稍候！');
         return;
       }
-    
       video.play()
         .then(() => {
-          setPlayStatus('playing');
-          setIsPlayEnded(false);
-        })
+          dispatch(setPlaybackStatus('playing'));
+          dispatch(setIsPlayEnded(false));
+      })
         .catch((err) => {
           console.error('视频播放失败：', err);
           // 区分自动播放被拦截的情况
@@ -93,26 +118,26 @@ const PlayBackBody: React.FC = () => {
           } else {
             message.error('播放失败，请检查视频源或浏览器权限！');
           }
-          setPlayStatus('stopped');
+          dispatch(setPlaybackStatus('stopped'));
         });
       };
     
       // 暂停操作
       const handlePause = () => {
         videoRef.current?.pause();
-        setPlayStatus('paused');
+        dispatch(setPlaybackStatus('paused'));
       };
     
-      // 停止操作
+      // 停止
       const handleStop = () => {
         const video = videoRef.current;
         if (video) {
           video.pause();
           video.currentTime = 0;
-          setCurrentTime(0);
+          dispatch(setCurrentTime(0));
         }
-        setPlayStatus('stopped');
-        setIsPlayEnded(false);
+        dispatch(setPlaybackStatus('stopped'));
+        dispatch(setIsPlayEnded(false));
       };
     
       // 音量更新（自定义控件）
@@ -128,19 +153,23 @@ const PlayBackBody: React.FC = () => {
     
       // 静音切换（同步音量状态）
       const handleMuteToggle = () => {
-        const video = videoRef.current;
-        if (!video) return;
-    
-        const newMuted = !isMuted;
-        setIsMuted(newMuted);
-        video.muted = newMuted;
-    
-        // 静音时记录当前音量，取消静音时恢复（可选优化）
-        if (newMuted) {
-          setVolume(video.volume); // 保留原音量
-        } else {
-          video.volume = volume; // 恢复原音量
-        }
+          const video = videoRef.current;
+          if (!video) return;
+      
+          const newisMuted = !isMuted;// 新的静音状态（是/否静音）
+          dispatch(setIsMuted(newisMuted));
+          video.muted = newisMuted;
+      
+          // 静音时记录当前音量，取消静音时恢复
+          // 2025.12.4优化：保留原音量状态（保存在 Redux 中）
+          if (newisMuted) {
+            const originalVolume = video.volume;
+            dispatch(setVolume(originalVolume));
+          } else {
+            const {volume} = useSelector((state: RootState) => state.playback);
+            console.log({volume});
+            video.volume = volume; // 恢复原音量
+          }
       };
     
       // 进度条拖动
@@ -149,7 +178,7 @@ const PlayBackBody: React.FC = () => {
         if (video && duration > 0) {
           const targetTime = Math.max(0, Math.min(time, duration));
           video.currentTime = targetTime;
-          setCurrentTime(targetTime);
+          dispatch(setCurrentTime(targetTime));
         }
       };
     
@@ -179,9 +208,13 @@ const PlayBackBody: React.FC = () => {
         }
         message.error(errorMsg);
         console.error('视频错误详情：', error);
+        dispatch(setPlaybackStatus('stopped'));
+        dispatch(setVideoLoading(false));
       };
       
-        useEffect(() => {
+
+      /////////////////////////////////////
+      useEffect(() => {
           const video = videoRef.current;
           if (!video) return;
       
@@ -192,8 +225,10 @@ const PlayBackBody: React.FC = () => {
             ended: handleVideoEnded,
             volumechange: handleVolumeChange,
             error: handleVideoError,
-            loadstart: () => setVideoLoading(true), // 视频开始加载
-            canplay: () => setVideoLoading(false), // 视频可播放
+            loadstart: () => dispatch(setVideoLoading(true)),
+            canplay: () => dispatch(setVideoLoading(false)),
+            waiting: () => dispatch(setVideoLoading(true)),
+            playing: () => dispatch(setVideoLoading(false)),
           };
       
           // 绑定事件

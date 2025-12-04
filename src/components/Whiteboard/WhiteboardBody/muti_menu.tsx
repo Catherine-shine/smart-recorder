@@ -6,7 +6,7 @@ import "./sync-custom-people-menu.css"
 
 export const muti_components = {
     // 使用Tldraw支持的自定义面板组件名称
-    Panel: () => (
+    SharePanel: () => (
         <div className="muti_share_zone" draggable={false}>
             <CustomPeopleMenu />
         </div>
