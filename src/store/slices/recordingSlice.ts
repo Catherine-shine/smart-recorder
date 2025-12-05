@@ -1,5 +1,8 @@
+// src/store/slices/recordingSlice.ts
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { RecordingState } from '../../types/RecordingState';
+import type { RootState } from '../index';
+import type { RecordingState } from '../../types/recording/RecordingState';
+import type { CollectDataPayload } from '../../types/recording/controlPanel';
 import { RECORDING_STATUS } from '../../types/common';
 
 // 初始状态
@@ -9,6 +12,11 @@ const initialState: RecordingState = {
   pauseDuration: 0,
   lastPauseTime: null,
   lastRecordingDuration: null,
+  collectedData: {
+    videoBlob: null,
+    whiteboardData: [],
+    mouseData: [],
+  },
 };
 
 export const recordingSlice = createSlice({
@@ -44,6 +52,71 @@ export const recordingSlice = createSlice({
     setLastRecordingDuration: (state, action: PayloadAction<number | null>) => {
       state.lastRecordingDuration = action.payload;
     },
+    
+    // 开始录制
+    startRecording: (state) => {
+      state.status = RECORDING_STATUS.RECORDING;
+      state.startTime = Date.now();
+      state.pauseDuration = 0;
+      state.lastPauseTime = null;
+      // 开始录制时清空历史收集数据（可选，根据业务需求）
+      state.collectedData = initialState.collectedData;
+    },
+    
+    // 暂停录制
+    pauseRecording: (state) => {
+      if (state.status === RECORDING_STATUS.RECORDING) {
+        state.status = RECORDING_STATUS.PAUSED;
+        state.lastPauseTime = Date.now();
+      }
+    },
+    
+    // 恢复录制
+    resumeRecording: (state) => {
+      if (state.status === RECORDING_STATUS.PAUSED && state.lastPauseTime) {
+        state.status = RECORDING_STATUS.RECORDING;
+        state.pauseDuration += Date.now() - state.lastPauseTime;
+        state.lastPauseTime = null;
+      }
+    },
+    
+    // 结束录制
+    endRecording: (state) => {
+      state.status = RECORDING_STATUS.NOT_RECORDING;
+      if (state.startTime) {
+        const endTime = Date.now();
+        const totalDuration = endTime - state.startTime - state.pauseDuration;
+        state.lastRecordingDuration = totalDuration;
+      }
+      state.lastPauseTime = null;
+    },
+    
+    // 完善收集数据逻辑：按类型分类存储
+    collectData: (
+      state, 
+      action: PayloadAction<{
+        type: 'video' | 'whiteboard' | 'mouse'; // 数据类型
+        data: any; // 对应类型的数据
+      }>
+    ) => {
+      const { type, data } = action.payload;
+      switch (type) {
+        // 存储视频Blob
+        case 'video':
+          state.collectedData.videoBlob = data;
+          break;
+        // 追加白板操作数据
+        case 'whiteboard':
+          state.collectedData.whiteboardData.push(data);
+          break;
+        // 追加鼠标轨迹数据
+        case 'mouse':
+          state.collectedData.mouseData.push(data);
+          break;
+        default:
+          break;
+      }
+    },
   },
 });
 
@@ -55,7 +128,18 @@ export const {
   setPauseDuration,
   setLastPauseTime,
   setLastRecordingDuration,
+  startRecording,
+  pauseRecording,
+  resumeRecording,
+  endRecording,
+  collectData,
 } = recordingSlice.actions;
+
+// 导出选择器
+export const selectRecordingStatus = (state: RootState) => state.recording.status;
+export const selectStartTimestamp = (state: RootState) => state.recording.startTime;
+export const selectCollectedData = (state: RootState) => state.recording.collectedData;
+export const selectLastRecordingDuration = (state: RootState) => state.recording.lastRecordingDuration;
 
 // 导出切片 Reducer
 export default recordingSlice.reducer;
@@ -67,118 +151,9 @@ export type RecordingAction =
   | ReturnType<typeof setStartTime>
   | ReturnType<typeof setPauseDuration>
   | ReturnType<typeof setLastPauseTime>
-  | ReturnType<typeof setLastRecordingDuration>;
-
-
-
-
-
-
-/*//录制状态：正在录制中=1，录制暂停中=2，不在录制=0
-import { createSlice } from '@reduxjs/toolkit';
-import type { RecordingState } from '../../types/RecordingState';
-import {RECORDING_STATUS} from '../../types/common'
-
-// 初始状态
-const initialState = {
-  status: RECORDING_STATUS.NOT_RECORDING, // 当前录制状态
-  startTime: null,     // 录制开始的时间戳
-  pauseDuration: 0,    // 总暂停时长（毫秒）
-  lastPauseTime: null, // 最后一次暂停的时间戳
-  lastRecordingDuration: null,
-  // filePath: '', //录制文件存放到的路径
-} as RecordingState;
-
-
-export const recordingSlice = createSlice({
-  name: 'recording',
-  initialState,//初始状态
-  reducers: {
-    // 1. 初始化/重置状态
-    resetRecordingState: (state) => {
-      return { ...initialState };
-     
-    },
-
-    // 2. 开始录制（只能从“未录制”状态开始）
-    startRecording: (state) => {
-      if (state.status !== RECORDING_STATUS.NOT_RECORDING) {
-        console.warn('录制在进行中或在暂停中，无法开始。');
-        return;
-      }
-      state.status = RECORDING_STATUS.RECORDING;
-      state.startTime = Date.now(); // 记录开始时间
-      state.pauseDuration = 0;     // 暂停时长重置为0
-      state.lastPauseTime = null;  // 最后一次暂停的时间戳重置为0
-    },
-
-    // 3. 暂停录制（只能从“录制中”状态暂停）
-    pauseRecording: (state) => {
-      if (state.status !== RECORDING_STATUS.RECORDING) {
-        console.warn('当前未在录制中，无法暂停。');
-        return;
-      }
-      state.status = RECORDING_STATUS.PAUSED;
-      state.lastPauseTime = Date.now(); // 记录暂停录制的时间点
-    },
-
-    // 4. 继续录制（只能从“暂停”状态恢复）
-    resumeRecording: (state) => {
-      if (state.status !== RECORDING_STATUS.PAUSED) {
-        console.warn('当前未在暂停状态，无法继续录制。');
-        return;
-      }
-      state.status = RECORDING_STATUS.RECORDING;
-      // 计算本次暂停的时长并累加
-      if (state.lastPauseTime) {
-        state.pauseDuration += (Date.now() - state.lastPauseTime);
-        state.lastPauseTime = null;
-      }
-    },
-
-    // 5. 停止录制（可从“录制中”或“暂停”状态停止）
-    stopRecording: (state) => {
-      if (state.status === RECORDING_STATUS.NOT_RECORDING) {
-        console.warn('当前未在录制，无需停止。');
-        return;
-      }
-      // 如果是在暂停状态下停止，需要先累加最后一次暂停的时长
-      if (state.status === RECORDING_STATUS.PAUSED && state.lastPauseTime) {
-        state.pauseDuration += (Date.now() - state.lastPauseTime);
-      }
-      // 计算总录制时长
-      const totalDuration = state.startTime ? 
-        (Date.now() - state.startTime - state.pauseDuration) : 0;
-      // 重置为未录制状态
-      state.status = RECORDING_STATUS.NOT_RECORDING;
-      // 计算最终视频时长
-      state.lastRecordingDuration = totalDuration;
-      // 重置其它字段
-      state.startTime = null;
-      state.pauseDuration = 0;
-      state.lastPauseTime = null;
-    },
-
-    // 6. 强制设置状态（用于特殊情况，如外部中断）
-    setRecordingStatus: (state, action) => {
-      const newStatus = action.payload;
-      // 确保设置的值是有效的状态
-      if (Object.values(RECORDING_STATUS).includes(newStatus)) {
-        state.status = newStatus;
-        // 根据设置的状态，可能还需要重置其他关联状态
-        if (newStatus === RECORDING_STATUS.NOT_RECORDING) {
-          state.startTime = null;
-          state.pauseDuration = 0;
-          state.lastPauseTime = null;
-        }
-      } else {
-        console.error('尝试设置无效的录制状态:', newStatus);
-      }
-    },
-  },
-});
-
-// 为每个 case reducer 函数生成 Action creators
-export const { resetRecordingState, startRecording, pauseRecording, resumeRecording, stopRecording, setRecordingStatus} = recordingSlice.actions;
-
-export default recordingSlice.reducer;*/
+  | ReturnType<typeof setLastRecordingDuration>
+  | ReturnType<typeof startRecording>
+  | ReturnType<typeof pauseRecording>
+  | ReturnType<typeof resumeRecording>
+  | ReturnType<typeof endRecording>
+  | ReturnType<typeof collectData>;

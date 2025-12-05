@@ -1,5 +1,6 @@
 export type PlayStatus = 'playing' | 'paused' | 'stopped';
 
+
 export interface PlayButtonProps {
   status: PlayStatus; 
   onPlay: () => void; 
@@ -15,6 +16,7 @@ export interface PlaybackVideoItem {
   url: string; // 播放地址
   duration?: number; // 视频时长（秒），可选
   createTime?: string; // 录制时间，可选
+  isLocalRecord?: boolean;
 }
 
 export interface PlaybackListProps {

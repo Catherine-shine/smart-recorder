@@ -457,17 +457,6 @@ const PlayBackBody: React.FC = () => {
       captions,        // 新增：字幕数组
       currentCaption
     } = useSelector((state: RootState) => state.playback);
-    /*const [listLoading, setListLoading] = useState<boolean>(false);
-    const { playbackUrl } = useSelector((state: RootState) => state.playback);
-    const [playStatus, setPlayStatus] = useState<PlayStatus>('stopped');
-    const [volume, setVolume] = useState<number>(1);
-    const [isMuted, setIsMuted] = useState<boolean>(false);
-    const [currentTime, setCurrentTime] = useState<number>(0);
-    const [duration, setDuration] = useState<number>(0);
-    const [playbackRate, setPlaybackRate] = useState<number>(1);
-    const [isPlayEnded, setIsPlayEnded] = useState<boolean>(false);
-    const [videoLoading, setVideoLoading] = useState<boolean>(false);
-    
     const videoRef = useRef<HTMLVideoElement>(null);
    
     // 优先使用Redux中保存的视频url，兜底用测试地址（建议替换为本地视频）

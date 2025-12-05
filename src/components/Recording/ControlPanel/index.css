@@ -1,0 +1,143 @@
+/* 原有样式保持不变，新增以下控制面板相关样式 */
+
+/* 控制面板卡片样式 */
+.control-panel-card {
+  flex: 0;
+}
+
+.control-panel-card .ant-card-head {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.control-panel-card .ant-card-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+/* 控制面板标题样式 */
+.control-panel-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* 音视频开关区域样式 */
+.media-switch-group {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+}
+
+/* 录制控制按钮组样式 */
+.record-control-group {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+/* 简洁开关区域样式 */
+.simple-switch-group {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 8px;
+}
+
+.simple-switch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.simple-switch-icon {
+  color: var(--text-secondary);
+}
+
+.simple-switch-icon.activated {
+  color: var(--primary-color);
+}
+
+/* 圆形按钮基础样式 */
+.circle-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  font-size: 20px;
+}
+
+/* 摄像头按钮样式 */
+.camera-btn {
+  background-color: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.camera-btn.activated {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+}
+
+/* 麦克风按钮样式 */
+.mic-btn {
+  background-color: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.mic-btn.activated {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+}
+
+/* 录制开始按钮样式 */
+.record-start-btn {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+}
+
+/* 录制暂停按钮样式 */
+.record-pause-btn {
+  background-color: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+/* 录制停止按钮样式 */
+.record-stop-btn {
+  background-color: var(--error-color);
+  color: #fff;
+  border: none;
+}
+
+/* 新增摄像头预览样式 */
+.camera-preview-container {
+  width: 100%;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.camera-preview {
+  width: 100%;
+  height: auto;
+  max-height: 200px; /* 限制预览高度，避免占用过多空间 */
+  object-fit: cover; /* 保持视频比例，避免拉伸 */
+  background-color: #f5f5f5;
+}
+
+/* 原有样式保持不变... */
