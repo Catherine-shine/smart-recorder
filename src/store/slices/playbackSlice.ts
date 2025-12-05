@@ -1,6 +1,7 @@
 // src/store/slices/playbackSlice.ts
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { PlayStatus, PlaybackVideoItem } from '../../types/playback/playbackbody';//引入自定义的类型
+import type { PlayStatus, PlaybackVideoItem } from '../../types/playback/playbackbody';
+import type { caption } from '../../types/playback/caption';
 
 // 1. 定义切片局部状态类型
 export interface PlaybackState {
@@ -15,6 +16,8 @@ export interface PlaybackState {
   playbackRate: number;
   isPlayEnded: boolean;
   videoLoading: boolean;
+  captions:caption[],        // 新增：字幕数组
+  currentCaption:string,  // 新增：当前显示的字幕文本
 }
 
 // 2. 初始状态
@@ -30,6 +33,8 @@ const initialState: PlaybackState = {
   playbackRate: 1,
   isPlayEnded: false,
   videoLoading: false,
+  captions:[],        // 新增：字幕数组
+  currentCaption:'',  // 新增：当前显示的字幕文本
 };
 
 // 3. 创建切片
@@ -77,6 +82,9 @@ const playbackSlice = createSlice({
       state.isPlaying = false;
       state.isPlayEnded = false;
       state.videoLoading = false;
+
+      state.captions = [];
+      state.currentCaption = '';
     },
     // 停止播放的便捷方法
     stopPlayback: (state) => {
@@ -96,6 +104,17 @@ const playbackSlice = createSlice({
         state.isPlayEnded = false;
       }
     },
+    // 新增：设置字幕数组
+    setCaptions: (state, action: PayloadAction<caption[]>) => {
+      state.captions = action.payload;
+    },
+    
+    // 新增：设置当前字幕
+    setCurrentCaption: (state, action: PayloadAction<string>) => {
+      state.currentCaption = action.payload;
+    },
+    
+   
   },
 });
 
@@ -115,6 +134,8 @@ export const {
   resetPlaybackState,
   stopPlayback,
   togglePlayback,
+  setCaptions,
+  setCurrentCaption
 } = playbackSlice.actions;
 
 // 导出切片 Reducer（供 rootReducer 聚合）

@@ -149,6 +149,62 @@ def upload_video():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/current-subtitle', methods=['POST'])
+def get_current_subtitle():
+    """获取当前时间点的字幕"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+        current_time = data.get('current_time', 0)  # 当前播放时间（秒）
+
+        if not filename:
+            return jsonify({'error': '未提供文件名'}), 400
+
+        # 构建字幕文件名
+        base_name = os.path.splitext(filename)[0]
+        vtt_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{base_name}.vtt')
+
+        if not os.path.exists(vtt_path):
+            # 如果没有vtt文件，尝试加载JSON格式字幕
+            json_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{base_name}_subtitles.json')
+            if os.path.exists(json_path):
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    subtitles = json.load(f)
+            else:
+                return jsonify({'current_subtitle': ''})
+        else:
+            # 解析WebVTT文件
+            subtitles = []
+            captions = webvtt.read(vtt_path)
+            for i, caption in enumerate(captions):
+                # 转换时间格式
+                start_seconds = caption.start_in_seconds
+                end_seconds = caption.end_in_seconds
+                subtitles.append({
+                    'id': i + 1,
+                    'start': start_seconds,
+                    'end': end_seconds,
+                    'text': caption.text.strip()
+                })
+
+        # 查找当前时间对应的字幕
+        current_subtitle = ''
+        for subtitle in subtitles:
+            if current_time >= subtitle['start'] and current_time <= subtitle['end']:
+                current_subtitle = subtitle['text']
+                break
+
+        return jsonify({
+            'success': True,
+            'current_subtitle': current_subtitle,
+            'subtitles': subtitles  # 可选：返回所有字幕供前端缓存
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# 修改转录接口，保存字幕为JSON文件
 @app.route('/api/transcribe', methods=['POST'])
 def transcribe_video():
     """转录视频为字幕"""
@@ -164,7 +220,6 @@ def transcribe_video():
         if not os.path.exists(video_path):
             return jsonify({'error': '文件不存在'}), 404
 
-        # 创建临时文件
         with tempfile.TemporaryDirectory() as temp_dir:
             # 提取音频
             audio_path = os.path.join(temp_dir, 'audio.wav')
@@ -181,13 +236,19 @@ def transcribe_video():
             vtt_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{base_name}.vtt')
             srt_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{base_name}.srt')
 
+            # 新增：保存JSON格式字幕
+            json_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{base_name}_subtitles.json')
+            with open(json_path, 'w', encoding='utf-8') as f:
+                json.dump(subtitles, f, ensure_ascii=False, indent=2)
+
             if create_webvtt(subtitles, vtt_path) and create_srt(subtitles, srt_path):
                 return jsonify({
                     'success': True,
-                    'subtitles': subtitles,
+                    'subtitles': subtitles,  # 直接返回JSON格式字幕
                     'vtt_url': f'/api/subtitle/{base_name}.vtt',
                     'srt_url': f'/api/subtitle/{base_name}.srt',
                     'video_url': f'/api/video/{filename}',
+                    'json_url': f'/api/subtitle/{base_name}_subtitles.json',
                     'total_segments': len(subtitles)
                 })
             else:
@@ -195,7 +256,6 @@ def transcribe_video():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/api/subtitle/<filename>', methods=['GET'])
 def get_subtitle(filename):
