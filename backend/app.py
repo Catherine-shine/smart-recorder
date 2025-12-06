@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
-from backend.dao.database import init_db
-from backend.routes import api
+from dao.database import init_db
+from routes import api
 
 def create_app():
     app = Flask(__name__)

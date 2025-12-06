@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, send_file, current_app
-from backend.dao.database import get_db_connection
-from backend.utils.subtitle import generate_vtt
-from backend.utils.combine_video import combine_video_with_subtitle
+from dao.database import get_db_connection
+from utils.subtitle import generate_vtt
+from utils.combine_video import combine_video_with_subtitle
 import os
 import hashlib
 import time
@@ -91,7 +91,7 @@ def upload_recording():
             saved_subtitle_path = subtitle_path
             
             # 如果有视频文件，尝试合并字幕
-            video_source = saved_screen_path or saved_webcam_path
+            video_source = saved_screen_path
             if video_source:
                 subtitled_video_path = os.path.join(UPLOAD_FOLDER, f"{hash_id}_subtitled.mp4")
                 if combine_video_with_subtitle(video_source, saved_subtitle_path, subtitled_video_path):
