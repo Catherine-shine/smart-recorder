@@ -8,6 +8,8 @@
 - Vite (构建工具)
 
 ## 项目结构
+
+```text
 src/
 ├── components/ # 组件
 │ ├── whiteboard/ # 白板模块
@@ -21,7 +23,7 @@ src/
 ├── utils/ # 工具函数
 ├── types/ # TS类型定义
 └── assets/ # 静态资源
-
+```
 
 ## 快速开始
 1. `git clone https://github.com/Catherine-shine/smart-recorder`
