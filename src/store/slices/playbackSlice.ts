@@ -134,4 +134,4 @@ export type PlaybackAction = ReturnType<typeof setPlaying>
   | ReturnType<typeof setRecordList>
   | ReturnType<typeof resetPlaybackState>
   | ReturnType<typeof stopPlayback>
-  | ReturnType<typeof togglePlayback>;
+  | ReturnType<typeof togglePlayback>;                                                            

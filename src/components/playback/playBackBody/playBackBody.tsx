@@ -37,11 +37,10 @@ const PlayBackBody: React.FC = () => {
 
     const videoRef = useRef<HTMLVideoElement>(null);
     // 优先使用Redux中保存的视频url，兜底用测试地址（建议替换为本地视频）
-    const videoSrc = playbackUrl || 'https://www.w3school.com.cn/i/movie.mp4';
+    const videoSrc = playbackUrl;
 
     //保存最新的 volume，以在事件处理函数handleMuteToggle中使用
     const volumeRef = useRef(volume);
-    // 当 volume 变化时更新 ref
     useEffect(() => {
       volumeRef.current = volume;
     }, [volume]);
@@ -58,9 +57,16 @@ const PlayBackBody: React.FC = () => {
     const handleLoadedMetadata = () => {
       const video = videoRef.current;
       if (video) {
-        dispatch(setDuration(video.duration));
+        console.log('Loaded metadata:', { duration: video.duration, readyState: video.readyState });
+        // 只有当视频元素提供了有效的duration且大于0时才更新，否则保持Redux中已有的正确值
+        // 避免视频元素返回0时长时覆盖视频列表中设置的正确时长
+        const validDuration = (isNaN(video.duration) || !isFinite(video.duration) || video.duration <= 0) ? undefined : video.duration;
+      
         dispatch(setPlaybackStatus('stopped'));
         dispatch(setVideoLoading(false));
+        if (validDuration !== undefined) {
+          dispatch(setDuration(validDuration));
+        }
       }
     };
     
@@ -86,7 +92,7 @@ const PlayBackBody: React.FC = () => {
       const video = videoRef.current;
       if (video) {
           video.currentTime = 0;
-          setCurrentTime(0);
+          dispatch(setCurrentTime(0));
           dispatch(setPlaybackStatus('stopped'));
           dispatch(setIsPlayEnded(true));
           message.success('视频播放结束！');
@@ -139,8 +145,8 @@ const PlayBackBody: React.FC = () => {
     
       // 音量更新（自定义控件）
       const handleVolumeUpdate = (vol: number) => {
-        setVolume(vol);
-        setIsMuted(vol === 0); // 音量为0时自动静音
+        dispatch(setVolume(vol));
+        dispatch(setIsMuted(vol === 0)); // 音量为0时自动静音
         const video = videoRef.current;
         if (video) {
           video.volume = vol;
@@ -180,7 +186,7 @@ const PlayBackBody: React.FC = () => {
       const handleVideoError = () => {
         const video = videoRef.current;
         if (!video || !video.error) return;
-    
+
         const error = video.error;
         let errorMsg = '视频加载失败';
         // 根据错误码精准提示原因
@@ -204,29 +210,68 @@ const PlayBackBody: React.FC = () => {
         console.error('视频错误详情：', error);
         dispatch(setPlaybackStatus('stopped'));
         dispatch(setVideoLoading(false));
+        // 修复：视频加载失败时不再重置duration为0，因为我们已经从录制数据中知道了正确的时长
+        // 只有当视频源确实无效时（如MEDIA_ERR_SRC_NOT_SUPPORTED）才考虑重置
+        if (error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+          dispatch(setDuration(0));
+        }
       };
       
 
       /////////////////////////////////////
       useEffect(() => {
           const video = videoRef.current;
-          if (!video) return;
+          if (!video) {
+            console.log('Video element not found');
+            return;
+          }
+          console.log('Video element initialized:', video);
+          console.log('Current videoSrc:', videoSrc);
+          console.log('Current playbackUrl:', playbackUrl);
       
          
           const eventHandlers = {
-            timeupdate: handleTimeUpdate,
-            loadedmetadata: handleLoadedMetadata,
-            ended: handleVideoEnded,
-            volumechange: handleVolumeChange,
-            error: handleVideoError,
-            loadstart: () => dispatch(setVideoLoading(true)),
-            canplay: () => dispatch(setVideoLoading(false)),
-            waiting: () => dispatch(setVideoLoading(true)),
-            playing: () => dispatch(setVideoLoading(false)),
+            timeupdate: () => {
+              console.log('timeupdate event triggered');
+              handleTimeUpdate();
+            },
+            loadedmetadata: () => {
+              console.log('loadedmetadata event triggered');
+              handleLoadedMetadata();
+            },
+            ended: () => {
+              console.log('ended event triggered');
+              handleVideoEnded();
+            },
+            volumechange: () => {
+              console.log('volumechange event triggered');
+              handleVolumeChange();
+            },
+            error: (e: Event) => {
+              console.log('error event triggered:', e);
+              handleVideoError();
+            },
+            loadstart: () => {
+              console.log('loadstart event triggered');
+              dispatch(setVideoLoading(true));
+            },
+            canplay: () => {
+              console.log('canplay event triggered');
+              dispatch(setVideoLoading(false));
+            },
+            waiting: () => {
+              console.log('waiting event triggered');
+              dispatch(setVideoLoading(true));
+            },
+            playing: () => {
+              console.log('playing event triggered');
+              dispatch(setVideoLoading(false));
+            },
           };
       
           // 绑定事件
           Object.entries(eventHandlers).forEach(([event, handler]) => {
+            console.log('Adding event listener:', event);
             video.addEventListener(event, handler);
           });
       
@@ -237,19 +282,44 @@ const PlayBackBody: React.FC = () => {
       
           // 视频源变化时重新加载
           if (video.src !== videoSrc) {
+            console.log('Video source changed, loading new video:', videoSrc);
+            console.log('Old video src:', video.src);
             video.src = videoSrc;
-            video.load(); // 手动触发加载
+            
+            // 当videoSrc为空时，重置视频状态
+            if (!videoSrc) {
+              console.log('Video source is empty, resetting video state');
+              video.pause();
+              dispatch(setCurrentTime(0));
+              dispatch(setDuration(0));
+              dispatch(setPlaybackStatus('stopped'));
+              dispatch(setVideoLoading(false));
+              dispatch(setIsPlayEnded(false));
+            } else {
+              video.load(); // 手动触发加载
+            }
+          } else {
+            console.log('Video source is the same, checking ready state:', video.readyState);
+            if (video.readyState >= 2) {
+              console.log('Video already has metadata, checking duration:', video.duration);
+              // 只有当视频元素提供了有效的duration且大于0时才更新，否则保持Redux中已有的正确值
+              const validDuration = (isNaN(video.duration) || !isFinite(video.duration) || video.duration <= 0) ? undefined : video.duration;
+              if (validDuration !== undefined) {
+                dispatch(setDuration(validDuration));
+              }
+            } else {
+              console.log('Video ready state is insufficient, forcing load...');
+              video.load(); // 强制重新加载
+            }
           }
       
-          // 组件卸载/依赖变化时解绑事件+释放资源
+          // 组件卸载/依赖变化时解绑事件
           return () => {
             Object.entries(eventHandlers).forEach(([event, handler]) => {
               video.removeEventListener(event, handler);
             });
-            // 释放Blob URL（防止内存泄漏）
-            if (playbackUrl && playbackUrl.startsWith('blob:')) {
-              URL.revokeObjectURL(playbackUrl);
-            }
+            // 注意：不要在playBackBody中释放Blob URL，因为它可能被playBackList使用
+            // Blob URL的释放应该由创建它的组件（playBackList）负责
           };
       }, [playbackUrl, playbackRate, volume, isMuted, videoSrc]); 
 
@@ -308,8 +378,6 @@ const PlayBackBody: React.FC = () => {
 
                   <Col xs={24} sm={24} md={15} className="progress-bar-container">
                     <ProgressBar
-                      currentTime={currentTime}
-                      duration={duration}
                       onChange={handleProgressChange}
                     />
                   </Col>

@@ -14,7 +14,7 @@ export interface PlaybackVideoItem {
   id: string; // 唯一标识
   title: string; // 视频标题
   url: string; // 播放地址
-  duration?: number; // 视频时长（秒），可选
+  duration: number; // 视频时长（秒），可选
   createTime?: string; // 录制时间，可选
   isLocalRecord?: boolean;
 }

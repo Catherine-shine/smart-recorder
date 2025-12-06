@@ -77,13 +77,15 @@ const WhiteboardPlayback: React.FC<WhiteboardPlaybackProps> = ({
           回放白板
         </Title>
       }
-      headStyle={{
-        // 动态样式：依赖isDarkMode，保留内联
-        borderBottom: isDarkMode ? '1px solid #374151' : '1px solid #e5e6eb',
-        backgroundColor: isDarkMode ? 'rgba(45, 55, 72, 0.95)' : 'rgba(255, 255, 255, 0.95)'
-      }}
-      bodyStyle={{
-        // 已提取到CSS类，此处可清空（或保留覆盖）
+      styles={{
+        // 动态样式：依赖isDarkMode，使用新的styles属性
+        header: {
+          borderBottom: isDarkMode ? '1px solid #374151' : '1px solid #e5e6eb',
+          backgroundColor: isDarkMode ? 'rgba(45, 55, 72, 0.95)' : 'rgba(255, 255, 255, 0.95)'
+        },
+        body: {
+          // 已提取到CSS类，此处可清空（或保留覆盖）
+        }
       }}
     >
       <div className="whiteboard-playback-content">
