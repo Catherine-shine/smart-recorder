@@ -7,8 +7,15 @@ import rootReducer from './rootReducer';
 // 🔴 创建 Store 实例
 export const store = configureStore({
   reducer: rootReducer, // 直接使用聚合后的根 Reducer
-  // 可选：配置中间件、devTools 等
-  // middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
+  // 配置中间件，忽略Blob对象的非序列化警告
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+    serializableCheck: {
+      // 忽略特定路径下的非序列化值
+      ignoredPaths: ['recording.collectedData.videoBlob'],
+      // 忽略特定action中的非序列化值
+      ignoredActions: ['recording/collectData'],
+    },
+  }),
 });
 
 // 🔴 推导全局核心类型（与之前逻辑一致，仅依赖 rootReducer）

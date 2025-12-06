@@ -36,7 +36,7 @@ const ControlPanel: React.FC = () => {
   const formatDuration = (ms: number | null) => {
     if (!ms) return '00:00';
     const seconds = Math.floor((ms / 1000) % 60);
-    const minutes = Math.floor((ms / 1000 / 60) % 60);
+    const minutes = Math.floor(ms / 1000 / 60); // 去掉% 60，这样可以处理超过60分钟的情况
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 

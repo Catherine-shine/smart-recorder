@@ -57,7 +57,9 @@ export const recordingSlice = createSlice({
     startRecording: (state) => {
       state.status = RECORDING_STATUS.RECORDING;
       state.startTime = Date.now();
+      console.log('录制开始时间:', state.startTime);
       state.pauseDuration = 0;
+      console.log('初始暂停时长:', state.pauseDuration);
       state.lastPauseTime = null;
       // 开始录制时清空历史收集数据（可选，根据业务需求）
       state.collectedData = initialState.collectedData;
@@ -68,6 +70,7 @@ export const recordingSlice = createSlice({
       if (state.status === RECORDING_STATUS.RECORDING) {
         state.status = RECORDING_STATUS.PAUSED;
         state.lastPauseTime = Date.now();
+        console.log('暂停时间:', state.lastPauseTime);
       }
     },
     
@@ -75,7 +78,9 @@ export const recordingSlice = createSlice({
     resumeRecording: (state) => {
       if (state.status === RECORDING_STATUS.PAUSED && state.lastPauseTime) {
         state.status = RECORDING_STATUS.RECORDING;
-        state.pauseDuration += Date.now() - state.lastPauseTime;
+        const currentPauseDuration = Date.now() - state.lastPauseTime;
+        state.pauseDuration += currentPauseDuration;
+        console.log('本次暂停时长:', currentPauseDuration, '累计暂停时长:', state.pauseDuration);
         state.lastPauseTime = null;
       }
     },
@@ -85,8 +90,14 @@ export const recordingSlice = createSlice({
       state.status = RECORDING_STATUS.NOT_RECORDING;
       if (state.startTime) {
         const endTime = Date.now();
+        console.log('录制结束时间:', endTime);
+        console.log('总时长(结束-开始):', endTime - state.startTime);
+        console.log('累计暂停时长:', state.pauseDuration);
         const totalDuration = endTime - state.startTime - state.pauseDuration;
-        state.lastRecordingDuration = totalDuration;
+        console.log('计算的录制时长:', totalDuration);
+        state.lastRecordingDuration = totalDuration ;
+        // 关键修复：重置startTime，防止endRecording被多次调用时重复计算时长
+        state.startTime = null;
       }
       state.lastPauseTime = null;
     },
