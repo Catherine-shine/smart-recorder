@@ -1,0 +1,12 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "backend of smart-recorder"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "ffmpeg-python>=0.2.0",
+    "flask",
+    "flask-cors",
+    "openai-whisper>=20250625",
+]
