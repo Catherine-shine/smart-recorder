@@ -24,6 +24,10 @@ def init_db():
             id TEXT PRIMARY KEY,
             trajectory_path TEXT,
             audio_path TEXT,
+            screen_recording_path TEXT,
+            webcam_recording_path TEXT,
+            subtitle_path TEXT,
+            subtitled_video_path TEXT,
             created_at INTEGER
         )
     ''')
