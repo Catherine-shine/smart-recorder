@@ -3,10 +3,10 @@
 /* 1. 工作区网格布局 - 确保使用grid布局而非flex */
 .workspace-grid {
   display: grid !important;
-  grid-template-columns: 5fr 1fr !important;
-  gap: 16px !important;
+  grid-template-columns: 4fr 1fr !important;
+  gap: 24px !important;
   height: calc(100vh - 70px) !important;
-  padding: 16px !important;
+  padding: 24px !important;
   overflow: hidden !important;
 }
 
@@ -21,10 +21,10 @@
 .video-section {
   display: flex;
   flex-direction: column;
-  gap: 16px !important;
+  gap: 20px !important;
   height: 100%;
-  width: 200px;
-  padding: 0 16px 16px 16px;
+  width: 100%;
+  padding: 0;
 }
 
 /* 4. 确保Card内容正确填充白板区域 */
@@ -32,6 +32,7 @@
   width: 100% !important;
   height: 100% !important;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 /* 5. 优化tldraw编辑器样式，确保与页面布局兼容 */

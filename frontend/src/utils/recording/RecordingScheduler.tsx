@@ -102,9 +102,56 @@ globalMediaRecorderRef.recordedBlobs = [];
         audio: true, // 可选：录制系统音频
       } as MediaStreamConstraints);
 
+      // 3. 检查是否有可用的摄像头流
+      let webcamStream = null;
+      let webcamBlob = null;
+      let webcamRecorder = null;
+      let webcamBlobs: BlobPart[] = [];
+      
+      try {
+        // 尝试获取摄像头流（如果用户已授权）
+        const cameraConstraints: MediaStreamConstraints = {
+          video: true,
+          audio: false // 不重复获取音频
+        };
+        
+        webcamStream = await navigator.mediaDevices.getUserMedia(cameraConstraints);
+        console.log('摄像头流获取成功');
+        
+        // 为摄像头流创建独立的MediaRecorder - 与屏幕录制使用相同的自动格式检测
+        // 检查浏览器支持的视频格式
+        const videoTypes = ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm', 'video/mp4'];
+        let webcamSelectedMimeType = 'video/webm;codecs=vp8'; // 默认值
+        
+        // 选择第一个支持的格式
+        for (const type of videoTypes) {
+          if (MediaRecorder.isTypeSupported(type)) {
+            webcamSelectedMimeType = type;
+            break;
+          }
+        }
+        
+        console.log('Selected webcam video MIME type:', webcamSelectedMimeType);
+        
+        webcamRecorder = new MediaRecorder(webcamStream, {
+          mimeType: webcamSelectedMimeType,
+        });
+        
+        webcamRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            webcamBlobs.push(e.data);
+          }
+        };
+        
+        webcamRecorder.start(1000);
+        console.log('摄像头录制已启动');
+      } catch (webcamError) {
+        console.log('未启用摄像头或获取失败:', webcamError);
+      }
+
       globalMediaRecorderRef.stream = captureStream;
 
-      // 3. 创建MediaRecorder实例 - 自动选择浏览器支持的最佳视频格式
+      // 4. 创建MediaRecorder实例 - 自动选择浏览器支持的最佳视频格式
       // 检查浏览器支持的视频格式
       const videoTypes = ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm', 'video/mp4'];
       let selectedMimeType = 'video/webm'; // 默认值
@@ -125,17 +172,17 @@ globalMediaRecorderRef.recordedBlobs = [];
       globalMediaRecorderRef.instance = recorder;
       globalMediaRecorderRef.recordedBlobs = [];
       
-      // 4. 触发Redux开始录制Action - 只有在成功创建MediaRecorder实例后才设置开始时间
+      // 5. 触发Redux开始录制Action - 只有在成功创建MediaRecorder实例后才设置开始时间
       dispatch(startRecording());
 
-      // 5. 监听视频分片数据
+      // 6. 监听视频分片数据
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           globalMediaRecorderRef.recordedBlobs.push(e.data);
         }
       };
 
-      // 6. 录制结束时：收集完整视频Blob到Redux
+      // 7. 录制结束时：收集完整视频Blob到Redux
         recorder.onstop = async () => {
         if (globalMediaRecorderRef.recordedBlobs.length === 0) {
           console.error('No video data recorded!');
@@ -154,6 +201,29 @@ globalMediaRecorderRef.recordedBlobs = [];
         console.log('Created video blob:', videoBlob);
         console.log('Blob size:', videoBlob.size);
         console.log('Blob type:', videoBlob.type);
+        
+        // 停止摄像头录制（如果已启动）
+        let webcamRecording = null;
+        if (webcamRecorder) {
+          webcamRecorder.stop();
+          
+          // 等待摄像头录制数据可用
+          await new Promise(resolve => {
+            if (webcamBlobs.length > 0) {
+              resolve(null);
+            } else {
+              webcamRecorder.onstop = () => resolve(null);
+            }
+          });
+          
+          // 使用与摄像头录制时相同的MIME类型创建Blob（与屏幕录制保持一致）
+          if (webcamBlobs.length > 0) {
+            webcamRecording = new Blob(webcamBlobs, { type: webcamRecorder.mimeType });
+            console.log('Created webcam blob:', webcamRecording);
+            console.log('Webcam blob size:', webcamRecording.size);
+            console.log('Webcam blob type:', webcamRecording.type);
+          }
+        }
         
         // 将视频Blob存入Redux
         dispatch(collectData({ type: 'video', data: videoBlob }));
@@ -183,7 +253,9 @@ globalMediaRecorderRef.recordedBlobs = [];
               mouseData: collectedData.mouseData
             })], { type: 'application/json' }),
             // 设置录屏文件
-            screen_recording: videoBlob
+            screen_recording: videoBlob,
+            // 设置摄像头录制文件（如果有）
+            webcam_recording: webcamRecording
           };
           
           console.log('开始上传录屏数据...');
@@ -191,15 +263,26 @@ globalMediaRecorderRef.recordedBlobs = [];
           formDataForUpload.append('audio', formData.audio, 'audio.webm');
           formDataForUpload.append('trajectory', formData.trajectory, 'trajectory.json');
           formDataForUpload.append('screen_recording', formData.screen_recording, 'screen_recording.webm');
+          
+          // 如果有摄像头录制文件，添加到表单
+          if (formData.webcam_recording) {
+            formDataForUpload.append('webcam_recording', formData.webcam_recording, 'webcam_recording.webm');
+          }
 
           const response = await uploadRecording({
             audio: new File([formData.audio], 'audio.webm', { type: formData.audio.type }),
             trajectory: new File([formData.trajectory], 'trajectory.json', { type: formData.trajectory.type }),
-            screen_recording: new File([formData.screen_recording], 'screen_recording.webm', { type: formData.screen_recording.type })
+            screen_recording: new File([formData.screen_recording], 'screen_recording.webm', { type: formData.screen_recording.type }),
+            webcam_recording: formData.webcam_recording ? new File([formData.webcam_recording], 'webcam_recording.webm', { type: formData.webcam_recording.type }) : undefined
           });
           console.log('录屏数据上传成功！', response);
         } catch (error) {
           console.error('录屏数据上传失败：', error);
+        }
+        
+        // 清理摄像头流
+        if (webcamStream) {
+          webcamStream.getTracks().forEach(track => track.stop());
         }
         
         // 录制结束且数据处理完成后，重置单例状态

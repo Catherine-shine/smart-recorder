@@ -63,21 +63,36 @@ const VideoPreview: React.FC = () => {
     if (isCameraOn) {
       // 关闭摄像头
       if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
+        // 获取所有视频轨道并停止
+        const videoTracks = mediaStream.getTracks().filter(track => track.kind === 'video');
+        videoTracks.forEach(track => track.stop());
+        
+        // 如果有音频轨道且麦克风已开启，保留音频流
+        const audioTracks = mediaStream.getTracks().filter(track => track.kind === 'audio');
+        if (audioTracks.length > 0 && isMicOn) {
+          // 创建一个新的仅包含音频的媒体流
+          const audioStream = new MediaStream(audioTracks);
+          setMediaStream(audioStream);
+        } else {
+          // 如果没有音频轨道或麦克风已关闭，完全停止流
+          if (!isMicOn) {
+            audioTracks.forEach(track => track.stop());
+            setMediaStream(null);
+          }
+        }
       }
-      setMediaStream(null);
       setIsCameraOn(false);
-      setIsMicOn(false);
     } else {
       // 开启摄像头
       setIsLoading(true);
       
       try {
+        // 仅请求视频权限
         const constraints: MediaStreamConstraints = {
           video: selectedCamera ? { 
             deviceId: { exact: selectedCamera }
           } : true,
-          audio: selectedMic ? { deviceId: { exact: selectedMic } } : true
+          audio: false // 不自动请求音频
         };
         
         console.log('获取媒体流，约束:', constraints);
@@ -85,10 +100,15 @@ const VideoPreview: React.FC = () => {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         console.log('媒体流获取成功，轨道:', stream.getTracks().map(t => t.kind));
         
+        // 如果麦克风已开启，添加音频轨道
+        if (isMicOn && mediaStream) {
+          const audioTracks = mediaStream.getTracks().filter(track => track.kind === 'audio');
+          audioTracks.forEach(track => stream.addTrack(track));
+        }
+        
         // 使用setState触发useEffect更新
         setMediaStream(stream);
         setIsCameraOn(true);
-        setIsMicOn(true);
         
       } catch (error) {
         console.error('开启摄像头失败:', error);
@@ -100,15 +120,62 @@ const VideoPreview: React.FC = () => {
   };
 
   // 4. 切换麦克风
-  const toggleMicrophone = () => {
-    if (!mediaStream) return;
+  const toggleMicrophone = async () => {
+    if (isLoading) return;
     
-    const audioTracks = mediaStream.getAudioTracks();
-    if (audioTracks.length > 0) {
-      audioTracks.forEach(track => {
-        track.enabled = !isMicOn;
-      });
-      setIsMicOn(!isMicOn);
+    // 如果摄像头已开启，直接使用现有的mediaStream
+    if (isCameraOn && mediaStream) {
+      const audioTracks = mediaStream.getAudioTracks();
+      
+      if (audioTracks.length > 0) {
+        // 如果已经有音频轨道，移除它
+        audioTracks.forEach(track => {
+          mediaStream!.removeTrack(track);
+          track.stop();
+        });
+        setIsMicOn(false);
+      } else {
+        // 如果没有音频轨道，添加一个
+        try {
+          const audioConstraints: MediaStreamConstraints = {
+            video: false,
+            audio: selectedMic ? { deviceId: { exact: selectedMic } } : true
+          };
+          
+          const audioStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+          const newAudioTrack = audioStream.getAudioTracks()[0];
+          
+          // 添加音频轨道到现有的媒体流
+          mediaStream.addTrack(newAudioTrack);
+          setIsMicOn(true);
+        } catch (error) {
+          console.error('开启麦克风失败:', error);
+          alert(`无法访问麦克风: ${error instanceof Error ? error.message : '未知错误'}`);
+        }
+      }
+    } else {
+      // 如果摄像头未开启，创建一个独立的音频流
+      if (mediaStream && !isCameraOn) {
+        // 如果已有纯音频流，关闭它
+        mediaStream.getTracks().forEach(track => track.stop());
+        setMediaStream(null);
+        setIsMicOn(false);
+      } else {
+        // 如果没有音频流，创建一个新的
+        try {
+          const audioConstraints: MediaStreamConstraints = {
+            video: false,
+            audio: selectedMic ? { deviceId: { exact: selectedMic } } : true
+          };
+          
+          const audioStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+          setMediaStream(audioStream);
+          setIsMicOn(true);
+        } catch (error) {
+          console.error('开启麦克风失败:', error);
+          alert(`无法访问麦克风: ${error instanceof Error ? error.message : '未知错误'}`);
+        }
+      }
     }
   };
 
@@ -208,7 +275,8 @@ const VideoPreview: React.FC = () => {
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: '16px',
-        minHeight: '250px',
+        minHeight: '180px',
+        maxHeight: '200px',
         position: 'relative'
       }}>
         {isLoading ? (
@@ -251,20 +319,20 @@ const VideoPreview: React.FC = () => {
           type={isCameraOn ? 'default' : 'primary'}
           icon={<CameraOutlined />}
           onClick={toggleCamera}
-          style={{ minWidth: '140px' }}
+          style={{ minWidth: '120px' }}
           loading={isLoading}
         >
-          {isCameraOn ? '关闭摄像头' : isLoading ? '启动中...' : '开启摄像头'}
+          {isCameraOn ? '关闭摄像头' : isLoading ? '启动中...' : '摄像头'}
         </Button>
         
         <Button
           type={isMicOn ? 'primary' : 'default'}
           icon={isMicOn ? <AudioOutlined /> : <AudioMutedOutlined />}
           onClick={toggleMicrophone}
-          disabled={!isCameraOn || isLoading}
-          style={{ minWidth: '140px' }}
+          disabled={isLoading}
+          style={{ minWidth: '120px' }}
         >
-          {isMicOn ? '关闭麦克风' : '开启麦克风'}
+          {isMicOn ? '关闭麦克风' : '麦克风'}
         </Button>
       </Space>
 
