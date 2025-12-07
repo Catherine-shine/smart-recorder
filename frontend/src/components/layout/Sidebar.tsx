@@ -72,7 +72,7 @@ const Sidebar: React.FC = () => {
       }}
     >
       <Space 
-        direction="vertical" 
+        orientation="vertical" 
         size="large" 
         style={{ 
           width: '100%', 

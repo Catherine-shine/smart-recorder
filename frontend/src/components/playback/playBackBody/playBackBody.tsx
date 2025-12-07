@@ -16,7 +16,7 @@ import type { PlayStatus } from '../../../types/playback/playbackbody';
 import ProgressBar from './progressBar/progressBar';
 import VolumeControl from './volumeControl/volumeControl';
 import PlaybackRate from './playBackRate/playBackRate';
-import { Card, Row, Col, message, Spin } from 'antd';
+import { Card, Row, Col, message, Spin, Typography } from 'antd';
 import React, { useRef, useEffect, useState } from "react";
 import './index.css';
 
@@ -33,6 +33,7 @@ const PlayBackBody: React.FC = () => {
       playbackRate,
       isPlayEnded,
       videoLoading,
+      currentVideo,
     } = useSelector((state: RootState) => state.playback);
 
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -352,6 +353,65 @@ const PlayBackBody: React.FC = () => {
                   </video>
                 
               </div>
+
+              {/* 下载链接区域 - 对所有视频显示 */}
+              {playbackUrl && (
+                <div className="download-links-container" style={{ marginTop: '16px' }}>
+                    <Typography.Text strong>下载链接：</Typography.Text>
+                    {/* 对于本地视频，显示基本的视频文件下载链接 */}
+                    {(!currentVideo || !currentVideo.hashid) && (
+                      <a 
+                        href={playbackUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ marginRight: '16px' }}
+                        download
+                      >
+                        视频文件
+                      </a>
+                    )}
+                    {/* 对于后端视频，显示完整的下载链接 */}
+                    {currentVideo && currentVideo.hashid && (
+                      <>
+                        <a 
+                          href={`/api/recordings/${currentVideo.hashid}/subtitled-video`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ marginRight: '16px' }}
+                          download
+                        >
+                          带字幕视频
+                        </a>
+                        <a 
+                          href={`/api/recordings/${currentVideo.hashid}/screen`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ marginRight: '16px' }}
+                          download
+                        >
+                          屏幕录制
+                        </a>
+                        <a 
+                          href={`/api/recordings/${currentVideo.hashid}/webcam`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ marginRight: '16px' }}
+                          download
+                        >
+                          摄像头录制
+                        </a>
+                        <a 
+                          href={`/api/recordings/${currentVideo.hashid}/audio`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          download
+                        >
+                          音频文件
+                        </a>
+                      </>
+                    )}
+                </div>
+              )}
 
               {/* 控制栏容器 */}
               <div className="playback-controls-parent">

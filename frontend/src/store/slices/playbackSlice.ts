@@ -18,6 +18,7 @@ export interface PlaybackState {
   videoLoading: boolean;
   captions:caption[],        // 新增：字幕数组
   currentCaption:string,  // 新增：当前显示的字幕文本
+  currentVideo: PlaybackVideoItem | null; // 新增：当前播放的视频信息
 }
 
 // 2. 初始状态
@@ -35,7 +36,8 @@ const initialState: PlaybackState = {
   videoLoading: false,
   captions:[],        // 新增：字幕数组
   currentCaption:'',  // 新增：当前显示的字幕文本
-};
+  currentVideo: null, // 新增：当前播放的视频信息
+}
 
 // 3. 创建切片
 const playbackSlice = createSlice({
@@ -93,6 +95,11 @@ const playbackSlice = createSlice({
       state.isPlaying = false;
       state.isPlayEnded = false;
     },
+    // 设置当前播放的视频
+    setCurrentVideo: (state, action: PayloadAction<PlaybackVideoItem | null>) => {
+      state.currentVideo = action.payload;
+    },
+    
     // 播放/暂停切换
     togglePlayback: (state) => {
       if (state.status === 'playing') {
@@ -135,7 +142,8 @@ export const {
   stopPlayback,
   togglePlayback,
   setCaptions,
-  setCurrentCaption
+  setCurrentCaption,
+  setCurrentVideo
 } = playbackSlice.actions;
 
 // 导出切片 Reducer（供 rootReducer 聚合）
@@ -155,4 +163,5 @@ export type PlaybackAction = ReturnType<typeof setPlaying>
   | ReturnType<typeof setRecordList>
   | ReturnType<typeof resetPlaybackState>
   | ReturnType<typeof stopPlayback>
-  | ReturnType<typeof togglePlayback>;                                                            
+  | ReturnType<typeof togglePlayback>
+  | ReturnType<typeof setCurrentVideo>;                                                            

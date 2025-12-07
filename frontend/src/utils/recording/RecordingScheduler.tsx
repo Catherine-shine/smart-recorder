@@ -12,6 +12,7 @@ import {
   selectCollectedData,
 } from '../../store/slices/recordingSlice';
 import { RECORDING_STATUS } from '../../types/common';
+import { uploadRecording } from '../../api/recording';
 
 // 全局单例引用，确保只有一个MediaRecorder实例在运行
 const globalMediaRecorderRef = {
@@ -53,7 +54,7 @@ globalMediaRecorderRef.recordedBlobs = [];
     };
 
     // 录制结束时：收集完整视频Blob到Redux
-    recorder.onstop = () => {
+        recorder.onstop = async () => {
       if (globalMediaRecorderRef.recordedBlobs.length === 0) return;
       const blob = new Blob(globalMediaRecorderRef.recordedBlobs, { type: mimeType });
       // 将视频Blob存入Redux
@@ -135,7 +136,7 @@ globalMediaRecorderRef.recordedBlobs = [];
       };
 
       // 6. 录制结束时：收集完整视频Blob到Redux
-      recorder.onstop = () => {
+        recorder.onstop = async () => {
         if (globalMediaRecorderRef.recordedBlobs.length === 0) {
           console.error('No video data recorded!');
           // 录制失败时重置状态
@@ -169,6 +170,37 @@ globalMediaRecorderRef.recordedBlobs = [];
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         }, 100);
+        
+        // 上传录屏数据至后端
+        try {
+          // 构建上传表单数据
+          const formData = {
+            // 由于当前只录制视频，我们创建一个空的音频文件
+            audio: new Blob([''], { type: 'audio/webm' }),
+            // 创建轨迹文件
+            trajectory: new Blob([JSON.stringify({
+              whiteboardData: collectedData.whiteboardData,
+              mouseData: collectedData.mouseData
+            })], { type: 'application/json' }),
+            // 设置录屏文件
+            screen_recording: videoBlob
+          };
+          
+          console.log('开始上传录屏数据...');
+          const formDataForUpload = new FormData();
+          formDataForUpload.append('audio', formData.audio, 'audio.webm');
+          formDataForUpload.append('trajectory', formData.trajectory, 'trajectory.json');
+          formDataForUpload.append('screen_recording', formData.screen_recording, 'screen_recording.webm');
+
+          const response = await uploadRecording({
+            audio: new File([formData.audio], 'audio.webm', { type: formData.audio.type }),
+            trajectory: new File([formData.trajectory], 'trajectory.json', { type: formData.trajectory.type }),
+            screen_recording: new File([formData.screen_recording], 'screen_recording.webm', { type: formData.screen_recording.type })
+          });
+          console.log('录屏数据上传成功！', response);
+        } catch (error) {
+          console.error('录屏数据上传失败：', error);
+        }
         
         // 录制结束且数据处理完成后，重置单例状态
         globalMediaRecorderRef.instance = null;
