@@ -17,6 +17,7 @@ export interface PlaybackVideoItem {
   duration: number; // 视频时长（秒），可选
   createTime?: string; // 录制时间，可选
   isLocalRecord?: boolean;
+  hashid?: string; // 后端视频的hashid，用于下载链接
 }
 
 export interface PlaybackListProps {
