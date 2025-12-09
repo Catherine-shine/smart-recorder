@@ -89,6 +89,7 @@ const WhiteboardPlayback: React.FC<WhiteboardPlaybackProps> = ({
       }}
     >
       <div className="whiteboard-playback-content">
+        <div className="whiteboard-playback-inner">
         {/* 渲染录制图片（空数组判断） */}
         {images.length > 0 && images.map((img) => (
           <div
@@ -125,6 +126,7 @@ const WhiteboardPlayback: React.FC<WhiteboardPlaybackProps> = ({
             backgroundColor: isDarkMode ? '#2d3748' : '#ffffff'
           }}
         />
+        </div>
       </div>
     </Card>
   );

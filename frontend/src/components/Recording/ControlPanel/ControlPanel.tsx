@@ -20,8 +20,8 @@ const ControlPanel: React.FC = () => {
   const dispatch = useAppDispatch();
   
   // 获取摄像头和麦克风状态
-  const [isCameraOn, setIsCameraOn] = useState(false);
-  const [isMicOn, setIsMicOn] = useState(false);
+  const isCameraOn = useAppSelector(state => state.mediastream.isCameraEnabled);
+  const isMicOn = useAppSelector(state => state.mediastream.isMicrophoneEnabled);
   const [isLoading, setIsLoading] = useState(false);
   
   // 获取最后一次录制时长
@@ -40,7 +40,6 @@ const ControlPanel: React.FC = () => {
           videoTracks.forEach(track => track.stop());
           window.globalMediaRecorderRef.webcamStream = null;
         }
-        setIsCameraOn(false);
         dispatch(setCameraEnabled(false));
       } else {
         // 开启摄像头
@@ -84,7 +83,6 @@ const ControlPanel: React.FC = () => {
           window.globalMediaRecorderRef.webcamInstance.start(1000);
         }
         
-        setIsCameraOn(true);
         dispatch(setCameraEnabled(true));
         // 开启摄像头时自动显示悬浮窗
         dispatch(setCameraPreviewVisible(true));
@@ -110,7 +108,6 @@ const ControlPanel: React.FC = () => {
           audioTracks.forEach(track => track.stop());
           window.globalMediaRecorderRef.audioStream = null;
         }
-        setIsMicOn(false);
         dispatch(setMicrophoneEnabled(false));
       } else {
         // 开启麦克风
@@ -154,7 +151,6 @@ const ControlPanel: React.FC = () => {
           window.globalMediaRecorderRef.audioInstance.start(1000);
         }
         
-        setIsMicOn(true);
         dispatch(setMicrophoneEnabled(true));
       }
     } catch (error) {
