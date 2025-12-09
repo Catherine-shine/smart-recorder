@@ -9,6 +9,7 @@ export interface MediaStreamState {
   isLoading: boolean;
   error: string | null;
   constraints: MediaStreamConstraints;
+  isCameraPreviewVisible: boolean;
 }
 
 // 初始状态
@@ -21,7 +22,8 @@ const initialState: MediaStreamState = {
   constraints: {
     video: true,
     audio: true
-  }
+  },
+  isCameraPreviewVisible: false
 };
 
 export const mediastreamSlice = createSlice({
@@ -58,6 +60,11 @@ export const mediastreamSlice = createSlice({
       state.constraints = action.payload;
     },
     
+    // 设置摄像头预览悬浮窗可见性
+    setCameraPreviewVisible: (state, action: PayloadAction<boolean>) => {
+      state.isCameraPreviewVisible = action.payload;
+    },
+    
     // 重置状态
     resetState: (state) => {
       Object.assign(state, initialState);
@@ -73,6 +80,7 @@ export const {
   setLoading,
   setError,
   setConstraints,
+  setCameraPreviewVisible,
   resetState,
 } = mediastreamSlice.actions;
 

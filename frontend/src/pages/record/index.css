@@ -1,9 +1,9 @@
 /* 保留原有主题变量和基础样式，只保留与白板组件相关的样式 */
 
-/* 1. 工作区网格布局 - 确保使用grid布局而非flex */
+/* 1. 工作区网格布局 - 移除右侧视频预览栏 */
 .workspace-grid {
   display: grid !important;
-  grid-template-columns: 4fr 1fr !important;
+  grid-template-columns: 1fr !important;
   gap: 24px !important;
   height: calc(100vh - 70px) !important;
   padding: 24px !important;
@@ -17,14 +17,22 @@
   overflow: hidden;
 }
 
-/* 3. 视频区域：精简间距，保持同级协调 */
-.video-section {
+/* 3. 控制面板容器：白板标题右侧的水平控制区域 */
+.control-panel-container {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 20px !important;
-  height: 100%;
-  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
   padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* 隐藏视频预览区域的样式 */
+.video-section {
+  display: none;
 }
 
 /* 4. 确保Card内容正确填充白板区域 */

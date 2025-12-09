@@ -17,10 +17,19 @@ import { uploadRecording } from '../../api/recording';
 // 全局单例引用，确保只有一个MediaRecorder实例在运行
 const globalMediaRecorderRef = {
   instance: null as MediaRecorder | null,
+  audioInstance: null as MediaRecorder | null,
+  webcamInstance: null as MediaRecorder | null,
   stream: null as MediaStream | null,
+  audioStream: null as MediaStream | null,
+  webcamStream: null as MediaStream | null,
   recordedBlobs: [] as BlobPart[],
+  audioBlobs: [] as BlobPart[],
+  webcamBlobs: [] as BlobPart[],
   isInitialized: false
 };
+
+// 将单例挂载到window对象上，供其他组件访问
+window.globalMediaRecorderRef = globalMediaRecorderRef;
 
 export function useRecordingScheduler() {
   const dispatch = useAppDispatch();
@@ -102,12 +111,48 @@ globalMediaRecorderRef.recordedBlobs = [];
         audio: true, // 可选：录制系统音频
       } as MediaStreamConstraints);
 
-      // 3. 检查是否有可用的摄像头流
-      let webcamStream = null;
-      let webcamBlob = null;
-      let webcamRecorder = null;
-      let webcamBlobs: BlobPart[] = [];
+      // 3. 获取独立的麦克风流（音频）
+      try {
+        // 尝试获取麦克风流（如果用户已授权）
+        const audioConstraints: MediaStreamConstraints = {
+          audio: true
+        };
+        
+        globalMediaRecorderRef.audioStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+        console.log('麦克风流获取成功');
+        
+        // 为麦克风流创建独立的MediaRecorder - 与屏幕录制使用相同的自动格式检测
+        // 检查浏览器支持的音频格式
+        const audioTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp3'];
+        let audioSelectedMimeType = 'audio/webm'; // 默认值
+        
+        // 选择第一个支持的格式
+        for (const type of audioTypes) {
+          if (MediaRecorder.isTypeSupported(type)) {
+            audioSelectedMimeType = type;
+            break;
+          }
+        }
+        
+        console.log('Selected audio MIME type:', audioSelectedMimeType);
+        
+        globalMediaRecorderRef.audioInstance = new MediaRecorder(globalMediaRecorderRef.audioStream, {
+          mimeType: audioSelectedMimeType,
+        });
+        
+        globalMediaRecorderRef.audioInstance.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            globalMediaRecorderRef.audioBlobs.push(e.data);
+          }
+        };
+        
+        globalMediaRecorderRef.audioInstance.start(1000);
+        console.log('麦克风录制已启动');
+      } catch (audioError) {
+        console.log('未启用麦克风或获取失败:', audioError);
+      }
       
+      // 4. 检查是否有可用的摄像头流
       try {
         // 尝试获取摄像头流（如果用户已授权）
         const cameraConstraints: MediaStreamConstraints = {
@@ -115,7 +160,7 @@ globalMediaRecorderRef.recordedBlobs = [];
           audio: false // 不重复获取音频
         };
         
-        webcamStream = await navigator.mediaDevices.getUserMedia(cameraConstraints);
+        globalMediaRecorderRef.webcamStream = await navigator.mediaDevices.getUserMedia(cameraConstraints);
         console.log('摄像头流获取成功');
         
         // 为摄像头流创建独立的MediaRecorder - 与屏幕录制使用相同的自动格式检测
@@ -133,17 +178,17 @@ globalMediaRecorderRef.recordedBlobs = [];
         
         console.log('Selected webcam video MIME type:', webcamSelectedMimeType);
         
-        webcamRecorder = new MediaRecorder(webcamStream, {
+        globalMediaRecorderRef.webcamInstance = new MediaRecorder(globalMediaRecorderRef.webcamStream, {
           mimeType: webcamSelectedMimeType,
         });
         
-        webcamRecorder.ondataavailable = (e) => {
+        globalMediaRecorderRef.webcamInstance.ondataavailable = (e) => {
           if (e.data.size > 0) {
-            webcamBlobs.push(e.data);
+            globalMediaRecorderRef.webcamBlobs.push(e.data);
           }
         };
         
-        webcamRecorder.start(1000);
+        globalMediaRecorderRef.webcamInstance.start(1000);
         console.log('摄像头录制已启动');
       } catch (webcamError) {
         console.log('未启用摄像头或获取失败:', webcamError);
@@ -188,7 +233,11 @@ globalMediaRecorderRef.recordedBlobs = [];
           console.error('No video data recorded!');
           // 录制失败时重置状态
           globalMediaRecorderRef.instance = null;
+          globalMediaRecorderRef.audioInstance = null;
+          globalMediaRecorderRef.webcamInstance = null;
           globalMediaRecorderRef.recordedBlobs = [];
+          globalMediaRecorderRef.audioBlobs = [];
+          globalMediaRecorderRef.webcamBlobs = [];
           globalMediaRecorderRef.isInitialized = false;
           return;
         }
@@ -202,23 +251,46 @@ globalMediaRecorderRef.recordedBlobs = [];
         console.log('Blob size:', videoBlob.size);
         console.log('Blob type:', videoBlob.type);
         
+        // 停止麦克风录制（如果已启动）
+        let audioRecording = null;
+        if (globalMediaRecorderRef.audioInstance) {
+          globalMediaRecorderRef.audioInstance.stop();
+          
+          // 等待麦克风录制数据可用
+          await new Promise(resolve => {
+            if (globalMediaRecorderRef.audioBlobs.length > 0) {
+              resolve(null);
+            } else {
+              globalMediaRecorderRef.audioInstance!.onstop = () => resolve(null);
+            }
+          });
+          
+          // 使用与麦克风录制时相同的MIME类型创建Blob（与屏幕录制保持一致）
+          if (globalMediaRecorderRef.audioBlobs.length > 0) {
+            audioRecording = new Blob(globalMediaRecorderRef.audioBlobs, { type: globalMediaRecorderRef.audioInstance!.mimeType });
+            console.log('Created audio blob:', audioRecording);
+            console.log('Audio blob size:', audioRecording.size);
+            console.log('Audio blob type:', audioRecording.type);
+          }
+        }
+        
         // 停止摄像头录制（如果已启动）
         let webcamRecording = null;
-        if (webcamRecorder) {
-          webcamRecorder.stop();
+        if (globalMediaRecorderRef.webcamInstance) {
+          globalMediaRecorderRef.webcamInstance.stop();
           
           // 等待摄像头录制数据可用
           await new Promise(resolve => {
-            if (webcamBlobs.length > 0) {
+            if (globalMediaRecorderRef.webcamBlobs.length > 0) {
               resolve(null);
             } else {
-              webcamRecorder.onstop = () => resolve(null);
+              globalMediaRecorderRef.webcamInstance!.onstop = () => resolve(null);
             }
           });
           
           // 使用与摄像头录制时相同的MIME类型创建Blob（与屏幕录制保持一致）
-          if (webcamBlobs.length > 0) {
-            webcamRecording = new Blob(webcamBlobs, { type: webcamRecorder.mimeType });
+          if (globalMediaRecorderRef.webcamBlobs.length > 0) {
+            webcamRecording = new Blob(globalMediaRecorderRef.webcamBlobs, { type: globalMediaRecorderRef.webcamInstance!.mimeType });
             console.log('Created webcam blob:', webcamRecording);
             console.log('Webcam blob size:', webcamRecording.size);
             console.log('Webcam blob type:', webcamRecording.type);
@@ -245,8 +317,8 @@ globalMediaRecorderRef.recordedBlobs = [];
         try {
           // 构建上传表单数据
           const formData = {
-            // 由于当前只录制视频，我们创建一个空的音频文件
-            audio: new Blob([''], { type: 'audio/webm' }),
+            // 使用采集到的音频数据（如果有），否则创建空的音频文件
+            audio: audioRecording || new Blob([''], { type: 'audio/webm' }),
             // 创建轨迹文件
             trajectory: new Blob([JSON.stringify({
               whiteboardData: collectedData.whiteboardData,
@@ -280,14 +352,22 @@ globalMediaRecorderRef.recordedBlobs = [];
           console.error('录屏数据上传失败：', error);
         }
         
-        // 清理摄像头流
-        if (webcamStream) {
-          webcamStream.getTracks().forEach(track => track.stop());
+        // 清理所有媒体流
+        if (globalMediaRecorderRef.audioStream) {
+          globalMediaRecorderRef.audioStream.getTracks().forEach(track => track.stop());
+        }
+        
+        if (globalMediaRecorderRef.webcamStream) {
+          globalMediaRecorderRef.webcamStream.getTracks().forEach(track => track.stop());
         }
         
         // 录制结束且数据处理完成后，重置单例状态
         globalMediaRecorderRef.instance = null;
+        globalMediaRecorderRef.audioInstance = null;
+        globalMediaRecorderRef.webcamInstance = null;
         globalMediaRecorderRef.recordedBlobs = [];
+        globalMediaRecorderRef.audioBlobs = [];
+        globalMediaRecorderRef.webcamBlobs = [];
         globalMediaRecorderRef.isInitialized = false;
       };
 
@@ -339,9 +419,17 @@ globalMediaRecorderRef.recordedBlobs = [];
     if (recordingStatus !== RECORDING_STATUS.RECORDING) return;
     // 触发Redux暂停Action
     dispatch(pauseRecording());
-    // 暂停MediaRecorder
+    // 暂停所有MediaRecorder实例
     if (globalMediaRecorderRef.instance?.state === 'recording') {
       globalMediaRecorderRef.instance.pause();
+    }
+    
+    if (globalMediaRecorderRef.audioInstance?.state === 'recording') {
+      globalMediaRecorderRef.audioInstance.pause();
+    }
+    
+    if (globalMediaRecorderRef.webcamInstance?.state === 'recording') {
+      globalMediaRecorderRef.webcamInstance.pause();
     }
   }, [dispatch, recordingStatus]);
 
@@ -352,9 +440,17 @@ globalMediaRecorderRef.recordedBlobs = [];
     if (recordingStatus !== RECORDING_STATUS.PAUSED) return;
     // 触发Redux恢复Action
     dispatch(resumeRecording());
-    // 恢复MediaRecorder
+    // 恢复所有MediaRecorder实例
     if (globalMediaRecorderRef.instance?.state === 'paused') {
       globalMediaRecorderRef.instance.resume();
+    }
+    
+    if (globalMediaRecorderRef.audioInstance?.state === 'paused') {
+      globalMediaRecorderRef.audioInstance.resume();
+    }
+    
+    if (globalMediaRecorderRef.webcamInstance?.state === 'paused') {
+      globalMediaRecorderRef.webcamInstance.resume();
     }
   }, [dispatch, recordingStatus]);
 
@@ -364,13 +460,33 @@ globalMediaRecorderRef.recordedBlobs = [];
     console.log('handleEnd调用次数:', callCountRef.current.end);
     // 触发Redux结束Action
     dispatch(endRecording());
-    // 停止MediaRecorder并释放流
+    // 停止所有MediaRecorder实例
     if (globalMediaRecorderRef.instance?.state !== 'inactive') {
       globalMediaRecorderRef.instance?.stop();
     }
+    
+    if (globalMediaRecorderRef.audioInstance?.state !== 'inactive') {
+      globalMediaRecorderRef.audioInstance?.stop();
+    }
+    
+    if (globalMediaRecorderRef.webcamInstance?.state !== 'inactive') {
+      globalMediaRecorderRef.webcamInstance?.stop();
+    }
+    
+    // 释放所有媒体流
     if (globalMediaRecorderRef.stream) {
       globalMediaRecorderRef.stream.getTracks().forEach(track => track.stop());
       globalMediaRecorderRef.stream = null;
+    }
+    
+    if (globalMediaRecorderRef.audioStream) {
+      globalMediaRecorderRef.audioStream.getTracks().forEach(track => track.stop());
+      globalMediaRecorderRef.audioStream = null;
+    }
+    
+    if (globalMediaRecorderRef.webcamStream) {
+      globalMediaRecorderRef.webcamStream.getTracks().forEach(track => track.stop());
+      globalMediaRecorderRef.webcamStream = null;
     }
     // 注意：不要立即清空recordedBlobs，因为stop()是异步的，需要等待onstop事件处理完成
     // 单例状态的重置将在onstop事件处理程序中完成
