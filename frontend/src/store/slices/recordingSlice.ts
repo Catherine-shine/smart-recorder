@@ -14,6 +14,8 @@ const initialState: RecordingState = {
   lastRecordingDuration: null,
   collectedData: {
     videoBlob: null,
+    audioBlob: null,
+    webcamBlob: null,
     whiteboardData: [],
     mouseData: [],
   },
@@ -106,7 +108,7 @@ export const recordingSlice = createSlice({
     collectData: (
       state, 
       action: PayloadAction<{
-        type: 'video' | 'whiteboard' | 'mouse'; // 数据类型
+        type: 'video' | 'audio' | 'webcam' | 'whiteboard' | 'mouse'; // 数据类型
         data: any; // 对应类型的数据
       }>
     ) => {
@@ -115,6 +117,14 @@ export const recordingSlice = createSlice({
         // 存储视频Blob
         case 'video':
           state.collectedData.videoBlob = data;
+          break;
+        // 存储音频Blob
+        case 'audio':
+          state.collectedData.audioBlob = data;
+          break;
+        // 存储摄像头Blob
+        case 'webcam':
+          state.collectedData.webcamBlob = data;
           break;
         // 追加白板操作数据
         case 'whiteboard':

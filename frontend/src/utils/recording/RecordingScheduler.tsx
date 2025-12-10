@@ -145,7 +145,15 @@ export function useRecordingScheduler() {
       }
       
       // 将视频Blob存入Redux
-      dispatch(collectData({ type: 'video', data: videoBlob }));
+        dispatch(collectData({ type: 'video', data: videoBlob }));
+        // 将音频Blob存入Redux
+        if (audioRecording) {
+          dispatch(collectData({ type: 'audio', data: audioRecording }));
+        }
+        // 将摄像头Blob存入Redux
+        if (webcamRecording) {
+          dispatch(collectData({ type: 'webcam', data: webcamRecording }));
+        }
 
       // 自动下载（可选）
       const url = URL.createObjectURL(videoBlob);
@@ -252,6 +260,7 @@ export function useRecordingScheduler() {
   const handleStart = useCallback(async () => {
     callCountRef.current.start++;
     console.log('handleStart调用次数:', callCountRef.current.start);
+    console.log('开始录制前的状态:', recordingStatus);
 
     try {
       // 如果已经初始化，直接返回
@@ -260,11 +269,11 @@ export function useRecordingScheduler() {
         return;
       }
       
-      // 立即设置初始化标志，防止并发调用时Redux action被执行多次
-      globalMediaRecorderRef.isInitialized = true;
-      
       // 1. 重置录制状态
       dispatch(resetRecordingState());
+      
+      // 设置初始化标志，防止并发调用时Redux action被执行多次
+      globalMediaRecorderRef.isInitialized = true;
       
       // 记录开始时间戳
       const startTime = Date.now();
@@ -315,9 +324,6 @@ export function useRecordingScheduler() {
       globalMediaRecorderRef.instance = recorder;
       globalMediaRecorderRef.recordedBlobs = [];
       
-      // 6. 触发Redux开始录制Action
-      dispatch(startRecording());
-
       // 7. 监听视频分片数据
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
@@ -327,6 +333,10 @@ export function useRecordingScheduler() {
 
       // 8. 开始录制
       recorder.start(1000);
+      
+      // 9. 触发Redux开始录制Action - 确保在recorder.start()之后调用，避免状态更新过早
+      dispatch(startRecording());
+      console.log('Redux状态更新为RECORDING，当前recordingStatus:', RECORDING_STATUS.RECORDING);
 
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : '录屏启动失败：用户拒绝授权或浏览器不支持';
@@ -334,61 +344,92 @@ export function useRecordingScheduler() {
       dispatch(resetRecordingState()); // 失败时重置状态
       cleanupRecording();
     }
-  }, [dispatch]);
+  }, [dispatch, recordingStatus]);
 
   // 暂停录屏
   const handlePause = useCallback(() => {
     callCountRef.current.pause++;
     console.log('handlePause调用次数:', callCountRef.current.pause);
-    if (recordingStatus !== RECORDING_STATUS.RECORDING) return;
+    console.log('调用handlePause时的recordingStatus:', recordingStatus);
     
-    // 触发Redux暂停Action
+    // 触发Redux暂停Action - 无论当前状态如何，都尝试暂停
     dispatch(pauseRecording());
     
-    // 暂停所有MediaRecorder实例
-    if (globalMediaRecorderRef.instance?.state === 'recording') {
-      globalMediaRecorderRef.instance.pause();
+    // 暂停所有MediaRecorder实例 - 移除状态检查，直接尝试暂停
+    try {
+      if (globalMediaRecorderRef.instance) {
+        globalMediaRecorderRef.instance.pause();
+        console.log('暂停屏幕录制成功');
+      }
+    } catch (error) {
+      console.error('暂停屏幕录制失败:', error);
     }
     
-    if (globalMediaRecorderRef.audioInstance?.state === 'recording') {
-      globalMediaRecorderRef.audioInstance.pause();
+    try {
+      if (globalMediaRecorderRef.audioInstance) {
+        globalMediaRecorderRef.audioInstance.pause();
+        console.log('暂停音频录制成功');
+      }
+    } catch (error) {
+      console.error('暂停音频录制失败:', error);
     }
     
-    if (globalMediaRecorderRef.webcamInstance?.state === 'recording') {
-      globalMediaRecorderRef.webcamInstance.pause();
+    try {
+      if (globalMediaRecorderRef.webcamInstance) {
+        globalMediaRecorderRef.webcamInstance.pause();
+        console.log('暂停摄像头录制成功');
+      }
+    } catch (error) {
+      console.error('暂停摄像头录制失败:', error);
     }
     
     // 暂停空白数据生成
     if (globalMediaRecorderRef.blankAudioInterval) {
       clearInterval(globalMediaRecorderRef.blankAudioInterval);
       globalMediaRecorderRef.blankAudioInterval = null;
+      console.log('暂停空白音频数据生成');
     }
     if (globalMediaRecorderRef.blankVideoInterval) {
       clearInterval(globalMediaRecorderRef.blankVideoInterval);
       globalMediaRecorderRef.blankVideoInterval = null;
+      console.log('暂停空白视频数据生成');
     }
-  }, [dispatch, recordingStatus]);
+  }, [dispatch]);
 
   // 恢复录屏
   const handleResume = useCallback(() => {
     callCountRef.current.resume++;
     console.log('handleResume调用次数:', callCountRef.current.resume);
-    if (recordingStatus !== RECORDING_STATUS.PAUSED) return;
     
-    // 触发Redux恢复Action
+    // 触发Redux恢复Action - 无论当前状态如何，都尝试恢复
     dispatch(resumeRecording());
     
-    // 恢复所有MediaRecorder实例
-    if (globalMediaRecorderRef.instance?.state === 'paused') {
-      globalMediaRecorderRef.instance.resume();
+    // 恢复所有MediaRecorder实例 - 移除状态检查，直接尝试恢复
+    try {
+      if (globalMediaRecorderRef.instance) {
+        globalMediaRecorderRef.instance.resume();
+        console.log('恢复屏幕录制成功');
+      }
+    } catch (error) {
+      console.error('恢复屏幕录制失败:', error);
     }
     
-    if (globalMediaRecorderRef.audioInstance?.state === 'paused') {
-      globalMediaRecorderRef.audioInstance.resume();
+    try {
+      if (globalMediaRecorderRef.audioInstance) {
+        globalMediaRecorderRef.audioInstance.resume();
+        console.log('恢复音频录制成功');
+      }
+    } catch (error) {
+      console.error('恢复音频录制失败:', error);
     }
     
-    if (globalMediaRecorderRef.webcamInstance?.state === 'paused') {
-      globalMediaRecorderRef.webcamInstance.resume();
+    try {
+      if (globalMediaRecorderRef.webcamInstance) {
+        globalMediaRecorderRef.webcamInstance.resume();
+        console.log('恢复摄像头录制成功');
+      }
+    } catch (error) {
+      console.error('恢复摄像头录制失败:', error);
     }
     
     // 恢复空白数据生成
@@ -396,13 +437,15 @@ export function useRecordingScheduler() {
       globalMediaRecorderRef.blankAudioInterval = window.setInterval(() => {
         globalMediaRecorderRef.audioBlobs.push(generateBlankAudio());
       }, 1000);
+      console.log('恢复空白音频数据生成');
     }
     if (globalMediaRecorderRef.isCameraMuted && !globalMediaRecorderRef.blankVideoInterval) {
       globalMediaRecorderRef.blankVideoInterval = window.setInterval(() => {
         globalMediaRecorderRef.webcamBlobs.push(generateBlankVideo());
       }, 1000);
+      console.log('恢复空白视频数据生成');
     }
-  }, [dispatch, recordingStatus]);
+  }, [dispatch]);
 
   // 结束录屏
   const handleEnd = useCallback(() => {
@@ -662,8 +705,8 @@ export function useRecordingScheduler() {
   // 组件卸载时清理资源
   useEffect(() => {
     return () => {
-      // 如果录制正在进行，自动结束
-      if (recordingStatus !== RECORDING_STATUS.NOT_RECORDING) {
+      // 只有在录制状态下才自动结束，暂停状态下不自动结束
+      if (recordingStatus === RECORDING_STATUS.RECORDING) {
         handleEnd();
       }
     };

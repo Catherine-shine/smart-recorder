@@ -34,6 +34,8 @@ export interface WhiteboardData {
 /** 采集数据总结构 */
 export interface CollectedData {
   videoBlob: Blob | null;
+  audioBlob: Blob | null;
+  webcamBlob: Blob | null;
   whiteboardData: WhiteboardData[];
   mouseData: MouseData[];
 }
