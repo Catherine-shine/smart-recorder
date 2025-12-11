@@ -1,5 +1,6 @@
+// frontend/src/components/Sidebar/Sidebar.tsx
 import React, { useState } from 'react';
-import { Layout, Space, Tooltip, Modal, Switch, Divider, FloatButton } from 'antd';
+import { Layout, Space, Tooltip, Modal, Switch, Divider } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -8,7 +9,15 @@ import {
   SettingOutlined,
 } from '@ant-design/icons';
 import { setActiveTool } from '../../store/slices/layoutSlice';
+import {
+  setAutoOpenCamera,
+  setAutoOpenMic,
+  setAutoHideToolbar,
+  setToolbarHideDelay,
+  setToolbarHidden
+} from '../../store/slices/settingsSlice';
 import type { RootState } from '../../store';
+import './Sidebar.css';
 
 const { Sider } = Layout;
 
@@ -16,23 +25,43 @@ const Sidebar: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  
   const { activeTool, sidebarCollapsed } = useSelector((state: RootState) => state.layout);
   const { theme } = useSelector((state: RootState) => state.layout);
-  const isDarkMode = theme === 'dark';
+  const { 
+    autoOpenCamera, 
+    autoOpenMic, 
+    autoHideToolbar, 
+    toolbarHideDelay,
+    toolbarHidden,
+  } = useSelector((state: RootState) => state.settings);
   
-  // 浮窗可见状态
+  const isDarkMode = theme === 'dark';
   const [settingsVisible, setSettingsVisible] = useState(false);
-  // 设置项状态
-  const [autoOpenCamera, setAutoOpenCamera] = useState(false);
-  const [autoOpenMic, setAutoOpenMic] = useState(false);
-  const [autoHideToolbar, setAutoHideToolbar] = useState(true);
-  const [toolbarHideDelay, setToolbarHideDelay] = useState(3); // 默认3秒后隐藏
 
-  // 工具配置：只保留 draw、play、settings
+  // 工具配置
   const tools = [
-    { key: 'draw', icon: <EditOutlined />, label: '画笔', path: '/' },
-    { key: 'play', icon: <PlayCircleOutlined />, label: '播放', path: '/playback' },
-    { key: 'settings', icon: <SettingOutlined />, label: '设置', path: null }, // path为null，点击不跳转
+    { 
+      key: 'draw', 
+      icon: <EditOutlined />, 
+      label: '画笔工具',
+      description: '在白板上绘图',
+      path: '/'
+    },
+    { 
+      key: 'play', 
+      icon: <PlayCircleOutlined />, 
+      label: '回放',
+      description: '查看录制内容',
+      path: '/playback'
+    },
+    { 
+      key: 'settings', 
+      icon: <SettingOutlined />, 
+      label: '设置',
+      description: '应用设置',
+      path: null
+    },
   ];
 
   // 路由变化时自动同步激活工具
@@ -49,198 +78,132 @@ const Sidebar: React.FC = () => {
     dispatch(setActiveTool(toolKey));
     
     if (toolKey === 'settings') {
-      // 点击settings显示浮窗，不跳转页面
       setSettingsVisible(true);
     } else if (targetPath) {
-      // 其他工具正常跳转
       navigate(targetPath);
     }
   };
 
   // 设置浮窗内容
   const settingsContent = (
-    <div style={{ padding: '8px 0' }}>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span>进入页面自动打开摄像头</span>
+    <div className="settings-modal-content">
+      <div className="settings-section">
+        <h3 className="settings-section-title">录制设置</h3>
+        <div className="settings-item">
+          <div className="settings-item-label">
+            <span className="label-text">自动开启摄像头</span>
+            <span className="label-description">进入录制页面时自动打开摄像头</span>
+          </div>
           <Switch 
             checked={autoOpenCamera} 
-            onChange={setAutoOpenCamera}
-            size="small"
+            onChange={(checked) => dispatch(setAutoOpenCamera(checked))}
+            className="settings-switch"
           />
         </div>
-        <div style={{ fontSize: 12, color: '#666', fontStyle: 'italic' }}>
-          启用后，进入录制页面将自动开启摄像头
-        </div>
-      </div>
-
-      <Divider style={{ margin: '12px 0' }} />
-
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span>进入页面自动打开麦克风</span>
+        
+        <div className="settings-item">
+          <div className="settings-item-label">
+            <span className="label-text">自动开启麦克风</span>
+            <span className="label-description">进入录制页面时自动打开麦克风</span>
+          </div>
           <Switch 
             checked={autoOpenMic} 
-            onChange={setAutoOpenMic}
-            size="small"
+            onChange={(checked) => dispatch(setAutoOpenMic(checked))}
+            className="settings-switch"
           />
-        </div>
-        <div style={{ fontSize: 12, color: '#666', fontStyle: 'italic' }}>
-          启用后，进入录制页面将自动开启麦克风
         </div>
       </div>
 
-      <Divider style={{ margin: '12px 0' }} />
+      <Divider className="settings-divider" />
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span>自动隐藏工具栏</span>
+      <div className="settings-section">
+        <h3 className="settings-section-title">界面设置</h3>
+        <div className="settings-item">
+          <div className="settings-item-label">
+            <span className="label-text">自动隐藏工具栏</span>
+            <span className="label-description">无操作时自动隐藏侧边栏</span>
+          </div>
           <Switch 
             checked={autoHideToolbar} 
-            onChange={setAutoHideToolbar}
-            size="small"
+            onChange={(checked) => dispatch(setAutoHideToolbar(checked))}
+            className="settings-switch"
           />
         </div>
-        <div style={{ fontSize: 12, color: '#666', fontStyle: 'italic' }}>
-          无操作时工具栏自动收起，点击可重新唤起
-        </div>
-      </div>
-
-      {autoHideToolbar && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ marginBottom: 8 }}>
-            <span style={{ fontSize: 14 }}>隐藏延迟：</span>
-            <span style={{ fontWeight: 'bold', marginLeft: 8 }}>{toolbarHideDelay} 秒</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12 }}>快</span>
+        
+        {autoHideToolbar && (
+          <div className="settings-slider">
+            <div className="slider-header">
+              <span className="slider-label">隐藏延迟</span>
+              <span className="slider-value">{toolbarHideDelay} 秒</span>
+            </div>
             <input
               type="range"
               min="1"
               max="10"
               value={toolbarHideDelay}
-              onChange={(e) => setToolbarHideDelay(parseInt(e.target.value))}
-              style={{ flex: 1, height: 6, borderRadius: 3 }}
+              onChange={(e) => dispatch(setToolbarHideDelay(parseInt(e.target.value)))}
+              className="slider-input"
             />
-            <span style={{ fontSize: 12 }}>慢</span>
+            <div className="slider-labels">
+              <span>快</span>
+              <span>慢</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 
   return (
     <>
       <Sider 
-        className="sidebar" 
-        width={72}
+        className={`sidebar ${isDarkMode ? 'dark' : 'light'} ${toolbarHidden && autoHideToolbar ? 'hidden' : ''}`}
+        width={80}
         collapsed={sidebarCollapsed}
-        theme={isDarkMode ? 'dark' : 'light'}
         style={{
-          background: isDarkMode 
-            ? 'linear-gradient(180deg, #1a1f28 0%, #2d3748 100%)' 
-            : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-          borderRight: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0',
-          boxShadow: isDarkMode 
-            ? '4px 0 20px rgba(0, 0, 0, 0.3)' 
-            : '4px 0 20px rgba(0, 0, 0, 0.08)',
-          borderRadius: '0 20px 20px 0',
-          transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
           height: 'calc(100vh - 70px)',
           position: 'sticky',
           top: 70,
           zIndex: 99,
-          overflow: 'hidden',
-          backdropFilter: 'blur(10px)',
+        }}
+        onMouseEnter={() => {
+          if (toolbarHidden && autoHideToolbar) {
+            dispatch(setToolbarHidden(false));
+          }
         }}
       >
+        {/* 侧边栏头部占位 */}
+        <div className="sidebar-header" />
+        
         <Space 
           orientation="vertical" 
-          size="large" 
-          style={{ 
-            width: '100%', 
-            padding: '32px 0',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 20,
-          }}
+          size={24} 
+          className="sidebar-tools"
         >
           {tools.map(tool => (
             <Tooltip 
               key={tool.key} 
-              title={tool.label} 
+              title={
+                <div className="tooltip-content">
+                  <div className="tooltip-title">{tool.label}</div>
+                  <div className="tooltip-description">{tool.description}</div>
+                </div>
+              }
               placement="right"
-              color={isDarkMode ? '#2d3748' : '#f8fafc'}
-              arrow={{ pointAtCenter: true, style: { color: isDarkMode ? '#374151' : '#e2e8f0' } }}
-              overlayStyle={{ 
-                borderRadius: 10, 
-                boxShadow: isDarkMode 
-                  ? '0 4px 15px rgba(0, 0, 0, 0.3)' 
-                  : '0 4px 15px rgba(0, 0, 0, 0.1)',
-                border: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0',
-                padding: '8px 16px',
-                fontSize: 14,
-              }}
+              color={isDarkMode ? '#1a1a1a' : '#ffffff'}
+              overlayClassName="sidebar-tooltip"
+              mouseEnterDelay={0.3}
             >
-              <div
+              <button
                 className={`tool-button ${activeTool === tool.key ? 'active' : ''}`}
                 onClick={() => handleToolClick(tool.key, tool.path)}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: 64,
-                  width: 64,
-                  cursor: 'pointer',
-                  fontSize: 24,
-                  color: activeTool === tool.key 
-                    ? (isDarkMode ? '#f9fafb' : '#1e293b') 
-                    : (isDarkMode ? '#94a3b8' : '#64748b'),
-                  background: activeTool === tool.key 
-                    ? (isDarkMode 
-                      ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
-                      : 'linear-gradient(135deg, #007bff 0%, #6366f1 100%)')
-                    : 'transparent',
-                  borderRadius: 20,
-                  border: 'none',
-                  transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                  boxShadow: activeTool === tool.key 
-                    ? (isDarkMode 
-                      ? '0 0 20px rgba(59, 130, 246, 0.4)' 
-                      : '0 0 20px rgba(0, 123, 255, 0.3)')
-                    : 'none',
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget;
-                  el.style.color = isDarkMode ? '#f9fafb' : '#1e293b';
-                  el.style.background = isDarkMode 
-                    ? 'rgba(59, 130, 246, 0.2)' 
-                    : 'rgba(0, 123, 255, 0.1)';
-                  el.style.transform = 'scale(1.1)';
-                  el.style.boxShadow = isDarkMode 
-                    ? '0 0 15px rgba(59, 130, 246, 0.2)' 
-                    : '0 0 15px rgba(0, 123, 255, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget;
-                  el.style.color = activeTool === tool.key 
-                    ? (isDarkMode ? '#f9fafb' : '#1e293b') 
-                    : (isDarkMode ? '#94a3b8' : '#64748b');
-                  el.style.background = activeTool === tool.key 
-                    ? (isDarkMode 
-                      ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
-                      : 'linear-gradient(135deg, #007bff 0%, #6366f1 100%)')
-                    : 'transparent';
-                  el.style.transform = 'scale(1)';
-                  el.style.boxShadow = activeTool === tool.key 
-                    ? (isDarkMode 
-                      ? '0 0 20px rgba(59, 130, 246, 0.4)' 
-                      : '0 0 20px rgba(0, 123, 255, 0.3)')
-                    : 'none';
-                }}
+                aria-label={tool.label}
               >
-                {tool.icon}
-              </div>
+                <div className="tool-icon-wrapper">
+                  {tool.icon}
+                </div>
+                <span className="tool-label">{tool.label}</span>
+              </button>
             </Tooltip>
           ))}
         </Space>
@@ -248,22 +211,26 @@ const Sidebar: React.FC = () => {
 
       {/* 设置浮窗 */}
       <Modal
-        title="设置"
+        title={
+          <div className="modal-header">
+            <SettingOutlined className="modal-header-icon" />
+            <span>设置</span>
+          </div>
+        }
         open={settingsVisible}
         onCancel={() => setSettingsVisible(false)}
         footer={null}
-        width={350}
-        style={{ top: 100 }}
-        bodyStyle={{ padding: '20px 24px' }}
+        width={420}
+        className="settings-modal"
         styles={{
           header: { 
-            borderBottom: '1px solid #e8e8e8',
-            marginBottom: 16,
-            paddingBottom: 12 
+            borderBottom: 'none',
+            padding: '20px 24px 0',
+          },
+          body: { 
+            padding: '20px 24px 24px',
           }
         }}
-        maskStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
-        wrapClassName="settings-modal"
       >
         {settingsContent}
       </Modal>
