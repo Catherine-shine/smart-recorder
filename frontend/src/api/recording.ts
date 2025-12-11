@@ -8,6 +8,15 @@ import type {
   RecordingListItem,
 } from '../types/api/apiTypes';
 
+// 联调专用：新增日志打印函数
+const logApi = (api: string, params: any, res: any, err?: any) => {
+  console.log(`[API联调] ${api}`, {
+    参数: params,
+    响应: res,
+    错误: err,
+  });
+};
+
 /**
  * 上传录制数据（生成字幕+合并视频）
  * @param formData 上传的表单数据
@@ -32,14 +41,28 @@ export const uploadRecording = async (form: RecordingUploadForm): Promise<Record
   });
 };
 
+
 /**
  * 获取录制详情
  * @param hashed 录制ID
  * @returns 录制完整信息
  */
 export const getRecordingDetail = async (hashed: RecordingHashed): Promise<RecordingDetailResponse> => {
-  return request.get(`/recordings/${hashed}`);
+  try {
+    const res = await request.get(`/recordings/${hashed}`) as any; 
+    logApi('getRecordingDetail', { hashed }, res);
+    
+    if (!res.trajectory) {
+      console.warn(`[联调警告] 录制${hashed}无轨迹数据`, res);
+    }
+    return res as RecordingDetailResponse;
+  } catch (err) {
+    logApi('getRecordingDetail', { hashed }, null, err);
+    throw err;
+  }
 };
+
+
 
 /**
  * 下载音频文件
@@ -101,5 +124,16 @@ export const downloadRecordingSubtitledVideo = async (hashed: RecordingHashed): 
  * @returns 录制列表
  */
 export const getRecordingList = async (): Promise<RecordingListItem[]> => {
-  return request.get('/recordings');
+  try {
+    const res = await request.get('/recordings'); 
+    logApi('getRecordingList', {}, res);
+    return request.get('/recordings');
+  } catch (err) {
+    logApi('getRecordingList', {}, null, err);
+    throw err;
+  }
 };
+
+// export const getRecordingList = async (): Promise<RecordingListItem[]> => {
+//   return request.get('/recordings');
+// };

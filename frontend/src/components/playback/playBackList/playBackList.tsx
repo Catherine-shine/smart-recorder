@@ -21,14 +21,22 @@ import { formatDuration } from '../../../utils/playback/playback';
 import { v4 as uuidv4 } from 'uuid'; // 需安装：npm install uuid
 import { uploadRecording } from '../../../api/recording';
 import './index.css';
+import { getRecordingList } from '../../../api/recording'; // 按实际路径调整
+import type { RecordingListItem } from '../../../types/api/apiTypes'; // 按实际路径调整
+
 
 const { Text, Title } = Typography;
-
+interface PlaybackListProps {
+  onSelectRecording?: (recordingId: string) => Promise<void>;
+}
 // 初始 Mock 数据
 
 
-const PlaybackList: React.FC = () => {
+const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
   const dispatch = useDispatch();
+  const [list, setList] = useState<RecordingListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [selectedVideoIdProp, setSelectedVideoIdProp] = useState<string | null>(null);
   // 本地视频列表
   const [localVideoList, setLocalVideoList] = useState<PlaybackVideoItem[]>(() => {

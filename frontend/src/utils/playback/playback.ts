@@ -1,6 +1,6 @@
-  export const formatDuration = (seconds?: number) => {//second 参数是可选的,调用函数时可以不传递该参数。
-    if (!seconds) return '未知时长';
-    const min = Math.floor(seconds / 60);
-    const sec = Math.floor(seconds % 60);
-    return `${min}:${sec.toString().padStart(2, '0')}`;//在秒数的开头填充字符0，直到字符串达到2位数
-  };
+export const formatDuration = (seconds?: number) => { // 加?允许undefined
+  if (seconds === undefined || seconds === null || isNaN(seconds)) return '00:00';
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
