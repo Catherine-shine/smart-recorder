@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, send_file, current_app
 from dao.database import get_db_connection
 from utils.subtitle import generate_vtt
-from utils.combine_video import combine_video_with_subtitle
+from utils.combine_video import combine_video_with_subtitle, combine_video_with_audio
 import os
 import hashlib
 import time
@@ -73,8 +73,15 @@ def upload_recording():
 
     if screen_file:
         screen_ext = os.path.splitext(screen_file.filename)[1] if screen_file.filename else '.webm'
-        saved_screen_path = os.path.join(UPLOAD_FOLDER, f"{hash_id}_screen{screen_ext}")
-        screen_file.save(saved_screen_path)
+        # 先保存原始录屏文件
+        raw_screen_path = os.path.join(UPLOAD_FOLDER, f"{hash_id}_screen_raw{screen_ext}")
+        screen_file.save(raw_screen_path)
+        
+        # 合并音频
+        saved_screen_path = os.path.join(UPLOAD_FOLDER, f"{hash_id}_screen.mp4")
+        if not combine_video_with_audio(raw_screen_path, saved_audio_path, saved_screen_path):
+            # 如果合并失败，回退到原始文件
+            saved_screen_path = raw_screen_path
         
     if webcam_file:
         webcam_ext = os.path.splitext(webcam_file.filename)[1] if webcam_file.filename else '.webm'
@@ -93,9 +100,12 @@ def upload_recording():
             # 如果有视频文件，尝试合并字幕
             video_source = saved_screen_path
             if video_source:
-                subtitled_video_path = os.path.join(UPLOAD_FOLDER, f"{hash_id}_subtitled.mp4")
-                if combine_video_with_subtitle(video_source, saved_subtitle_path, subtitled_video_path):
-                    saved_subtitled_video_path = subtitled_video_path
+                temp_subtitled_path = os.path.join(UPLOAD_FOLDER, f"{hash_id}_subtitled_temp.mp4")
+                if combine_video_with_subtitle(video_source, saved_subtitle_path, temp_subtitled_path):
+                    # 字幕合并成功后，再合并音频
+                    saved_subtitled_video_path = os.path.join(UPLOAD_FOLDER, f"{hash_id}_subtitled.mp4")
+                    if not combine_video_with_audio(temp_subtitled_path, saved_audio_path, saved_subtitled_video_path):
+                        saved_subtitled_video_path = temp_subtitled_path
 
     except Exception as e:
         print(f"字幕生成或视频合并失败: {e}")

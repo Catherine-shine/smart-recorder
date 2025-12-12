@@ -48,3 +48,46 @@ def combine_video_with_subtitle(video_path, subtitle_path, output_path):
     except Exception as e:
         print(f"合并视频出错: {str(e)}")
         return False
+
+
+def combine_video_with_audio(video_path, audio_path, output_path):
+    """
+    将音频合并到视频中
+    
+    Args:
+        video_path: 原始视频路径
+        audio_path: 音频文件路径 (.mp3, .wav 等)
+        output_path: 输出视频路径
+    """
+    try:
+        # 转换为绝对路径
+        video_path = os.path.abspath(video_path)
+        audio_path = os.path.abspath(audio_path)
+        output_path = os.path.abspath(output_path)
+
+        print(f"正在合并视频和音频...")
+        print(f"视频源: {video_path}")
+        print(f"音频源: {audio_path}")
+        
+        # 使用 ffmpeg-python 构建流
+        # input: 输入视频和音频
+        # output: 输出文件，覆盖已存在文件
+        # run: 执行命令
+        (
+            ffmpeg
+            .input(video_path)
+            .input(audio_path)
+            .output(output_path, vcodec='copy', acodec='aac', strict='experimental')
+            .overwrite_output()
+            .run(capture_stdout=True, capture_stderr=True)
+        )
+            
+        print("视频音频合并完成")
+        return True
+
+    except ffmpeg.Error as e:
+        print(f"FFmpeg 错误: {e.stderr.decode('utf8')}")
+        return False
+    except Exception as e:
+        print(f"合并视频出错: {str(e)}")
+        return False
