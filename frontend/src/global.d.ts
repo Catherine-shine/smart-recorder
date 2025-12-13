@@ -1,4 +1,4 @@
-// 为全局变量添加类型定义
+// src/types/global.d.ts
 declare global {
   interface Window {
     globalMediaRecorderRef: {
@@ -12,9 +12,18 @@ declare global {
       audioBlobs: BlobPart[];
       webcamBlobs: BlobPart[];
       isInitialized: boolean;
+      startTime: number;
+      endTime: number;
+      isCameraMuted: boolean;
+      isMicMuted: boolean;
+      audioMimeType: string;
+      webcamMimeType: string;
+      audioStateChanges: { timestamp: number; isEnabled: boolean }[];
+      cameraStateChanges: { timestamp: number; isEnabled: boolean }[];
+      whiteboardData: any[];
+      mouseData: { x: number; y: number; timestamp: number }[];
     };
   }
 }
 
-// 确保这个文件被视为模块
 export {};

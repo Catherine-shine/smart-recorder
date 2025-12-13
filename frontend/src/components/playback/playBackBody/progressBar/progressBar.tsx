@@ -1,5 +1,5 @@
-import React from 'react';
-import { Slider, Typography, Space } from 'antd';
+import React, { useState } from 'react';
+import { Slider, Typography, Space, Tooltip } from 'antd';
 import type { SliderProps } from 'antd/es/slider';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../store';
@@ -9,7 +9,6 @@ const { Text } = Typography;
 
 // 格式化时间：秒 -> 分:秒（如 65s -> 1:05）
 const formatTime = (seconds: number): string => {
-  if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
   const min = Math.floor(seconds / 60);
   const sec = Math.floor(seconds % 60);
   return `${min}:${sec.toString().padStart(2, '0')}`;
@@ -25,6 +24,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 }) => {
   // 从Redux获取当前播放时间和总时长
   const { currentTime, duration } = useSelector((state: RootState) => state.playback);
+
   // 进度条拖动处理
   const handleProgressChange: SliderProps['onChange'] = (value) => {
     onChange(Number(value));
@@ -35,25 +35,25 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     onChange(Number(value));
   };
 
-    // 修复：当duration为0、NaN或Infinity时，max设为0，避免数值脱节
-  const sliderMax = Math.max(0, isNaN(duration) || !isFinite(duration) ? 0 : duration);
-  // 修复：当前时间限制在0到sliderMax之间，避免Infinity问题
-  const sliderValue = Math.max(0, Math.min(currentTime, sliderMax));
+  // 自定义tooltip内容
+  const tooltipFormatter = (value?: number) => {
+    return formatTime(value || 0);
+  };
 
   return (
-   <Space orientation="vertical" className="progress-bar-container">
+    <Space orientation="vertical" className="progress-bar-container">
       <Slider
         min={0}
-        max={sliderMax}
-        value={sliderValue}
+        max={duration}
+        value={currentTime}
         onChange={handleProgressChange}
         onAfterChange={handleProgressAfterChange}
-        disabled={sliderMax === 0} // 仅当总时长为0时禁用
+        tooltip={{ formatter: tooltipFormatter }}
         className="progress-bar-slider"
       />
       <Space className="progress-bar-time-wrapper">
-        <Text type="secondary">{formatTime(sliderValue)}</Text>
-        <Text type="secondary">{formatTime(sliderMax)}</Text>
+        <Text type="secondary">{formatTime(currentTime)}</Text>
+        <Text type="secondary">{formatTime(duration)}</Text>
       </Space>
     </Space>
   );

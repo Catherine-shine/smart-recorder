@@ -30,7 +30,11 @@ request.interceptors.request.use(
 // 响应拦截器：统一处理响应/错误
 request.interceptors.response.use(
   (response) => {
-    // 统一处理响应数据（根据后端返回格式调整）
+    // 对于blob类型的响应，返回整个response对象
+    if (response.config.responseType === 'blob') {
+      return response;
+    }
+    // 其他类型响应返回response.data
     return response.data;
   },
   (error: AxiosError) => {

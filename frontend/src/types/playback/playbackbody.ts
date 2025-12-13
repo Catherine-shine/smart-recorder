@@ -1,5 +1,7 @@
 export type PlayStatus = 'playing' | 'paused' | 'stopped';
 
+export type BlobUrlType = string | { video: string; audio: string };
+
 
 export interface PlayButtonProps {
   status: PlayStatus; 

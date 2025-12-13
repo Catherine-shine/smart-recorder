@@ -1,0 +1,48 @@
+.webcam-floating-container {
+  position: fixed;
+  width: 240px;
+  height: 180px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  cursor: move;
+}
+
+.webcam-floating-header {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  cursor: move;
+}
+
+.webcam-floating-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.webcam-floating-content {
+  width: 100%;
+  height: calc(100% - 40px);
+  overflow: hidden;
+}
+
+.webcam-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .webcam-floating-container {
+    width: 180px;
+    height: 135px;
+  }
+}

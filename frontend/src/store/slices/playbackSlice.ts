@@ -1,6 +1,6 @@
 // src/store/slices/playbackSlice.ts
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { PlayStatus, PlaybackVideoItem } from '../../types/playback/playbackbody';
+import type { PlayStatus, PlaybackVideoItem, BlobUrlType } from '../../types/playback/playbackbody';
 import type { caption } from '../../types/playback/caption';
 
 // 1. 定义切片局部状态类型
@@ -10,7 +10,9 @@ export interface PlaybackState {
   duration: number;
   recordList: PlaybackVideoItem[]; // PlaybackVideoItem类型
   status: PlayStatus; // PlayStatus类型
-  playbackUrl: string;
+  playbackUrl: BlobUrlType;
+  webcamUrl: string;
+  audioUrl: string;
   volume: number;
   isMuted: boolean;
   playbackRate: number;
@@ -28,7 +30,9 @@ const initialState: PlaybackState = {
   duration: 0,
   recordList: [],
   status: 'stopped', 
-  playbackUrl: '',
+  playbackUrl: '' as BlobUrlType,
+  webcamUrl: '',
+  audioUrl: '',
   volume: 1,
   isMuted: false,
   playbackRate: 1,
@@ -53,7 +57,7 @@ const playbackSlice = createSlice({
     setDuration: (state, action: PayloadAction<number>) => {
       state.duration = action.payload;
     },
-    setPlaybackUrl: (state, action: PayloadAction<string>) => {
+    setPlaybackUrl: (state, action: PayloadAction<BlobUrlType>) => {
       state.playbackUrl = action.payload;
     },
     setVolume: (state, action: PayloadAction<number>) => {
@@ -84,6 +88,8 @@ const playbackSlice = createSlice({
       state.isPlaying = false;
       state.isPlayEnded = false;
       state.videoLoading = false;
+      state.webcamUrl = '';
+      state.audioUrl = '';
 
       state.captions = [];
       state.currentCaption = '';
@@ -95,10 +101,19 @@ const playbackSlice = createSlice({
       state.isPlaying = false;
       state.isPlayEnded = false;
     },
+    // 设置摄像头URL
+    setWebcamUrl: (state, action: PayloadAction<string>) => {
+      state.webcamUrl = action.payload;
+    },
+    // 设置音频URL
+    setAudioUrl: (state, action: PayloadAction<string>) => {
+      state.audioUrl = action.payload;
+    },
     // 设置当前播放的视频
     setCurrentVideo: (state, action: PayloadAction<PlaybackVideoItem | null>) => {
       state.currentVideo = action.payload;
     },
+    
     
     // 播放/暂停切换
     togglePlayback: (state) => {
@@ -131,6 +146,8 @@ export const {
   setCurrentTime,
   setDuration,
   setPlaybackUrl,
+  setWebcamUrl,
+  setAudioUrl,
   setVolume,
   setIsMuted,
   setPlaybackRate,
@@ -164,4 +181,4 @@ export type PlaybackAction = ReturnType<typeof setPlaying>
   | ReturnType<typeof resetPlaybackState>
   | ReturnType<typeof stopPlayback>
   | ReturnType<typeof togglePlayback>
-  | ReturnType<typeof setCurrentVideo>;                                                            
+  | ReturnType<typeof setCurrentVideo>;

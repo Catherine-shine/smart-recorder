@@ -16,15 +16,19 @@ import type { PlayStatus } from '../../../types/playback/playbackbody';
 import ProgressBar from './progressBar/progressBar';
 import VolumeControl from './volumeControl/volumeControl';
 import PlaybackRate from './playBackRate/playBackRate';
-import { Card, Row, Col, message, Spin, Typography } from 'antd';
+import { Card, Row, Col, Spin, Typography, message } from 'antd';
 import React, { useRef, useEffect, useState } from "react";
+import WebcamFloating from '../webcamFloating/webcamFloating';
 import './index.css';
 
 const PlayBackBody: React.FC = () => {
     const dispatch = useDispatch();
+    const [messageApi, contextHolder] = message.useMessage();
   // 从 Redux 中获取所有状态
     const {
       playbackUrl,
+      webcamUrl,
+      audioUrl,
       status: playStatus,
       volume,
       isMuted,
@@ -37,8 +41,15 @@ const PlayBackBody: React.FC = () => {
     } = useSelector((state: RootState) => state.playback);
 
     const videoRef = useRef<HTMLVideoElement>(null);
+    const webcamRef = useRef<HTMLVideoElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
     // 优先使用Redux中保存的视频url，兜底用测试地址（建议替换为本地视频）
-    const videoSrc = playbackUrl;
+    const videoSrc = (typeof playbackUrl === 'object' && playbackUrl !== null ? playbackUrl.video : playbackUrl) || '';
+    // 从Redux中获取麦克风音频url
+    const audioSrc = audioUrl || '';
+    
+    // 确保videoSrc始终是有效的字符串
+    const safeVideoSrc = videoSrc && videoSrc !== 'about:blank' ? videoSrc : '';
 
     //保存最新的 volume，以在事件处理函数handleMuteToggle中使用
     const volumeRef = useRef(volume);
@@ -54,20 +65,15 @@ const PlayBackBody: React.FC = () => {
       }
     };
     
-    // 视频元数据加载完成（获取总时长）
+    // 视频元数据加载完成（不再从视频元素获取时长，只更新播放状态和加载状态）
     const handleLoadedMetadata = () => {
       const video = videoRef.current;
       if (video) {
         console.log('Loaded metadata:', { duration: video.duration, readyState: video.readyState });
-        // 只有当视频元素提供了有效的duration且大于0时才更新，否则保持Redux中已有的正确值
-        // 避免视频元素返回0时长时覆盖视频列表中设置的正确时长
-        const validDuration = (isNaN(video.duration) || !isFinite(video.duration) || video.duration <= 0) ? undefined : video.duration;
       
         dispatch(setPlaybackStatus('stopped'));
         dispatch(setVideoLoading(false));
-        if (validDuration !== undefined) {
-          dispatch(setDuration(validDuration));
-        }
+        // 不再更新duration，使用后端返回的录屏时长
       }
     };
     
@@ -96,31 +102,51 @@ const PlayBackBody: React.FC = () => {
           dispatch(setCurrentTime(0));
           dispatch(setPlaybackStatus('stopped'));
           dispatch(setIsPlayEnded(true));
-          message.success('视频播放结束！');
+          messageApi.success('视频播放结束！');
       }
     };
     
     // 播放操作（异步处理）
     const handlePlay = () => {
       const video = videoRef.current;
+      
       if (!video) {
-        message.warning('视频播放器尚未加载完成，请稍候！');
+        messageApi.warning('视频播放器尚未加载完成，请稍候！');
         return;
       }
-      video.play()
+      
+      // 验证视频源是否有效
+      if (!safeVideoSrc || safeVideoSrc === 'about:blank') {
+        messageApi.error('视频源无效，请重新选择视频！');
+        return;
+      }
+      
+      const playPromises = [video.play()];
+      // 只有当摄像头元素和有效的摄像头URL都存在时，才尝试播放摄像头视频
+      if (webcamRef.current && webcamUrl && webcamUrl !== '') {
+        playPromises.push(webcamRef.current.play());
+      }
+      // 只有当音频元素和有效的音频URL都存在时，才尝试播放麦克风音频
+      if (audioRef.current && audioSrc && audioSrc !== '') {
+        playPromises.push(audioRef.current.play());
+      }
+      
+      Promise.all(playPromises)
         .then(() => {
           dispatch(setPlaybackStatus('playing'));
           dispatch(setIsPlayEnded(false));
       })
         .catch((err) => {
           console.error('视频播放失败：', err);
-          // 区分自动播放被拦截的情况
+          // 区分不同类型的播放错误
           if (err.name === 'NotAllowedError') {
-            message.error('播放失败：浏览器禁止自动播放带音频的视频，请手动点击播放按钮并确保是首次交互！');
+            messageApi.error('播放失败：浏览器禁止自动播放视频，请手动点击播放按钮并确保是首次交互！');
           } else if (err.name === 'AbortError') {
-            message.error('视频加载被中断，请检查网络或视频源！');
+            messageApi.error('视频加载被中断，请检查网络或视频源！');
+          } else if (err.name === 'NotSupportedError') {
+            messageApi.error('播放失败：视频格式不被支持或源无效！');
           } else {
-            message.error('播放失败，请检查视频源或浏览器权限！');
+            messageApi.error('播放失败，请检查视频源或浏览器权限！');
           }
           dispatch(setPlaybackStatus('stopped'));
         });
@@ -129,139 +155,157 @@ const PlayBackBody: React.FC = () => {
       // 暂停操作
       const handlePause = () => {
         videoRef.current?.pause();
+        webcamRef.current?.pause();
+        audioRef.current?.pause();
         dispatch(setPlaybackStatus('paused'));
       };
     
       // 停止
       const handleStop = () => {
         const video = videoRef.current;
+        const webcam = webcamRef.current;
+        const audio = audioRef.current;
+        
         if (video) {
           video.pause();
           video.currentTime = 0;
-          dispatch(setCurrentTime(0));
         }
+        
+        if (webcam) {
+          webcam.pause();
+          webcam.currentTime = 0;
+        }
+        
+        if (audio) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+        
+        dispatch(setCurrentTime(0));
         dispatch(setPlaybackStatus('stopped'));
         dispatch(setIsPlayEnded(false));
       };
     
-      // 音量更新（自定义控件）
+      // 音量更新（自定义控件） - 只控制麦克风音频音量
       const handleVolumeUpdate = (vol: number) => {
         dispatch(setVolume(vol));
         dispatch(setIsMuted(vol === 0)); // 音量为0时自动静音
-        const video = videoRef.current;
-        if (video) {
-          video.volume = vol;
-          video.muted = vol === 0;
+        const audio = audioRef.current;
+        
+        if (audio) {
+          audio.volume = vol;
+          audio.muted = vol === 0;
         }
       };
     
-      // 静音切换（同步音量状态）
+      // 静音切换（同步音量状态） - 只控制麦克风音频静音
       const handleMuteToggle = () => {
-          const video = videoRef.current;
-          if (!video) return;
+          const audio = audioRef.current;
+          if (!audio) return;
       
           const newisMuted = !isMuted;// 新的静音状态（是/否静音）
           dispatch(setIsMuted(newisMuted));
-          video.muted = newisMuted;
-      
+          
+          if (audio) {
+            audio.muted = newisMuted;
+          }
+          
           // 静音时记录当前音量，取消静音时恢复
           ///////// 2025.12.4优化///////////
            if (!newisMuted) {
-              // 恢复原音量（使用 ref 中的 redux 状态值）
-              video.volume = volumeRef.current;
-              console.log(video.volume)
+              const restoreVolume = volumeRef.current;
+              if (audio) {
+                audio.volume = restoreVolume;
+              }
+              console.log('恢复音量:', restoreVolume);
            }
       };
     
       // 进度条拖动
       const handleProgressChange = (time: number) => {
         const video = videoRef.current;
-        if (video && duration > 0) {
+        const webcam = webcamRef.current;
+        const audio = audioRef.current;
+        
+        if ((video || webcam || audio) && duration > 0) {
           const targetTime = Math.max(0, Math.min(time, duration));
-          video.currentTime = targetTime;
+          
+          if (video) {
+            video.currentTime = targetTime;
+          }
+          
+          if (webcam) {
+            webcam.currentTime = targetTime;
+          }
+          
+          if (audio) {
+            audio.currentTime = targetTime;
+          }
+          
           dispatch(setCurrentTime(targetTime));
         }
       };
     
-      // 视频错误监听（关键：排查播放失败原因）
+      // 视频错误监听
       const handleVideoError = () => {
-        const video = videoRef.current;
-        if (!video || !video.error) return;
-
-        const error = video.error;
-        let errorMsg = '视频加载失败';
-        // 根据错误码精准提示原因
-        switch (error.code) {
-          case MediaError.MEDIA_ERR_ABORTED:
-            errorMsg = '视频加载被用户中断';
-            break;
-          case MediaError.MEDIA_ERR_NETWORK:
-            errorMsg = '网络错误，视频加载失败（跨域/资源失效）';
-            break;
-          case MediaError.MEDIA_ERR_DECODE:
-            errorMsg = '视频解码失败，格式不支持（建议使用MP4/H.264）';
-            break;
-          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            errorMsg = '视频源地址无效或不被浏览器支持';
-            break;
-          default:
-            errorMsg = `未知错误：${error.message || error.code}`;
-        }
-        message.error(errorMsg);
-        console.error('视频错误详情：', error);
+        messageApi.error('视频加载失败！');
         dispatch(setPlaybackStatus('stopped'));
+        dispatch(setDuration(0));
         dispatch(setVideoLoading(false));
-        // 修复：视频加载失败时不再重置duration为0，因为我们已经从录制数据中知道了正确的时长
-        // 只有当视频源确实无效时（如MEDIA_ERR_SRC_NOT_SUPPORTED）才考虑重置
-        if (error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-          dispatch(setDuration(0));
-        }
       };
       
 
       /////////////////////////////////////
       useEffect(() => {
           const video = videoRef.current;
+          
+          // Setup video element
+          
           if (!video) {
-            console.log('Video element not found');
+            console.error('Video element not found');
             return;
           }
-          console.log('Video element initialized:', video);
-          console.log('Current videoSrc:', videoSrc);
-          console.log('Current playbackUrl:', playbackUrl);
       
-         
-          const eventHandlers = {
+          // 视频事件处理
+          const videoEventHandlers = {
             timeupdate: () => {
-              console.log('timeupdate event triggered');
               handleTimeUpdate();
+              // 视频进度更新时，同步摄像头视频和麦克风音频进度
+              if (webcamRef.current) {
+                webcamRef.current.currentTime = video.currentTime;
+              }
+              if (audioRef.current) {
+                audioRef.current.currentTime = video.currentTime;
+              }
             },
             loadedmetadata: () => {
-              console.log('loadedmetadata event triggered');
               handleLoadedMetadata();
             },
             ended: () => {
-              console.log('ended event triggered');
               handleVideoEnded();
+              // 视频结束时，同步停止摄像头视频和麦克风音频
+              if (webcamRef.current) {
+                webcamRef.current.pause();
+                webcamRef.current.currentTime = 0;
+              }
+              if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+              }
             },
             volumechange: () => {
-              console.log('volumechange event triggered');
               handleVolumeChange();
             },
             error: (e: Event) => {
-              console.log('error event triggered:', e);
               handleVideoError();
             },
             loadstart: () => {
-              console.log('loadstart event triggered');
               dispatch(setVideoLoading(true));
             },
             canplay: () => {
-              console.log('canplay event triggered');
               dispatch(setVideoLoading(false));
             },
             waiting: () => {
-              console.log('waiting event triggered');
               dispatch(setVideoLoading(true));
             },
             playing: () => {
@@ -270,9 +314,9 @@ const PlayBackBody: React.FC = () => {
             },
           };
       
-          // 绑定事件
-          Object.entries(eventHandlers).forEach(([event, handler]) => {
-            console.log('Adding event listener:', event);
+          // 绑定视频事件
+          Object.entries(videoEventHandlers).forEach(([event, handler]) => {
+            console.log('Adding video event listener:', event);
             video.addEventListener(event, handler);
           });
       
@@ -281,51 +325,90 @@ const PlayBackBody: React.FC = () => {
           if (video.volume !== volume) video.volume = volume;
           if (video.muted !== isMuted) video.muted = isMuted;
       
+          // 确保视频元素有有效的src
+          if (!video.src && safeVideoSrc && safeVideoSrc !== 'about:blank') {
+            video.src = safeVideoSrc;
+            video.load();
+          }
+      
           // 视频源变化时重新加载
-          if (video.src !== videoSrc) {
-            console.log('Video source changed, loading new video:', videoSrc);
-            console.log('Old video src:', video.src);
-            video.src = videoSrc;
-            
-            // 当videoSrc为空时，重置视频状态
-            if (!videoSrc) {
-              console.log('Video source is empty, resetting video state');
+          if (video.src !== safeVideoSrc) {
+            // 确保safeVideoSrc不为空
+            if (!safeVideoSrc || safeVideoSrc === 'about:blank') {
               video.pause();
               dispatch(setCurrentTime(0));
               dispatch(setDuration(0));
               dispatch(setPlaybackStatus('stopped'));
               dispatch(setVideoLoading(false));
               dispatch(setIsPlayEnded(false));
-            } else {
-              video.load(); // 手动触发加载
+              return;
             }
+            
+            video.src = safeVideoSrc;
+            video.load(); // 手动触发加载
           } else {
-            console.log('Video source is the same, checking ready state:', video.readyState);
+            // 不再从视频元素获取时长，始终使用后端返回的录屏时长
             if (video.readyState >= 2) {
-              console.log('Video already has metadata, checking duration:', video.duration);
-              // 只有当视频元素提供了有效的duration且大于0时才更新，否则保持Redux中已有的正确值
-              const validDuration = (isNaN(video.duration) || !isFinite(video.duration) || video.duration <= 0) ? undefined : video.duration;
-              if (validDuration !== undefined) {
-                dispatch(setDuration(validDuration));
-              }
+              console.log('Video ready state is sufficient, using backend-provided duration');
             } else {
               console.log('Video ready state is insufficient, forcing load...');
-              video.load(); // 强制重新加载
+              // 确保视频源有效
+              if (safeVideoSrc && safeVideoSrc !== 'about:blank') {
+                video.load(); // 强制重新加载
+              }
             }
           }
       
           // 组件卸载/依赖变化时解绑事件
           return () => {
-            Object.entries(eventHandlers).forEach(([event, handler]) => {
+            // 解绑视频事件
+            Object.entries(videoEventHandlers).forEach(([event, handler]) => {
               video.removeEventListener(event, handler);
             });
+            
             // 注意：不要在playBackBody中释放Blob URL，因为它可能被playBackList使用
             // Blob URL的释放应该由创建它的组件（playBackList）负责
           };
-      }, [playbackUrl, playbackRate, volume, isMuted, videoSrc]); 
+      }, [playbackUrl, playbackRate, volume, isMuted, videoSrc]);
+
+      // 麦克风音频设置和管理
+      useEffect(() => {
+          const audio = audioRef.current;
+          
+          // Setup audio element
+
+          
+          if (!audio) {
+            console.error('Audio element not found');
+            return;
+          }
+      
+          // 初始化音频属性
+          audio.volume = volume;
+          audio.muted = isMuted;
+      
+          // 音频源变化时重新加载
+          if (audio.src !== audioSrc) {
+            
+            
+            // 确保audioSrc不为空
+            if (!audioSrc || audioSrc === 'about:blank') {
+              console.log('Audio source is empty, resetting audio state');
+              audio.src = '';
+              audio.pause();
+              return;
+            }
+            
+            audio.src = audioSrc;
+            audio.load(); // 手动触发加载
+          }
+      }, [audioSrc, volume, isMuted]); 
 
       return (
-        <div>
+        <>
+          <div>
+          {/* 摄像头悬浮窗 */}
+          <WebcamFloating webcamRef={webcamRef} />
            <Card
               title="录屏回放"
               variant="outlined"
@@ -347,11 +430,20 @@ const PlayBackBody: React.FC = () => {
                     ref={videoRef}
                     controls={false}
                     className="playback-video"
-                    src={videoSrc}
+                    src={safeVideoSrc}
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onTimeUpdate={handleTimeUpdate}
                   >
                     您的浏览器不支持HTML5视频播放，请升级浏览器
                   </video>
-                
+                  {/* 隐藏的音频元素，用于播放麦克风音频 */}
+                  <audio
+                    ref={audioRef}
+                    className="hidden-audio"
+                    src={audioSrc}
+                  >
+                    您的浏览器不支持HTML5音频播放，请升级浏览器
+                  </audio>
               </div>
 
               {/* 下载链接区域 - 对所有视频显示 */}
@@ -361,7 +453,7 @@ const PlayBackBody: React.FC = () => {
                     {/* 对于本地视频，显示基本的视频文件下载链接 */}
                     {(!currentVideo || !currentVideo.hashid) && (
                       <a 
-                        href={playbackUrl} 
+                        href={typeof playbackUrl === 'string' ? playbackUrl : playbackUrl.video} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         style={{ marginRight: '16px' }}
@@ -454,7 +546,9 @@ const PlayBackBody: React.FC = () => {
               </div>
             </Card>
         </div>
-      )
+          {contextHolder}
+        </>
+      );
 };
 
 export default PlayBackBody;

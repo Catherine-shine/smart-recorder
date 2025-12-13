@@ -2,7 +2,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../index';
 import type { RecordingState } from '../../types/recording/RecordingState';
-import type { CollectDataPayload } from '../../types/recording/controlPanel';
+
 import { RECORDING_STATUS } from '../../types/common';
 
 // 初始状态
