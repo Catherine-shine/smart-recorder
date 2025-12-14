@@ -165,15 +165,22 @@ const Header: React.FC = () => {
         {/* 主题切换开关：美化样式 */}
         <div 
           style={{ 
-            padding: 4,
+            padding: 2,
             backgroundColor: isDarkMode ? '#374151' : '#e2e8f0',
             borderRadius: 20,
             boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
           }}
+          onClick={() => dispatch(toggleTheme())}
         >
           <Switch
             checked={isDarkMode}
-            onChange={() => dispatch(toggleTheme())}
+            onChange={(_, e) => {
+              e?.stopPropagation();
+              dispatch(toggleTheme());
+            }}
             checkedChildren={<BulbFilled style={{ color: '#fcd34d', fontSize: 16 }} />}
             unCheckedChildren={<BulbOutlined style={{ color: '#64748b', fontSize: 16 }} />}
             size="default"
