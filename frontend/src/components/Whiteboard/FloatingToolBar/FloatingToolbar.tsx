@@ -64,6 +64,7 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const [messageApi, contextHolder] = message.useMessage();
 
   // 合并主题配置（全局变量兜底）
   const {
@@ -101,7 +102,7 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       cancelText: '取消',
       onOk: () => {
         onClearCanvas();
-        message.success('画布已清空');
+        messageApi.success('画布已清空');
         setTool('none');
       },
     });
@@ -114,8 +115,10 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   };
 
   return (
-    <div
-      ref={toolbarRef}
+    <>
+      {contextHolder}
+      <div
+        ref={toolbarRef}
       className="floating-toolbar-container"
       style={{
         // 主题变量通过内联样式注入（CSS 中通过 var() 引用）
@@ -268,7 +271,8 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
           onClick={() => setIsExpanded(!isExpanded)}
         />
       </Tooltip>
-    </div>
+      </div>
+    </>
   );
 };
 

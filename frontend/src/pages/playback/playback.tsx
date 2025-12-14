@@ -5,8 +5,10 @@ import React ,{useState} from "react";
 import './index.css';
 import PlayBackBody from "../../components/playback/playBackBody/playBackBody";
 import WhiteboardPlayback from "../../components/playback/playBackWhiteboard/playBackWhiteboard";
-import { getRecordingDetail } from "../../api/recording"; // 导入封装的接口
+import { getRecordingDetail, getSessionPlaybackData } from "../../api/recording"; // 导入封装的接口
 import type { RecordingDetailResponse } from "../../types/api/apiTypes";
+import { useDispatch } from 'react-redux';
+import { setDuration, setTrajectoryData } from "../../store/slices/playbackSlice";
 
 interface RecordingDetailResponseWithWhiteboard extends RecordingDetailResponse {
   whiteboard?: {
@@ -15,6 +17,7 @@ interface RecordingDetailResponseWithWhiteboard extends RecordingDetailResponse 
 }
 //注明组件的 ts 类型是 React 函数式组件（React.FC）
 const PlaybackModule: React.FC = () => { 
+  const dispatch = useDispatch();
   const [selectedRecording, setSelectedRecording] = useState<any>(null);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false); // 播放状态
@@ -31,32 +34,43 @@ const PlaybackModule: React.FC = () => {
   //   }
   // };
   const handleSelectRecording = async (recordingId: string) => {
-  try {
-    setLoading(true);
-    const data = await getRecordingDetail(recordingId) as RecordingDetailResponseWithWhiteboard;
-    
-    // 1. 设置白板数据
-    setWhiteboardOperations(data.whiteboard?.operations || []);
-    
-    // 2. 更新选中的录制项
-    setSelectedRecording(data);
-    
-    // 3. 根据后端返回的URL设置视频播放地址
-    // 优先使用带字幕的视频，否则使用屏幕录制
-    const videoUrl = data.subtitledVideoUrl || data.screenRecordingUrl;
-    if (videoUrl) {
-      // 这里可能需要dispatch到Redux store，或者直接设置状态
-      // 取决于你的架构
-      console.log('选中录制的视频URL:', videoUrl);
+    try {
+      setLoading(true);
+      // 获取录制详情
+      const recordingData = await getRecordingDetail(recordingId) as RecordingDetailResponseWithWhiteboard;
+      setWhiteboardOperations(recordingData.whiteboard?.operations || []);
+      setSelectedRecording(recordingData);
+      
+      // 更新Redux中的录制时长
+      // 优先使用后端API直接返回的duration（秒），如果没有则尝试从轨迹数据中提取
+      if (recordingData.duration && recordingData.duration > 0) {
+        dispatch(setDuration(recordingData.duration));
+      } else if (recordingData.trajectory) {
+        try {
+          const trajectoryData = JSON.parse(recordingData.trajectory);
+          
+          // 如果后端没有返回duration，则尝试从轨迹数据中提取
+          if (trajectoryData.duration) {
+            dispatch(setDuration(trajectoryData.duration));
+          }
+          
+          if (trajectoryData) {
+            dispatch(setTrajectoryData(trajectoryData));
+          }
+        } catch (error) {
+          console.error('Failed to parse trajectory data:', error);
+          message.error('解析轨迹数据失败');
+        }
+      }
+      
+      message.success('加载录制内容成功');
+    } catch (err) {
+      message.error('加载录制内容失败');
+      console.error('Failed to load recording:', err);
+    } finally {
+      setLoading(false);
     }
-    
-  } catch (err) {
-    console.error('加载录制详情失败:', err);
-    message.error('加载录制详情失败');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   // 视频时间同步：秒 → 毫秒（白板用毫秒）
   const handleVideoTimeUpdate = (timeInSeconds: number) => {
     setVideoCurrentTime(timeInSeconds * 1000);

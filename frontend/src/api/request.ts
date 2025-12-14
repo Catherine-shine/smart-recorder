@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import { message } from 'antd';
 
 // 创建Axios实例
 const request: AxiosInstance = axios.create({
@@ -30,28 +31,39 @@ request.interceptors.request.use(
 // 响应拦截器：统一处理响应/错误
 request.interceptors.response.use(
   (response) => {
-    // 统一处理响应数据（根据后端返回格式调整）
+    // 对于blob类型的响应，返回整个response对象
+    if (response.config.responseType === 'blob') {
+      return response;
+    }
+    // 其他类型响应返回response.data
     return response.data;
   },
   (error: AxiosError) => {
     console.error('响应错误：', error);
-    // 统一错误提示（可结合UI组件如ElMessage）
+    // 统一错误提示
     if (error.response) {
       const status = error.response.status;
+      const errorMessage = (error.response?.data as any)?.message || '请求失败，请稍后重试';
       switch (status) {
         case 401:
-          console.error('未授权，请重新登录');
+          message.error('未授权，请重新登录');
           // 可跳转登录页
           break;
         case 404:
-          console.error('接口不存在');
+          message.error('接口不存在');
           break;
         case 500:
-          console.error('服务器内部错误');
+          message.error('服务器内部错误：' + errorMessage);
           break;
         default:
-          console.error('请求失败：', (error.response?.data as any)?.message || '未知错误');
+          message.error('请求失败：' + errorMessage);
       }
+    } else if (error.request) {
+      // 请求已发出但没有收到响应
+      message.error('网络错误，无法连接到服务器');
+    } else {
+      // 请求配置错误
+      message.error('请求配置错误：' + error.message);
     }
     return Promise.reject(error);
   }

@@ -1,7 +1,7 @@
 import type { RootState } from '../../../store';
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useRef, useState } from 'react';
-import { setPlaybackUrl, setDuration, setRecordList, resetPlaybackState, setCurrentVideo } from '../../../store/slices/playbackSlice';
+import { setPlaybackUrl, setDuration, setRecordList, resetPlaybackState, setCurrentVideo, setWebcamUrl, setAudioUrl, setTrajectoryData } from '../../../store/slices/playbackSlice';
 import { RECORDING_STATUS } from '../../../types/common'
 // 引入录制切片的选择器和action
 import { 
@@ -18,9 +18,9 @@ import {  Card, Empty, Typography, Tag, Spin, message } from 'antd';
 import React from "react";
 import { formatDuration } from '../../../utils/playback/playback';
 import { v4 as uuidv4 } from 'uuid'; // 需安装：npm install uuid
-import { uploadRecording } from '../../../api/recording';
+import { uploadRecording, getRecordingList, clearAllRecordings, deleteRecording, getRecordingDetail, downloadRecordingScreen, downloadRecordingWebcam, downloadRecordingAudio, getRecordingTrajectory } from '../../../api/recording';
+
 import './index.css';
-import { getRecordingList } from '../../../api/recording'; // 按实际路径调整
 import type { RecordingListItem } from '../../../types/api/apiTypes'; // 按实际路径调整
 
 
@@ -37,55 +37,40 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
   const [loading, setLoading] = useState(true);
 
   const [selectedVideoIdProp, setSelectedVideoIdProp] = useState<string | null>(null);
-  // 本地视频列表
-  const [localVideoList, setLocalVideoList] = useState<PlaybackVideoItem[]>(() => {
-    // 从 localStorage 恢复录制的视频（可选：避免刷新丢失）
-    const savedLocalVideos = localStorage.getItem('localRecordedVideos');
-    if (savedLocalVideos) {
+  // 视频列表（从后端获取）
+  const [localVideoList, setLocalVideoList] = useState<PlaybackVideoItem[]>([]);
+  const [messageApi, contextHolder] = message.useMessage();
+  
+  // 从后端获取视频列表
+  useEffect(() => {
+    const fetchVideoList = async () => {
       try {
-        const parsedVideos = JSON.parse(savedLocalVideos);
-        // 为本地录制的视频重新创建 Blob URL
-        return parsedVideos.map((video: any) => {
-          if (video.isLocalRecord && video.url && video.url.startsWith('data:')) {
-            try {
-              // 从 Base64 数据创建 Blob
-              const base64Data = video.url;
-              const byteString = atob(base64Data.split(',')[1]);
-              const mimeString = base64Data.split(',')[0].split(':')[1].split(';')[0];
-              console.log('Restoring video from base64, MIME type:', mimeString);
-              
-              const ab = new ArrayBuffer(byteString.length);
-              const ia = new Uint8Array(ab);
-              for (let i = 0; i < byteString.length; i++) {
-                ia[i] = byteString.charCodeAt(i);
-              }
-              
-              // 创建Blob时使用正确的MIME类型
-              const blob = new Blob([ab], { type: mimeString });
-              console.log('Created blob from base64, size:', blob.size);
-              
-              const newBlobUrl = URL.createObjectURL(blob);
-              return {
-                ...video,
-                url: newBlobUrl,
-                hashid: video.hashid || null, // 确保hashid字段存在
-              };
-            } catch (error) {
-              console.error('Failed to restore video from base64:', error);
-              // 恢复失败时，移除该视频项
-              return null;
-            }
-          }
-          return video;
-        }).filter((video: any) => video !== null); // 过滤掉恢复失败的视频
+        setListLoading(true);
+        const response = await getRecordingList();
+        
+        // 将后端返回的录制列表转换为播放列表所需的格式
+        const videoList = response?.map((item) => ({
+          id: item.hashid,
+          title: `录屏_${new Date(item.created_at).toLocaleString()}`,
+          url: `/api/recordings/${item.hashid}/screen`, // 后端视频播放URL
+          // 确保duration是数字类型，如果是字符串则转换为数字
+          duration: typeof item.duration === 'string' ? parseFloat(item.duration) || 0 : item.duration || 0,
+          createTime: new Date(item.created_at).toLocaleString(),
+          isLocalRecord: false, // 标记为后端录制视频
+          hashid: item.hashid,
+        })) || [];
+        
+        setLocalVideoList(videoList);
       } catch (error) {
-        console.error('Failed to parse localStorage videos:', error);
-        // 解析失败时，清空localStorage
-        localStorage.removeItem('localRecordedVideos');
+        console.error('获取后端视频列表失败:', error);
+        messageApi.error('获取视频列表失败');
+      } finally {
+        setListLoading(false);
       }
-    }
-    return [];
-  });
+    };
+    
+    fetchVideoList();
+  }, []);
   const [listLoading, setListLoading] = useState<boolean>(false);
   const [playStatus, setPlayStatus] = useState<PlayStatus>('stopped');
   const [videoLoading, setVideoLoading] = useState<boolean>(false);
@@ -99,13 +84,52 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
   const recordingStatus = useSelector(selectRecordingStatus); // 录制状态
   const { playbackUrl } = useSelector((state: RootState) => state.playback);
 
+  // 定义Blob URL的类型，可以是单个URL字符串（本地视频）或包含视频和摄像头URL的对象（后端视频）
+  type BlobUrlType = string | { video: string; webcam: string };
+  
+  
   // 存储已生成的 blob URL（用于组件卸载时释放内存）
-  const blobUrlRef = useRef<Record<string, string>>({});
+  const blobUrlRef = useRef<Record<string, BlobUrlType>>({});
+
+  // 组件卸载时释放所有Blob URL
+  useEffect(() => {
+    return () => {
+      Object.values(blobUrlRef.current).forEach(blobUrl => {
+        if (typeof blobUrl === 'string') {
+          // 单个URL
+          URL.revokeObjectURL(blobUrl);
+        } else {
+          // URL对象（包含video和webcam）
+          if (blobUrl.video) URL.revokeObjectURL(blobUrl.video);
+          if (blobUrl.webcam) URL.revokeObjectURL(blobUrl.webcam);
+        }
+      });
+    };
+  }, []);
+
+  // 切换视频时释放前一个视频的Blob URL
+  useEffect(() => {
+    return () => {
+      if (selectedVideoIdProp && blobUrlRef.current[selectedVideoIdProp]) {
+        const blobUrl = blobUrlRef.current[selectedVideoIdProp];
+        if (typeof blobUrl === 'string') {
+          URL.revokeObjectURL(blobUrl);
+        } else {
+          if (blobUrl.video) URL.revokeObjectURL(blobUrl.video);
+          if (blobUrl.webcam) URL.revokeObjectURL(blobUrl.webcam);
+        }
+        // 从引用中删除
+        delete blobUrlRef.current[selectedVideoIdProp];
+      }
+    };
+  }, [selectedVideoIdProp]);
 
   // 添加一个状态来跟踪是否正在上传
   const [isUploading, setIsUploading] = useState(false);
   // 添加一个时间戳来记录上次上传时间
   const [lastUploadTime, setLastUploadTime] = useState(0);
+  
+
 
   // 核心逻辑：录制结束后，将视频添加到播放列表
   useEffect(() => {
@@ -167,9 +191,7 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
                     screen_recording: new File([videoBlob], 'screen_recording.webm', { type: videoBlob.type })
                   });
 
-                  // 更新视频项，添加后端hashid
-                  uploadHashid = uploadResponse.hashid;
-                  message.success('视频已上传到服务器！');
+                  messageApi.success('视频已上传到服务器！');
                   uploadSuccess = true;
                 } catch (error) {
                   retryCount++;
@@ -183,69 +205,49 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
               }
             } catch (error) {
               console.error('上传视频到后端失败:', error);
-              message.error('上传视频到服务器失败，将使用本地下载');
+              messageApi.error('上传视频到服务器失败，将使用本地下载');
             }
 
-            // 创建视频项
-            const newVideoItem: PlaybackVideoItem = {
-              id: uuidv4(), // 唯一 ID
-              title: `本地录屏_${createTime}`,
-              url: blobUrl,
-              duration: Math.floor(lastRecordingDuration / 1000), // 转为秒（适配原有 formatDuration）
-              createTime,
-              isLocalRecord: true, // 标记为本地录制视频
-              hashid: uploadHashid, // 使用提前声明的变量
-            };
-
-            // 5. 更新本地视频列表（使用函数式更新避免闭包问题）
-            setLocalVideoList(prevList => {
-              // 检查视频是否已经存在（通过检查videoBlob内容）
-              // 我们可以通过比较视频的创建时间和时长来判断是否为同一个视频
-              const existingVideoIndex = prevList.findIndex(item => 
-                item.isLocalRecord && 
-                Math.abs(new Date(item.createTime || 0).getTime() - now) < 1000 && // 1秒内的视频视为同一个（now已经是时间戳）
-                item.duration === Math.floor(lastRecordingDuration / 1000)
-              );
-              
-              if (existingVideoIndex >= 0) {
-                // 如果视频已存在，直接返回原列表
-                return prevList;
-              }
-              
-              const newLocalVideoList = [newVideoItem, ...prevList]; // 新视频置顶
-              
-              // 6. 将视频转换为Base64保存到 localStorage（持久化）
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const base64Data = reader.result as string;
-                // 保存视频数据到localStorage，不包含临时的blob URL
-                const videoDataForStorage = newLocalVideoList.map(video => ({
-                  ...video,
-                  url: video.isLocalRecord && video.id === newVideoItem.id ? base64Data : video.url, // 只更新当前新录制视频的base64数据
+            // 5. 重新从后端获取最新的视频列表
+            const fetchUpdatedList = async () => {
+              try {
+                const response = await getRecordingList();
+                
+                // 将后端返回的录制列表转换为播放列表所需的格式
+                const updatedVideoList = response.map((item) => ({
+                  id: item.hashid,
+                  title: `录屏_${new Date(item.created_at).toLocaleString()}`,
+                  url: `/api/recordings/${item.hashid}/screen`, // 后端视频播放URL
+                  duration: item.duration || 0,
+                  createTime: new Date(item.created_at).toLocaleString(),
+                  isLocalRecord: false, // 标记为后端录制视频
+                  hashid: item.hashid,
                 }));
-                localStorage.setItem('localRecordedVideos', JSON.stringify(videoDataForStorage));
-              };
-              reader.readAsDataURL(videoBlob);
-              
-              return newLocalVideoList;
-            });
+                
+                setLocalVideoList(updatedVideoList);
+                
+                // 自动选中最新录制的视频（列表中的第一个）
+                if (updatedVideoList.length > 0) {
+                  const latestVideo = updatedVideoList[0];
+                  setSelectedVideoIdProp(latestVideo.id);
+                  dispatch(setPlaybackUrl(latestVideo.url));
+                  dispatch(setCurrentVideo(latestVideo));
+                  const validDuration = isNaN(latestVideo.duration) || !isFinite(latestVideo.duration) ? 0 : latestVideo.duration;
+                  dispatch(setDuration(validDuration));
+                }
+              } catch (error) {
+                console.error('获取更新后的视频列表失败:', error);
+              }
+            };
             
-            // 7. 缓存 blob URL 用于后续释放
-            blobUrlRef.current[newVideoItem.id] = blobUrl;
-            // 8. 自动选中新录制的视频
-            setSelectedVideoIdProp(newVideoItem.id);
-            dispatch(setPlaybackUrl(newVideoItem.url));
-            dispatch(setCurrentVideo(newVideoItem)); // 将当前视频信息存储到Redux中
-            // 9. 同时设置录制的时长到Redux中，确保进度条能正常显示时长
-            const validDuration = isNaN(newVideoItem.duration) || !isFinite(newVideoItem.duration) ? 0 : newVideoItem.duration;
-            dispatch(setDuration(validDuration));
+            fetchUpdatedList();
             
             // 10. 重置录制状态，清除videoBlob和lastRecordingDuration，防止重复添加视频
             // 注意：我们只清除数据，不改变录制状态
             dispatch(setLastRecordingDuration(null));
             dispatch(collectData({ type: 'video', data: null }));
             
-            message.success('新录制的视频已添加到播放列表！');
+            messageApi.success('新录制的视频已添加到播放列表！');
           }
         } finally {
           // 无论成功失败，都设置上传状态为false
@@ -259,24 +261,244 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
   }, [recordingStatus, videoBlob, lastRecordingDuration, dispatch, isUploading, lastUploadTime]); // 更新依赖项
 
   // 处理视频选择逻辑
-  const handleVideoSelect = (video: PlaybackVideoItem) => {
+  const handleVideoSelect = async (video: PlaybackVideoItem) => {
+    console.log('=== 开始处理视频选择 ===', video.id, video.title);
+    console.log('=== 选中的视频完整信息:', video);
+    console.log('=== video.hashid:', video.hashid);
+    const startTime = Date.now();
+    
     setSelectedVideoIdProp(video.id);
     setPlayStatus('stopped');
     setVideoLoading(true);
-    dispatch(setPlaybackUrl(video.url));
-    dispatch(setCurrentVideo(video)); // 将当前视频信息存储到Redux中
     
-    // 🔴 添加这一行：调用父组件的回调，传递hashid
-    if (onSelectRecording && video.hashid) {
-      onSelectRecording(video.hashid);
+    let loadingMessage: any = null;
+    let mergingMessage: any = null;
+
+    
+    try {
+      if (!video.isLocalRecord) {
+        // 后端视频：获取视频和摄像头文件
+        console.log('1. 开始处理后端视频，hashid:', video.hashid);
+        loadingMessage = messageApi.loading('正在获取视频文件...', 0);
+        
+        // 提取hashid到局部变量，解决TypeScript类型问题
+        const hashid = video.hashid;
+        
+        // 检查hashid是否存在，否则抛出错误
+        if (!hashid) {
+          throw new Error('视频没有hashid，无法获取视频文件');
+        }
+        
+        // 并行下载视频、摄像头、音频文件和轨迹数据
+        console.log('2. 开始并行下载视频、摄像头、音频文件和轨迹数据...');
+        console.log('2.1 调用 downloadRecordingAudio:', hashid);
+        const downloadStartTime = Date.now();
+        
+        const [screenResp, webcamResp, audioResp, recordingDetail] = await Promise.all([
+          downloadRecordingScreen(hashid),
+          downloadRecordingWebcam(hashid),
+          downloadRecordingAudio(hashid),
+          getRecordingDetail(hashid) // 获取录制详情
+        ]);
+        
+        // 输出recordingDetail中的时间戳数据
+        console.log('2.1 从后端获取到的录制详情和时间戳数据:', recordingDetail);
+        if (recordingDetail) {
+          console.log('2.1.1 录制开始时间:', recordingDetail.createdAt || '未知');
+          console.log('2.1.2 录制时长:', recordingDetail.duration || '未知');
+          console.log('2.1.3 其他录制元数据:', {
+            hashid: recordingDetail.hashid,
+            sessionId: recordingDetail.sessionId,
+            createdAt: recordingDetail.createdAt
+          });
+        }
+        
+        // 单独获取轨迹数据
+        let trajectoryData: PlaybackVideoItem['trajectoryData'] = { mouse: [], whiteboard: [], audioStateChanges: [], cameraStateChanges: [] };
+        try {
+          const trajectoryResponse = await getRecordingTrajectory(hashid);
+          trajectoryData = trajectoryResponse;
+          console.log('2.2 获取到轨迹数据，包含摄像头和麦克风状态变化记录:', trajectoryData);
+          // 将轨迹数据保存到Redux中，供PlayBackBody组件使用
+          dispatch(setTrajectoryData(trajectoryData));
+          
+          // 输出轨迹数据中的时间戳信息
+          if (trajectoryData) {
+            console.log('2.2.1 轨迹数据统计信息:');
+            console.log('   - 鼠标轨迹数量:', trajectoryData.mouse?.length || 0);
+            console.log('   - 白板操作数量:', trajectoryData.whiteboard?.length || 0);
+            console.log('   - 音频状态变化次数:', trajectoryData.audioStateChanges?.length || 0);
+            console.log('   - 摄像头状态变化次数:', trajectoryData.cameraStateChanges?.length || 0);
+            
+            // 输出时间戳数据样本
+            if (trajectoryData.mouse && trajectoryData.mouse.length > 0) {
+              console.log('2.2.2 鼠标轨迹时间戳样本:', 
+                trajectoryData.mouse.slice(0, Math.min(3, trajectoryData.mouse.length))
+                  .map(item => item.timestamp));
+            }
+            if (trajectoryData.audioStateChanges && trajectoryData.audioStateChanges.length > 0) {
+              console.log('2.2.3 音频状态变化记录:', 
+                trajectoryData.audioStateChanges.map(item => ({ timestamp: item.timestamp, isEnabled: item.isEnabled })));
+            }
+            if (trajectoryData.cameraStateChanges && trajectoryData.cameraStateChanges.length > 0) {
+              console.log('2.2.4 摄像头状态变化记录:', 
+                trajectoryData.cameraStateChanges.map(item => ({ timestamp: item.timestamp, isEnabled: item.isEnabled })));
+            }
+          }
+        } catch (error) {
+          console.error('获取轨迹数据失败:', error);
+        }
+        
+        console.log('2.2 音频下载完成:', audioResp.type, audioResp.size);
+        
+        console.log('2. 视频、摄像头和音频文件下载完成，耗时:', Date.now() - downloadStartTime, 'ms');
+        console.log('视频响应类型:', screenResp.type, '大小:', screenResp.size || '未知');
+        console.log('摄像头响应类型:', webcamResp.type, '大小:', webcamResp.size || '未知');
+        console.log('音频响应类型:', audioResp.type, '大小:', audioResp.size || '未知');
+        
+        // 验证下载的文件是否有效
+        if (!screenResp || screenResp.size === 0) {
+          throw new Error('下载的视频文件无效或为空');
+        }
+        
+        if (!webcamResp || webcamResp.size === 0) {
+          throw new Error('下载的摄像头文件无效或为空');
+        }
+        
+        // 验证文件类型
+        console.log('3. 验证文件类型...');
+        if (!screenResp.type.startsWith('video/')) {
+          console.warn('警告：视频文件类型不是视频格式，实际类型：', screenResp.type);
+        }
+        
+        if (!webcamResp.type.startsWith('video/')) {
+          console.warn('警告：摄像头文件类型不是视频格式，实际类型：', webcamResp.type);
+        }
+        
+        // 更新加载状态
+        if (loadingMessage) {
+          loadingMessage(); // 关闭之前的消息
+        }
+        
+        // 生成视频、摄像头和音频URL
+        console.log('3. 生成视频、摄像头和音频URL...');
+        const videoUrl = URL.createObjectURL(screenResp);
+        const webcamUrl = URL.createObjectURL(webcamResp);
+        const audioUrl = URL.createObjectURL(audioResp);
+        
+        // 释放之前可能存在的相同视频的Blob URL
+        if (blobUrlRef.current[video.id]) {
+          const oldBlobUrl = blobUrlRef.current[video.id];
+          if (typeof oldBlobUrl === 'string') {
+            URL.revokeObjectURL(oldBlobUrl);
+          } else {
+            if (oldBlobUrl.video) URL.revokeObjectURL(oldBlobUrl.video);
+            if (oldBlobUrl.webcam) URL.revokeObjectURL(oldBlobUrl.webcam);
+          }
+        }
+        
+        // 存储Blob URL以便后续清理
+        blobUrlRef.current[video.id] = {
+          video: videoUrl,
+          webcam: webcamUrl
+        };
+        
+        // 更新播放URL和当前视频信息
+        console.log('4. 更新视频、摄像头和音频URL和当前视频信息...');
+        dispatch(setPlaybackUrl(videoUrl));
+        dispatch(setWebcamUrl(webcamUrl));
+        dispatch(setAudioUrl(audioUrl));
+        dispatch(setCurrentVideo({
+          ...video,
+          url: videoUrl // 更新视频URL
+        }));
+        // 将轨迹数据保存到Redux状态中
+        dispatch({ type: 'playback/setTrajectoryData', payload: trajectoryData });
+        
+        if (mergingMessage) {
+          mergingMessage(); // 关闭合并消息
+        }
+        console.log('5. 视频处理完成，总耗时:', Date.now() - startTime, 'ms');
+        messageApi.success('视频加载完成！');
+      } else {
+        // 本地视频：直接使用原URL
+        console.log('本地视频：直接使用原URL', video.url);
+        dispatch(setPlaybackUrl(video.url));
+        dispatch(setCurrentVideo(video));
+        // 本地视频可能没有轨迹数据，需要创建默认的空轨迹数据
+        const localTrajectoryData = video.trajectoryData || {
+          mouse: [],
+          whiteboard: [],
+          audioStateChanges: [],
+          cameraStateChanges: []
+        };
+        // 将轨迹数据保存到Redux状态中
+        dispatch({ type: 'playback/setTrajectoryData', payload: localTrajectoryData });
+      }
+      
+      // 切换视频时将列表中的时间传入进度条的slidermax中，确保时长有效
+      const validDuration = typeof video.duration === 'number' && !isNaN(video.duration) && isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+      dispatch(setDuration(validDuration));
+      
+      if (video.isLocalRecord) {
+        messageApi.success(`已切换至：${video.title}`);
+      }
+    } catch (error) {
+      console.error('处理视频选择失败:', error);
+      console.error('错误详情:', error instanceof Error ? error.stack : error);
+      
+      // 确保关闭所有加载消息
+      if (loadingMessage) {
+        loadingMessage();
+      }
+      if (mergingMessage) {
+        mergingMessage();
+      }
+      
+      // 根据错误类型提供更具体的错误信息
+      if (error instanceof Error) {
+          if (error.message.includes('下载')) {
+            messageApi.error('下载视频文件失败，请检查网络连接或服务器状态');
+        } else if (error.message.includes('超时')) {
+            messageApi.error('操作超时，请稍后重试');
+        } else if (error.message.includes('无效') || error.message.includes('为空')) {
+            messageApi.error('文件无效，请检查服务器文件是否完整');
+        } else {
+            messageApi.error('处理视频失败，请重试或联系管理员');
+        }
+      } else {
+          messageApi.error('处理视频失败，请重试');
+      }
+      
+      // 失败时使用原视频URL作为备选
+      console.log('错误处理：使用原视频URL作为备选播放源');
+      if (video.isLocalRecord) {
+        // 本地视频可以直接使用原URL
+        if (video.url && video.url !== '' && video.url !== 'about:blank') {
+          dispatch(setPlaybackUrl(video.url));
+        } else {
+          console.error('本地视频URL无效，无法设置播放源');
+          dispatch(setPlaybackUrl(''));
+        }
+      } else {
+        // 后端视频需要确保URL是可以直接播放的
+        // 对于失败情况，我们尝试直接使用API URL作为最后的备选
+        // 注意：这可能仍然无法工作，因为API可能需要正确的响应类型
+        if (video.url && video.url !== '' && video.url !== 'about:blank') {
+          dispatch(setPlaybackUrl(video.url));
+        } else {
+          console.error('后端视频URL无效，无法设置播放源');
+          dispatch(setPlaybackUrl(''));
+        }
+      }
+      dispatch(setCurrentVideo(video));
+    } finally {
+      // 无论成功失败，都设置加载状态为false
+      console.log('=== 视频选择处理结束 === 总耗时:', Date.now() - startTime, 'ms');
+      setVideoLoading(false);
+      // 关闭所有loading消息
+      message.destroy();
     }
-    
-    // 切换视频时将列表中的时间传入进度条的slidermax中，确保不是NaN或Infinity
-    const validDuration = isNaN(video.duration) || !isFinite(video.duration) ? 0 : video.duration;
-    dispatch(setDuration(validDuration));
-    // 模拟加载完成（可通过 video 标签的 canplay 事件优化）
-    setTimeout(() => setVideoLoading(false), 800);
-    message.success(`已切换至：${video.title}`);
   };
 
   // 初始化：选中第一个视频，特别是当播放列表只有一个视频时
@@ -305,103 +527,141 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
   useEffect(() => {
     return () => {
       Object.values(blobUrlRef.current).forEach(blobUrl => {
-        URL.revokeObjectURL(blobUrl);
+        if (typeof blobUrl === 'string') {
+          // 本地视频：直接释放URL
+          URL.revokeObjectURL(blobUrl);
+        } else if (typeof blobUrl === 'object' && blobUrl !== null) {
+          // 后端视频：分别释放视频和摄像头URL
+          if (blobUrl.video) URL.revokeObjectURL(blobUrl.video);
+          if (blobUrl.webcam) URL.revokeObjectURL(blobUrl.webcam);
+        }
       });
+      // 清除所有消息
+      message.destroy();
     };
   }, []);
 
   // 删除单个视频
-  const deleteVideo = (videoId: string) => {
+  const deleteVideo = async (videoId: string) => {
     // 找到要删除的视频
     const videoToDelete = localVideoList.find(video => video.id === videoId);
     if (!videoToDelete) return;
 
-    // 1. 释放该视频的 blob URL
-    if (blobUrlRef.current[videoId]) {
-      URL.revokeObjectURL(blobUrlRef.current[videoId]);
-      delete blobUrlRef.current[videoId];
-    }
-
-    // 2. 更新本地视频列表
-    const updatedVideoList = localVideoList.filter(video => video.id !== videoId);
-    setLocalVideoList(updatedVideoList);
-
-    // 3. 更新localStorage
-    // 转换为Base64格式存储（如果需要）
-    const videosForStorage = updatedVideoList.map(video => {
-      if (video.isLocalRecord && video.url && video.url.startsWith('blob:')) {
-        // 这里不需要重新转换，因为localStorage中已经存储了Base64格式
-        // 我们只需要保持原来的存储格式
-        return video;
+    try {
+      // 1. 如果是后端视频，调用API删除
+      if (!videoToDelete.isLocalRecord && videoToDelete.hashid) {
+        await deleteRecording(videoToDelete.hashid);
       }
-      return video;
-    });
-    localStorage.setItem('localRecordedVideos', JSON.stringify(videosForStorage));
 
-    // 4. 如果删除的是当前选中的视频，需要更新选中状态
-    if (selectedVideoIdProp === videoId) {
-      setSelectedVideoIdProp(null);
-      dispatch(setPlaybackUrl(''));
-      dispatch(resetPlaybackState());
+      // 2. 释放该视频的 blob URL（如果有的话）
+      if (blobUrlRef.current[videoId]) {
+        const blobUrl = blobUrlRef.current[videoId];
+        if (typeof blobUrl === 'string') {
+          // 本地视频：直接释放URL
+          URL.revokeObjectURL(blobUrl);
+        } else if (typeof blobUrl === 'object' && blobUrl !== null) {
+          // 后端视频：分别释放视频和摄像头URL
+          if (blobUrl.video) URL.revokeObjectURL(blobUrl.video);
+          if (blobUrl.webcam) URL.revokeObjectURL(blobUrl.webcam);
+        }
+        delete blobUrlRef.current[videoId];
+      }
+
+      // 3. 更新本地视频列表
+      const updatedVideoList = localVideoList.filter(video => video.id !== videoId);
+      setLocalVideoList(updatedVideoList);
+
+      // 4. 如果删除的是当前选中的视频，需要更新选中状态
+      if (selectedVideoIdProp === videoId) {
+        setSelectedVideoIdProp(null);
+        dispatch(setPlaybackUrl(''));
+        dispatch(resetPlaybackState());
+      }
+
+      // 5. 如果还有其他视频，默认选中第一个
+      if (updatedVideoList.length > 0 && !selectedVideoIdProp) {
+        setSelectedVideoIdProp(updatedVideoList[0].id);
+        dispatch(setPlaybackUrl(updatedVideoList[0].url));
+        dispatch(setCurrentVideo(updatedVideoList[0]));
+        const validDuration = isNaN(updatedVideoList[0].duration) || !isFinite(updatedVideoList[0].duration) ? 0 : updatedVideoList[0].duration;
+        dispatch(setDuration(validDuration));
+      }
+
+      messageApi.success('视频已删除！');
+    } catch (error) {
+      console.error('删除视频失败:', error);
+      messageApi.error('删除视频失败');
     }
-
-    // 5. 如果还有其他视频，默认选中第一个
-    if (updatedVideoList.length > 0 && !selectedVideoIdProp) {
-      setSelectedVideoIdProp(updatedVideoList[0].id);
-      dispatch(setPlaybackUrl(updatedVideoList[0].url));
-      dispatch(setCurrentVideo(updatedVideoList[0]));
-      const validDuration = isNaN(updatedVideoList[0].duration) || !isFinite(updatedVideoList[0].duration) ? 0 : updatedVideoList[0].duration;
-      dispatch(setDuration(validDuration));
-    }
-
-    message.success('视频已删除！');
   };
 
-  // 可选：清空录制视频列表（可暴露为按钮点击事件）
-  const clearLocalVideos = () => {
-    // 释放所有 blob URL
-    localVideoList
-      .forEach(item => {
-        if (blobUrlRef.current[item.id]) {
-          URL.revokeObjectURL(blobUrlRef.current[item.id]);
-          delete blobUrlRef.current[item.id];
-        }
-      });
-    // 保留 Mock 数据，清空录制视频
-    localStorage.setItem('localRecordedVideos', JSON.stringify([]));
-    // 更新组件状态，清空视频列表
-    setLocalVideoList([]);
-    // 重置选中视频状态
-    setSelectedVideoIdProp(null);
-    // 重置播放URL
-    dispatch(setPlaybackUrl(''));
-    // 清空Redux中的录制列表
-    dispatch(setRecordList([]));
-    // 重置播放状态
-    dispatch(resetPlaybackState());
-    // 重置录制状态，清除videoBlob和lastRecordingDuration，防止清空后重新添加视频
-    dispatch(resetRecordingState());
-    message.success('已清空本地录制视频！');
+  // 清空所有录制数据
+  const clearLocalVideos = async () => {
+    try {
+      // 1. 调用后端API清空所有数据
+      await clearAllRecordings();
+
+      // 2. 释放所有 blob URL
+      localVideoList
+        .forEach(item => {
+          if (blobUrlRef.current[item.id]) {
+            const blobUrl = blobUrlRef.current[item.id];
+            if (typeof blobUrl === 'string') {
+              // 本地视频：直接释放URL
+              URL.revokeObjectURL(blobUrl);
+            } else if (typeof blobUrl === 'object' && blobUrl !== null) {
+              // 后端视频：释放视频URL
+              if (blobUrl.video) URL.revokeObjectURL(blobUrl.video);
+              if (blobUrl.webcam) URL.revokeObjectURL(blobUrl.webcam);
+            }
+            delete blobUrlRef.current[item.id];
+          }
+        });
+
+      // 3. 更新组件状态，清空视频列表
+      setLocalVideoList([]);
+
+      // 4. 重置选中视频状态
+      setSelectedVideoIdProp(null);
+
+      // 5. 重置播放URL
+      dispatch(setPlaybackUrl(''));
+
+      // 6. 清空Redux中的录制列表
+      dispatch(setRecordList([]));
+
+      // 7. 重置播放状态
+      dispatch(resetPlaybackState());
+
+      // 8. 重置录制状态，清除videoBlob和lastRecordingDuration，防止清空后重新添加视频
+      dispatch(resetRecordingState());
+
+      messageApi.success('已清空后端录制数据！');
+    } catch (error) {
+      console.error('清空数据失败:', error);
+      messageApi.error('清空数据失败');
+    }
   };
 
   return (
-    <Card 
-      title={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Title level={5}>回放视频列表</Title>
-          {/* 可选：添加清空本地录制视频按钮 */}
-          <Text 
-            type="secondary"
-            onClick={clearLocalVideos}
-            style={{ cursor: 'pointer' }}
-          >
-            清空本地录屏
-          </Text>
-        </div>
-      }
-      className="playback-list-card"
-      variant="outlined" 
-    >
+    <>
+      {contextHolder}
+      <Card 
+        title={
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Title level={5}>回放视频列表</Title>
+            {/* 可选：添加清空后端录制视频按钮 */}
+            <Text 
+              type="secondary"
+              onClick={clearLocalVideos}
+              style={{ cursor: 'pointer' }}
+            >
+              清空后端录屏
+            </Text>
+          </div>
+        }
+        className="playback-list-card"
+        variant="outlined" 
+      >
       <Spin spinning={listLoading} className="playback-list">
         {videoListProp.length === 0 && !listLoading ? (
           <Empty description="暂无回放视频数据" style={{ margin: '20px 0' }} />
@@ -414,7 +674,11 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
               >
                 <div 
                   className="list-item-content"
-                  onClick={() => handleVideoSelect(video)}
+                  onClick={() => {
+                    console.log('=== 视频列表项被点击 ===', video.id, video.title);
+                    console.log('=== 点击的视频完整信息:', video);
+                    handleVideoSelect(video);
+                  }}
                   style={{ cursor: 'pointer' }}
                 >
                   {/* 视频标题：本地录制视频标记 */}
@@ -454,6 +718,7 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
         )}
       </Spin>
     </Card>
+    </>
   );
 };
 

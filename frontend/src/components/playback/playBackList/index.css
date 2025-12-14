@@ -10,7 +10,19 @@
   max-height: 500px; /* 限制列表最大高度，超出滚动 */
 }
 
+.video-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 450px; /* 确保容器高度在列表可滚动范围内 */
+  overflow-y: hidden; /* 隐藏容器溢出 */
+}
+
 .playback-list-item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* 确保标题在一行内显示，超出部分省略 */
+
   cursor: pointer;
   transition: all 0.2s ease;
 }

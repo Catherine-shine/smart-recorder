@@ -1,0 +1,108 @@
+{
+  "mouse": [
+    {
+      "x": 765,
+      "y": 417,
+      "timestamp": 1765707961035
+    },
+    {
+      "x": 743,
+      "y": 385,
+      "timestamp": 1765707961044
+    },
+    {
+      "x": 697,
+      "y": 315,
+      "timestamp": 1765707961058
+    },
+    {
+      "x": 675,
+      "y": 283,
+      "timestamp": 1765707961065
+    },
+    {
+      "x": 657,
+      "y": 252,
+      "timestamp": 1765707961075
+    },
+    {
+      "x": 641,
+      "y": 223,
+      "timestamp": 1765707961078
+    },
+    {
+      "x": 625,
+      "y": 194,
+      "timestamp": 1765707961087
+    },
+    {
+      "x": 613,
+      "y": 169,
+      "timestamp": 1765707961093
+    },
+    {
+      "x": 478,
+      "y": 169,
+      "timestamp": 1765707976057
+    },
+    {
+      "x": 475,
+      "y": 169,
+      "timestamp": 1765707976059
+    },
+    {
+      "x": 474,
+      "y": 169,
+      "timestamp": 1765707976111
+    },
+    {
+      "x": 473,
+      "y": 169,
+      "timestamp": 1765707976121
+    },
+    {
+      "x": 472,
+      "y": 169,
+      "timestamp": 1765707976128
+    },
+    {
+      "x": 471,
+      "y": 169,
+      "timestamp": 1765707976140
+    },
+    {
+      "x": 470,
+      "y": 169,
+      "timestamp": 1765707976158
+    }
+  ],
+  "whiteboard": [],
+  "audioStateChanges": [
+    {
+      "timestamp": 0,
+      "isEnabled": false
+    },
+    {
+      "timestamp": 14651,
+      "isEnabled": true
+    },
+    {
+      "timestamp": 19232,
+      "isEnabled": false
+    }
+  ],
+  "cameraStateChanges": [
+    {
+      "timestamp": 0,
+      "isEnabled": false
+    },
+    {
+      "timestamp": 4418,
+      "isEnabled": true
+    },
+    {
+      "timestamp": 13409,
+      "isEnabled": false
+    }
+  ]
+}

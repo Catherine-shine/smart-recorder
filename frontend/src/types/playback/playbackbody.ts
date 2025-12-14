@@ -1,5 +1,7 @@
 export type PlayStatus = 'playing' | 'paused' | 'stopped';
 
+export type BlobUrlType = string | { video: string; audio: string };
+
 
 export interface PlayButtonProps {
   status: PlayStatus; 
@@ -17,7 +19,13 @@ export interface PlaybackVideoItem {
   duration: number; // 视频时长（秒），可选
   createTime?: string; // 录制时间，可选
   isLocalRecord?: boolean;
-  hashid?: string|null; // 后端视频的hashid，用于下载链接
+  hashid?: string; // 后端视频的hashid，用于下载链接
+  trajectoryData?: {
+    mouse: any[];
+    whiteboard: any[];
+    audioStateChanges: Array<{ timestamp: number; isEnabled: boolean }>;
+    cameraStateChanges: Array<{ timestamp: number; isEnabled: boolean }>;
+  };
 }
 
 export interface PlaybackListProps {

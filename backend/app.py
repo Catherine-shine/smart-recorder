@@ -6,8 +6,8 @@ from routes import api
 def create_app():
     app = Flask(__name__)
     
-    # 启用 CORS
-    CORS(app)
+    # 启用 CORS，允许所有源访问
+    CORS(app, resources={r"/*": {"origins": "*"}})
     
     # 注册蓝图，设置前缀为 /api
     app.register_blueprint(api, url_prefix='/api')

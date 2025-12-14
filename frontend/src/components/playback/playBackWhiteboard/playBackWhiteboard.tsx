@@ -58,6 +58,12 @@ const PlayBackWhiteboard: React.FC<PlayBackWhiteboardProps> = ({
   // 计算总时长：优先使用外部传入，否则从operations计算
   const totalDuration = externalTotalDuration ?? 
     (operations.length > 0 ? Math.max(...operations.map(op => op.timestamp)) : 0);
+  
+  // 从operations中提取image类型的操作
+  const images = operations.filter(op => op.type === 'image').map(op => ({
+    id: op.id,
+    ...op.data
+  }));
 
   // ==================== 2. 核心渲染函数 ====================
   const renderToCanvas = useCallback((time: number) => {
@@ -223,6 +229,35 @@ const PlayBackWhiteboard: React.FC<PlayBackWhiteboardProps> = ({
         flexDirection: 'column'
       }}
     >
+      <div className="whiteboard-playback-content">
+        <div className="whiteboard-playback-inner">
+        {/* 渲染录制图片（空数组判断） */}
+        {images.length > 0 && images.map((img) => (
+          <div
+            key={img.id}
+            className="whiteboard-playback-image-wrapper"
+            style={{
+              // 动态数据：图片位置和尺寸，保留内联
+              left: img.x,
+              top: img.y,
+              width: img.width,
+              height: img.height,
+              // 动态样式：依赖isDarkMode，保留内联
+              border: isDarkMode ? '1px solid #374151' : '1px solid #e5e6eb',
+              boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.1)'
+            }}
+          >
+            <img
+              src={img.url}
+              alt={`回放图片-${img.id}`}
+              className="whiteboard-playback-image" // 提取样式到CSS
+              loading="lazy" // 懒加载优化
+            />
+          </div>
+        ))}
+        </div>
+      </div>
+
       {/* 白板画布区域 */}
       <div style={{ 
         flex: 1, 
