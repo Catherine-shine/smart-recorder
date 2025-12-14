@@ -7,7 +7,7 @@ import recordingReducer from './slices/recordingSlice';
 import mediastreamReducer from './slices/mediastreamSlice';
 import whiteboardReducer from './slices/whiteboardSlice';
 import layoutReducer from './slices/layoutSlice';
-
+import settingsReducer from './slices/settingsSlice'
 
 // 🔴 聚合所有 Reducer 为根 Reducer
 const rootReducer = combineReducers({
@@ -17,6 +17,7 @@ const rootReducer = combineReducers({
   mediastream: mediastreamReducer,                                                                                
   whiteboard: whiteboardReducer,
   layout:layoutReducer,
+  settings:settingsReducer
 
  
 });

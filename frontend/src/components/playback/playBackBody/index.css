@@ -23,6 +23,11 @@
     display: none;
 }
 
+/* 隐藏摄像头视频元素 */
+.hidden-webcam {
+    display: none;
+}
+
 .playback-card .ant-card-head {
   padding: var(--spacing-sm) 0 !important;
   margin-bottom: var(--spacing-md) !important;

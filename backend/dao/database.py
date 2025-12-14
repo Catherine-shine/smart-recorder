@@ -23,6 +23,7 @@ def init_db():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS recordings (
         id TEXT PRIMARY KEY,
+        session_id TEXT,
         trajectory_path TEXT,
         audio_path TEXT,
         screen_recording_path TEXT,
@@ -43,7 +44,9 @@ def init_db():
         total_duration REAL,
         final_screen_path TEXT,
         final_camera_path TEXT,
-        final_audio_path TEXT
+        final_audio_path TEXT,
+        audio_state_changes TEXT,  -- JSON字符串，存储音频状态变化
+        camera_state_changes TEXT   -- JSON字符串，存储摄像头状态变化
     )
     ''')
     

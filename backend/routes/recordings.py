@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, send_file, current_app
 from dao.database import get_db_connection
 from utils.subtitle import generate_vtt
+from utils.combine_video import combine_video_with_subtitle, combine_video_with_audio
 import os
 import hashlib
 import time
@@ -342,10 +343,38 @@ def complete_recording(session_id):
         conn.close()
         return jsonify({'error': '录制会话不存在或已关闭'}), 404
     
-    # 更新会话状态为完成
+    # 处理音频状态变化记录
+    audio_state_changes = []
+    if 'audio_state_changes' in request.form:
+        try:
+            audio_state_changes = json.loads(request.form['audio_state_changes'])
+            # 确保状态变化记录按时间顺序排列
+            audio_state_changes.sort(key=lambda x: x['timestamp'])
+        except json.JSONDecodeError:
+            print("音频状态变化记录解析失败")
+    
+    # 处理摄像头状态变化记录
+    camera_state_changes = []
+    if 'camera_state_changes' in request.form:
+        try:
+            camera_state_changes = json.loads(request.form['camera_state_changes'])
+            # 确保状态变化记录按时间顺序排列
+            camera_state_changes.sort(key=lambda x: x['timestamp'])
+        except json.JSONDecodeError:
+            print("摄像头状态变化记录解析失败")
+    
+    # 处理总时长
+    total_duration = 0
+    if 'total_duration' in request.form:
+        try:
+            total_duration = float(request.form['total_duration'])
+        except ValueError:
+            print("总时长解析失败")
+    
+    # 更新会话信息
     cursor.execute(
-        'UPDATE recording_sessions SET status = ? WHERE session_id = ?',
-        ('completed', session_id)
+        'UPDATE recording_sessions SET status = ?, total_duration = ?, audio_state_changes = ?, camera_state_changes = ? WHERE session_id = ?',
+        ('completed', total_duration, json.dumps(audio_state_changes), json.dumps(camera_state_changes), session_id)
     )
     
     conn.commit()
@@ -389,8 +418,9 @@ def upload_recording():
         conn.close()
         return jsonify({'hashid': hash_id, 'message': '录音已存在'})
 
-    # 计算录制时长（默认10秒，如果有屏幕录制文件则使用屏幕录制时长）
-    total_duration = 10000  # 默认10秒
+    # 计算录制时长
+    # 优先使用前端传递的总时长
+    total_duration = int(request.form.get('total_duration', 10000))  # 默认10秒
     screen_recording_path = None
     
     # 处理屏幕录制文件
@@ -462,26 +492,36 @@ def upload_recording():
                     
                     # 生成完整的状态变化序列（包括开始和结束）
                     audio_segments = []
-                    current_time = 0
-                    current_state = audio_state_changes[0]['isEnabled'] if audio_state_changes else False
-                    
-                    # 添加开始状态
-                    audio_segments.append({
-                        'isEnabled': current_state,
-                        'start': 0,
-                        'end': audio_state_changes[0]['timestamp'] if audio_state_changes else total_duration
-                    })
-                    
-                    # 处理所有状态变化
-                    for i, change in enumerate(audio_state_changes):
-                        current_state = change['isEnabled']
-                        start_time = change['timestamp']
-                        end_time = audio_state_changes[i+1]['timestamp'] if i+1 < len(audio_state_changes) else total_duration
+                    if audio_state_changes:
+                        # 设置初始状态（录制开始时的状态）
+                        initial_state = audio_state_changes[0]['isEnabled']
+                        initial_timestamp = audio_state_changes[0]['timestamp']
                         
+                        # 如果初始状态不是从0开始，添加从0到初始状态的时间段
+                        if initial_timestamp > 0:
+                            audio_segments.append({
+                                'isEnabled': initial_state,
+                                'start': 0,
+                                'end': initial_timestamp
+                            })
+                        
+                        # 处理所有状态变化
+                        for i, change in enumerate(audio_state_changes):
+                            current_state = change['isEnabled']
+                            start_time = change['timestamp']
+                            end_time = audio_state_changes[i+1]['timestamp'] if i+1 < len(audio_state_changes) else total_duration
+                            
+                            audio_segments.append({
+                                'isEnabled': current_state,
+                                'start': start_time,
+                                'end': end_time
+                            })
+                    else:
+                        # 如果没有状态变化记录，默认使用关闭状态
                         audio_segments.append({
-                            'isEnabled': current_state,
-                            'start': start_time,
-                            'end': end_time
+                            'isEnabled': False,
+                            'start': 0,
+                            'end': total_duration
                         })
                     
                     # 生成每个片段
@@ -511,7 +551,42 @@ def upload_recording():
                                     '-y', temp_file
                                 ]
                                 subprocess.run(cmd, check=True, capture_output=True)
-                                temp_files.append(temp_file)
+                                
+                                # 检查截取的音频是否达到了所需的时长
+                                actual_duration = get_file_duration(temp_file)
+                                if actual_duration < (segment['end'] - segment['start']):
+                                    # 生成补充的静音片段
+                                    supplement_duration = (segment['end'] - segment['start'] - actual_duration) / 1000
+                                    supplement_file = get_silent_audio_cache(supplement_duration * 1000)
+                                    if not os.path.exists(supplement_file):
+                                        cmd = [
+                                            FFMPEG_PATH, '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo',
+                                            '-t', str(supplement_duration), '-c:a', 'libopus', '-b:a', '128k', '-y', supplement_file
+                                        ]
+                                        subprocess.run(cmd, check=True, capture_output=True)
+                                    
+                                    # 合并原始片段和补充片段
+                                    merged_segment_file = os.path.join(UPLOAD_FOLDER, f'{hash_id}_audio_segment_{i}_merged.webm')
+                                    merge_list = os.path.join(UPLOAD_FOLDER, f'{hash_id}_audio_segment_{i}_merge.txt')
+                                    with open(merge_list, 'w') as f:
+                                        f.write(f"file '{temp_file}'\n")
+                                        f.write(f"file '{supplement_file}'\n")
+                                    
+                                    cmd = [
+                                        FFMPEG_PATH,
+                                        '-f', 'concat', '-safe', '0', '-i', merge_list,
+                                        '-c:a', 'libopus', '-b:a', '128k', '-y', merged_segment_file
+                                    ]
+                                    subprocess.run(cmd, check=True, capture_output=True)
+                                    
+                                    # 清理临时文件
+                                    os.unlink(merge_list)
+                                    os.unlink(temp_file)
+                                    
+                                    # 使用合并后的片段
+                                    temp_files.append(merged_segment_file)
+                                else:
+                                    temp_files.append(temp_file)
                             else:
                                 # 生成静音片段
                                 silent_file = get_silent_audio_cache(segment['end'] - segment['start'])
@@ -645,26 +720,36 @@ def upload_recording():
                     
                     # 生成完整的状态变化序列（包括开始和结束）
                     video_segments = []
-                    current_time = 0
-                    current_state = camera_state_changes[0]['isEnabled'] if camera_state_changes else False
-                    
-                    # 添加开始状态
-                    video_segments.append({
-                        'isEnabled': current_state,
-                        'start': 0,
-                        'end': camera_state_changes[0]['timestamp'] if camera_state_changes else total_duration
-                    })
-                    
-                    # 处理所有状态变化
-                    for i, change in enumerate(camera_state_changes):
-                        current_state = change['isEnabled']
-                        start_time = change['timestamp']
-                        end_time = camera_state_changes[i+1]['timestamp'] if i+1 < len(camera_state_changes) else total_duration
+                    if camera_state_changes:
+                        # 设置初始状态（录制开始时的状态）
+                        initial_state = camera_state_changes[0]['isEnabled']
+                        initial_timestamp = camera_state_changes[0]['timestamp']
                         
+                        # 如果初始状态不是从0开始，添加从0到初始状态的时间段
+                        if initial_timestamp > 0:
+                            video_segments.append({
+                                'isEnabled': initial_state,
+                                'start': 0,
+                                'end': initial_timestamp
+                            })
+                        
+                        # 处理所有状态变化
+                        for i, change in enumerate(camera_state_changes):
+                            current_state = change['isEnabled']
+                            start_time = change['timestamp']
+                            end_time = camera_state_changes[i+1]['timestamp'] if i+1 < len(camera_state_changes) else total_duration
+                            
+                            video_segments.append({
+                                'isEnabled': current_state,
+                                'start': start_time,
+                                'end': end_time
+                            })
+                    else:
+                        # 如果没有状态变化记录，默认使用关闭状态
                         video_segments.append({
-                            'isEnabled': current_state,
-                            'start': start_time,
-                            'end': end_time
+                            'isEnabled': False,
+                            'start': 0,
+                            'end': total_duration
                         })
                     
                     # 生成每个片段
@@ -694,7 +779,42 @@ def upload_recording():
                                     '-y', temp_file
                                 ]
                                 subprocess.run(cmd, check=True, capture_output=True)
-                                temp_files.append(temp_file)
+                                
+                                # 检查截取的视频是否达到了所需的时长
+                                actual_duration = get_file_duration(temp_file)
+                                if actual_duration < (segment['end'] - segment['start']):
+                                    # 生成补充的黑屏片段
+                                    supplement_duration = (segment['end'] - segment['start'] - actual_duration) / 1000
+                                    supplement_file = get_black_video_cache(supplement_duration * 1000)
+                                    if not os.path.exists(supplement_file):
+                                        cmd = [
+                                            FFMPEG_PATH, '-f', 'lavfi', '-i', 'color=c=black:s=640x480:r=30',
+                                            '-t', str(supplement_duration), '-c:v', 'libvpx-vp9', '-b:v', '500k', '-y', supplement_file
+                                        ]
+                                        subprocess.run(cmd, check=True, capture_output=True)
+                                    
+                                    # 合并原始片段和补充片段
+                                    merged_segment_file = os.path.join(UPLOAD_FOLDER, f'{hash_id}_video_segment_{i}_merged.webm')
+                                    merge_list = os.path.join(UPLOAD_FOLDER, f'{hash_id}_video_segment_{i}_merge.txt')
+                                    with open(merge_list, 'w') as f:
+                                        f.write(f"file '{temp_file}'\n")
+                                        f.write(f"file '{supplement_file}'\n")
+                                    
+                                    cmd = [
+                                        FFMPEG_PATH,
+                                        '-f', 'concat', '-safe', '0', '-i', merge_list,
+                                        '-c:v', 'libvpx-vp9', '-b:v', '500k', '-y', merged_segment_file
+                                    ]
+                                    subprocess.run(cmd, check=True, capture_output=True)
+                                    
+                                    # 清理临时文件
+                                    os.unlink(merge_list)
+                                    os.unlink(temp_file)
+                                    
+                                    # 使用合并后的片段
+                                    temp_files.append(merged_segment_file)
+                                else:
+                                    temp_files.append(temp_file)
                             else:
                                 # 生成黑屏片段
                                 black_file = get_black_video_cache(segment['end'] - segment['start'])
@@ -811,16 +931,53 @@ def upload_recording():
     # 保存轨迹文件
     trajectory_filename = f'{hash_id}.json'
     trajectory_path = os.path.join(UPLOAD_FOLDER, trajectory_filename)
-    trajectory_file.save(trajectory_path)
+    
+    # 解析轨迹文件内容并添加设备状态变化记录
+    trajectory_data = json.loads(trajectory_content)
+    
+    # 添加音频和摄像头状态变化记录
+    trajectory_data['audioStateChanges'] = audio_state_changes
+    trajectory_data['cameraStateChanges'] = camera_state_changes
+    
+    # 保存更新后的轨迹文件
+    with open(trajectory_path, 'w', encoding='utf-8') as f:
+        json.dump(trajectory_data, f, ensure_ascii=False, indent=2)
+    
+    # 重置原始轨迹文件指针（虽然可能不再需要，但保持兼容）
+    trajectory_file.seek(0)
 
     # 生成 VTT 字幕文件
     subtitle_path = os.path.join(UPLOAD_FOLDER, f'{hash_id}_subtitle.vtt')
     generate_vtt(audio_path, subtitle_path)
 
     # 将信息保存到数据库
+    # 首先检查是否有total_duration参数，如果有则创建或更新recording_sessions记录
+    if total_duration > 0:
+        # 生成一个session_id（使用相同的hash_id）
+        session_id = hash_id
+        
+        # 检查recording_sessions表中是否已有该session_id
+        existing_session = cursor.execute('SELECT * FROM recording_sessions WHERE session_id = ?', (session_id,)).fetchone()
+        
+        if existing_session:
+            # 更新现有记录
+            cursor.execute(
+                'UPDATE recording_sessions SET total_duration = ?, status = ? WHERE session_id = ?',
+                (total_duration, 'completed', session_id)
+            )
+        else:
+            # 创建新记录
+            cursor.execute(
+                'INSERT INTO recording_sessions (session_id, created_at, status, total_duration, audio_state_changes, camera_state_changes) VALUES (?, ?, ?, ?, ?, ?)',
+                (session_id, int(time.time() * 1000), 'completed', total_duration, json.dumps(audio_state_changes), json.dumps(camera_state_changes))
+            )
+    else:
+        session_id = None
+    
+    # 插入recordings记录
     cursor.execute(
-        'INSERT INTO recordings (id, trajectory_path, audio_path, screen_recording_path, webcam_recording_path, subtitle_path, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        (hash_id, trajectory_path, audio_path, screen_recording_path, webcam_recording_path, subtitle_path, int(time.time() * 1000))
+        'INSERT INTO recordings (id, session_id, trajectory_path, audio_path, screen_recording_path, webcam_recording_path, subtitle_path, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        (hash_id, session_id, trajectory_path, audio_path, screen_recording_path, webcam_recording_path, subtitle_path, int(time.time() * 1000))
     )
 
     conn.commit()
@@ -834,7 +991,13 @@ def get_recording(hashid):
     获取录音详情
     """
     conn = get_db_connection()
-    recording = conn.execute('SELECT * FROM recordings WHERE id = ?', (hashid,)).fetchone()
+    # 关联查询获取录制详情和时长
+    recording = conn.execute('''
+        SELECT r.*, rs.total_duration
+        FROM recordings r
+        LEFT JOIN recording_sessions rs ON r.session_id = rs.session_id
+        WHERE r.id = ?
+    ''', (hashid,)).fetchone()
     conn.close()
 
     if not recording:
@@ -855,7 +1018,8 @@ def get_recording(hashid):
         'webcamRecordingUrl': f'/api/recordings/{hashid}/webcam' if recording['webcam_recording_path'] else None,
         'subtitleUrl': f'/api/recordings/{hashid}/subtitle' if recording['subtitle_path'] else None,
         'subtitledVideoUrl': f'/api/recordings/{hashid}/subtitled-video' if recording['subtitled_video_path'] else None,
-        'createdAt': recording['created_at']
+        'createdAt': recording['created_at'],
+        'duration': recording['total_duration'] / 1000 if recording['total_duration'] is not None and recording['total_duration'] > 0 else 0
     })
 
 @bp.route('/recordings/<hashid>/audio', methods=['GET'])
@@ -1023,13 +1187,21 @@ def get_recordings():
     获取所有录制列表
     """
     conn = get_db_connection()
-    recordings = conn.execute('SELECT id, created_at, screen_recording_path, webcam_recording_path, subtitle_path FROM recordings ORDER BY created_at DESC').fetchall()
+    # 关联查询recordings和recording_sessions表，获取录制时长
+    recordings = conn.execute('''
+        SELECT r.id, r.created_at, r.screen_recording_path, r.webcam_recording_path, r.subtitle_path, r.session_id,
+               rs.total_duration
+        FROM recordings r
+        LEFT JOIN recording_sessions rs ON r.session_id = rs.session_id
+        ORDER BY r.created_at DESC
+    ''').fetchall()
     conn.close()
 
     return jsonify([{
         'hashid': recording['id'],
         'created_at': recording['created_at'],
-        'duration': 0,  # 这里可以从实际数据中获取时长，暂时返回0
+        # 将毫秒转换为秒，并确保返回有效值
+        'duration': recording['total_duration'] / 1000 if recording['total_duration'] is not None and recording['total_duration'] > 0 else 0,
         'hasScreenRecording': recording['screen_recording_path'] is not None,
         'hasWebcamRecording': recording['webcam_recording_path'] is not None,
         'hasSubtitle': recording['subtitle_path'] is not None
@@ -1144,3 +1316,103 @@ def get_all_files(hashid):
         
         # 发送zip文件给客户端
         return send_file(zip_path, as_attachment=True, download_name=zip_filename)
+
+@bp.route('/recordings/sessions/<session_id>/playback', methods=['GET'])
+def get_session_playback_data(session_id):
+    """
+    获取会话的回放数据
+    返回三个媒体流的URL、音频和摄像头的状态变化记录，以及总时长
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 获取会话信息
+    session = cursor.execute(
+        'SELECT * FROM recording_sessions WHERE session_id = ?',
+        (session_id,)
+    ).fetchone()
+    
+    if not session:
+        conn.close()
+        return jsonify({'error': '录制会话不存在'}), 404
+    
+    # 获取合成后的媒体文件路径
+    final_screen_path = session['final_screen_path']
+    final_camera_path = session['final_camera_path']
+    final_audio_path = session['final_audio_path']
+    total_duration = session['total_duration']
+    
+    # 获取音频和摄像头状态变化记录
+    audio_state_changes = []
+    camera_state_changes = []
+    
+    if session['audio_state_changes']:
+        try:
+            audio_state_changes = json.loads(session['audio_state_changes'])
+        except json.JSONDecodeError:
+            print("解析音频状态变化记录失败")
+    
+    if session['camera_state_changes']:
+        try:
+            camera_state_changes = json.loads(session['camera_state_changes'])
+        except json.JSONDecodeError:
+            print("解析摄像头状态变化记录失败")
+    
+    conn.close()
+    
+    # 构建响应
+    response = {
+        'session_id': session_id,
+        'total_duration': total_duration,
+        'audio_state_changes': audio_state_changes,
+        'camera_state_changes': camera_state_changes,
+        'media_urls': {
+            'screen': f'/api/recordings/sessions/{session_id}/media/screen' if final_screen_path else None,
+            'camera': f'/api/recordings/sessions/{session_id}/media/camera' if final_camera_path else None,
+            'audio': f'/api/recordings/sessions/{session_id}/media/audio' if final_audio_path else None
+        }
+    }
+    
+    return jsonify(response)
+
+@bp.route('/recordings/sessions/<session_id>/media/<media_type>', methods=['GET'])
+def get_session_media(session_id, media_type):
+    """
+    获取会话的媒体文件（支持流式传输）
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 获取会话信息
+    session = cursor.execute(
+        'SELECT * FROM recording_sessions WHERE session_id = ?',
+        (session_id,)
+    ).fetchone()
+    
+    if not session:
+        conn.close()
+        return jsonify({'error': '录制会话不存在'}), 404
+    
+    # 确定媒体文件路径
+    media_path = None
+    if media_type == 'screen':
+        media_path = session['final_screen_path']
+    elif media_type == 'camera':
+        media_path = session['final_camera_path']
+    elif media_type == 'audio':
+        media_path = session['final_audio_path']
+    else:
+        conn.close()
+        return jsonify({'error': '不支持的媒体类型'}), 400
+    
+    conn.close()
+    
+    if not media_path or not os.path.exists(media_path):
+        return jsonify({'error': '媒体文件不存在'}), 404
+    
+    # 根据媒体类型设置合适的MIME类型
+    mime_type = 'video/webm'
+    if media_type == 'audio':
+        mime_type = 'audio/webm'
+    
+    return send_file(media_path, mimetype=mime_type)

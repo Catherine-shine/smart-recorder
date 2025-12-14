@@ -21,6 +21,11 @@ export interface PlaybackState {
   captions:caption[],        // 新增：字幕数组
   currentCaption:string,  // 新增：当前显示的字幕文本
   currentVideo: PlaybackVideoItem | null; // 新增：当前播放的视频信息
+  trajectoryData: any | null; // 新增：轨迹数据，包含摄像头和麦克风状态变化记录
+  mediaTimestamps: { // 新增：预处理的媒体时间戳标记
+    camera: Array<{timestamp: number, isEnabled: boolean}>;
+    audio: Array<{timestamp: number, isEnabled: boolean}>;
+  };
 }
 
 // 2. 初始状态
@@ -41,6 +46,11 @@ const initialState: PlaybackState = {
   captions:[],        // 新增：字幕数组
   currentCaption:'',  // 新增：当前显示的字幕文本
   currentVideo: null, // 新增：当前播放的视频信息
+  trajectoryData: null, // 新增：轨迹数据，初始值为null
+  mediaTimestamps: { // 新增：预处理的媒体时间戳标记
+    camera: [],
+    audio: []
+  }
 }
 
 // 3. 创建切片
@@ -90,9 +100,19 @@ const playbackSlice = createSlice({
       state.videoLoading = false;
       state.webcamUrl = '';
       state.audioUrl = '';
+      state.trajectoryData = null;
 
       state.captions = [];
       state.currentCaption = '';
+    },
+    // 设置轨迹数据并预处理时间戳标记
+    setTrajectoryData: (state, action) => {
+      state.trajectoryData = action.payload;
+      // 预处理媒体时间戳标记
+      state.mediaTimestamps = {
+        camera: action.payload?.cameraStateChanges || [],
+        audio: action.payload?.audioStateChanges || []
+      };
     },
     // 停止播放的便捷方法
     stopPlayback: (state) => {
@@ -160,7 +180,8 @@ export const {
   togglePlayback,
   setCaptions,
   setCurrentCaption,
-  setCurrentVideo
+  setCurrentVideo,
+  setTrajectoryData
 } = playbackSlice.actions;
 
 // 导出切片 Reducer（供 rootReducer 聚合）
@@ -181,4 +202,5 @@ export type PlaybackAction = ReturnType<typeof setPlaying>
   | ReturnType<typeof resetPlaybackState>
   | ReturnType<typeof stopPlayback>
   | ReturnType<typeof togglePlayback>
-  | ReturnType<typeof setCurrentVideo>;
+  | ReturnType<typeof setCurrentVideo>
+  | ReturnType<typeof setTrajectoryData>;

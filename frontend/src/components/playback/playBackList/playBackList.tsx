@@ -2,7 +2,7 @@
 import type { RootState } from '../../../store';
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useRef, useState } from 'react';
-import { setPlaybackUrl, setDuration, setRecordList, resetPlaybackState, setCurrentVideo, setWebcamUrl, setAudioUrl } from '../../../store/slices/playbackSlice';
+import { setPlaybackUrl, setDuration, setRecordList, resetPlaybackState, setCurrentVideo, setWebcamUrl, setAudioUrl, setTrajectoryData } from '../../../store/slices/playbackSlice';
 import { RECORDING_STATUS } from '../../../types/common'
 // 引入录制切片的选择器和action
 import { 
@@ -19,17 +19,24 @@ import {  Card, Empty, Typography, Tag, Spin, message } from 'antd';
 import React from "react";
 import { formatDuration } from '../../../utils/playback/playback';
 import { v4 as uuidv4 } from 'uuid'; // 需安装：npm install uuid
-import { uploadRecording, getRecordingList, clearAllRecordings, deleteRecording, getRecordingDetail, downloadRecordingScreen, downloadRecordingWebcam, downloadRecordingAudio } from '../../../api/recording';
+import { uploadRecording, getRecordingList, clearAllRecordings, deleteRecording, getRecordingDetail, downloadRecordingScreen, downloadRecordingWebcam, downloadRecordingAudio, getRecordingTrajectory } from '../../../api/recording';
 
 import './index.css';
+import type { RecordingListItem } from '../../../types/api/apiTypes'; // 按实际路径调整
+
 
 const { Text, Title } = Typography;
-
+interface PlaybackListProps {
+  onSelectRecording?: (recordingId: string) => Promise<void>;
+}
 // 初始 Mock 数据
 
 
-const PlaybackList: React.FC = () => {
+const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
   const dispatch = useDispatch();
+  const [list, setList] = useState<RecordingListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [selectedVideoIdProp, setSelectedVideoIdProp] = useState<string | null>(null);
   // 视频列表（从后端获取）
   const [localVideoList, setLocalVideoList] = useState<PlaybackVideoItem[]>([]);
@@ -293,16 +300,65 @@ const PlaybackList: React.FC = () => {
           throw new Error('视频没有hashid，无法获取视频文件');
         }
         
-        // 并行下载视频、摄像头和音频文件
-        console.log('2. 开始并行下载视频、摄像头和音频文件...');
+        // 并行下载视频、摄像头、音频文件和轨迹数据
+        console.log('2. 开始并行下载视频、摄像头、音频文件和轨迹数据...');
         console.log('2.1 调用 downloadRecordingAudio:', hashid);
         const downloadStartTime = Date.now();
         
-        const [screenResp, webcamResp, audioResp] = await Promise.all([
+        const [screenResp, webcamResp, audioResp, recordingDetail] = await Promise.all([
           downloadRecordingScreen(hashid),
           downloadRecordingWebcam(hashid),
-          downloadRecordingAudio(hashid)
+          downloadRecordingAudio(hashid),
+          getRecordingDetail(hashid) // 获取录制详情
         ]);
+        
+        // 输出recordingDetail中的时间戳数据
+        console.log('2.1 从后端获取到的录制详情和时间戳数据:', recordingDetail);
+        if (recordingDetail) {
+          console.log('2.1.1 录制开始时间:', recordingDetail.createdAt || '未知');
+          console.log('2.1.2 录制时长:', recordingDetail.duration || '未知');
+          console.log('2.1.3 其他录制元数据:', {
+            hashid: recordingDetail.hashid,
+            sessionId: recordingDetail.sessionId,
+            createdAt: recordingDetail.createdAt
+          });
+        }
+        
+        // 单独获取轨迹数据
+        let trajectoryData: PlaybackVideoItem['trajectoryData'] = { mouse: [], whiteboard: [], audioStateChanges: [], cameraStateChanges: [] };
+        try {
+          const trajectoryResponse = await getRecordingTrajectory(hashid);
+          trajectoryData = trajectoryResponse;
+          console.log('2.2 获取到轨迹数据，包含摄像头和麦克风状态变化记录:', trajectoryData);
+          // 将轨迹数据保存到Redux中，供PlayBackBody组件使用
+          dispatch(setTrajectoryData(trajectoryData));
+          
+          // 输出轨迹数据中的时间戳信息
+          if (trajectoryData) {
+            console.log('2.2.1 轨迹数据统计信息:');
+            console.log('   - 鼠标轨迹数量:', trajectoryData.mouse?.length || 0);
+            console.log('   - 白板操作数量:', trajectoryData.whiteboard?.length || 0);
+            console.log('   - 音频状态变化次数:', trajectoryData.audioStateChanges?.length || 0);
+            console.log('   - 摄像头状态变化次数:', trajectoryData.cameraStateChanges?.length || 0);
+            
+            // 输出时间戳数据样本
+            if (trajectoryData.mouse && trajectoryData.mouse.length > 0) {
+              console.log('2.2.2 鼠标轨迹时间戳样本:', 
+                trajectoryData.mouse.slice(0, Math.min(3, trajectoryData.mouse.length))
+                  .map(item => item.timestamp));
+            }
+            if (trajectoryData.audioStateChanges && trajectoryData.audioStateChanges.length > 0) {
+              console.log('2.2.3 音频状态变化记录:', 
+                trajectoryData.audioStateChanges.map(item => ({ timestamp: item.timestamp, isEnabled: item.isEnabled })));
+            }
+            if (trajectoryData.cameraStateChanges && trajectoryData.cameraStateChanges.length > 0) {
+              console.log('2.2.4 摄像头状态变化记录:', 
+                trajectoryData.cameraStateChanges.map(item => ({ timestamp: item.timestamp, isEnabled: item.isEnabled })));
+            }
+          }
+        } catch (error) {
+          console.error('获取轨迹数据失败:', error);
+        }
         
         console.log('2.2 音频下载完成:', audioResp.type, audioResp.size);
         
@@ -367,6 +423,8 @@ const PlaybackList: React.FC = () => {
           ...video,
           url: videoUrl // 更新视频URL
         }));
+        // 将轨迹数据保存到Redux状态中
+        dispatch({ type: 'playback/setTrajectoryData', payload: trajectoryData });
         
         if (mergingMessage) {
           mergingMessage(); // 关闭合并消息
@@ -378,10 +436,20 @@ const PlaybackList: React.FC = () => {
         console.log('本地视频：直接使用原URL', video.url);
         dispatch(setPlaybackUrl(video.url));
         dispatch(setCurrentVideo(video));
+        // 本地视频可能没有轨迹数据，需要创建默认的空轨迹数据
+        const localTrajectoryData = video.trajectoryData || {
+          mouse: [],
+          whiteboard: [],
+          audioStateChanges: [],
+          cameraStateChanges: []
+        };
+        // 将轨迹数据保存到Redux状态中
+        dispatch({ type: 'playback/setTrajectoryData', payload: localTrajectoryData });
       }
       
-      // 切换视频时将列表中的时间传入进度条的slidermax中
-      dispatch(setDuration(video.duration));
+      // 切换视频时将列表中的时间传入进度条的slidermax中，确保时长有效
+      const validDuration = typeof video.duration === 'number' && !isNaN(video.duration) && isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+      dispatch(setDuration(validDuration));
       
       if (video.isLocalRecord) {
         messageApi.success(`已切换至：${video.title}`);

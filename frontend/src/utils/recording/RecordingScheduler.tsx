@@ -8,10 +8,10 @@ import {
   endRecording,
   resetRecordingState,
   selectRecordingStatus,
-  selectLastRecordingDuration,
 } from '../../store/slices/recordingSlice';
 import { RECORDING_STATUS } from '../../types/common';
 import { uploadRecording } from '../../api/recording';
+import type { RecordingUploadForm } from '../../types/api/apiTypes';
 import { setCameraEnabled, setMicrophoneEnabled } from '../../store/slices/mediastreamSlice';
 
 
@@ -47,11 +47,7 @@ const globalMediaRecorderRef = {
   cameraStateChanges: [] as MediaStateChange[],
   // 存储白板和鼠标数据
   whiteboardData: [] as any[],
-  mouseData: [] as { x: number; y: number; timestamp: number }[],
-  // 会话ID和分段录制相关字段
-  sessionId: '',
-  segmentIndex: 0,
-  lastSegmentTime: 0
+  mouseData: [] as { x: number; y: number; timestamp: number }[]
 };
 
 // 将单例挂载到window对象上，供其他组件访问
@@ -123,7 +119,7 @@ export function useRecordingScheduler() {
 
   // 开始录屏
   const handleStart = useCallback(async () => {
-    callCountRef.current.start++;
+    callCountRef.current.start++; 
     console.log('handleStart调用次数:', callCountRef.current.start);
     console.log('开始录制前的状态:', recordingStatus);
 
@@ -140,15 +136,14 @@ export function useRecordingScheduler() {
       // 设置初始化标志，防止并发调用时Redux action被执行多次
       globalMediaRecorderRef.isInitialized = true;
       
-      // 2. 不再需要初始化录制会话（改为结束后统一上传）
-      
       // 记录开始时间戳
       const startTime = Date.now();
       globalMediaRecorderRef.startTime = startTime;
-      globalMediaRecorderRef.lastSegmentTime = startTime;
-      globalMediaRecorderRef.segmentIndex = 0;
+      // 以下字段用于旧的分段上传逻辑，已不再需要
+      // globalMediaRecorderRef.lastSegmentTime = startTime;
+      // globalMediaRecorderRef.segmentIndex = 0;
       
-      // 初始化设备状态变化记录
+      // 初始化设备状态变化记录 - 默认关闭摄像头和麦克风
       globalMediaRecorderRef.audioStateChanges = [{
         timestamp: 0, // 录制开始时的时间戳
         isEnabled: false // 默认关闭麦克风
@@ -237,16 +232,24 @@ export function useRecordingScheduler() {
         };
       }
       
-      // 分段数据上传函数已移除，改为结束录制后统一上传
-
+      // 定期上传逻辑已移除，改为录制结束后统一上传
+      
+      // 设置分段上传定时器（每5秒上传一次）- 已移除
+      // const segmentUploadInterval = setInterval(uploadSegment, 5000);
+      
       // 8. 监听录制结束事件
       recorder.onstop = async () => {
         console.log('recorder.onstop: 录制结束事件被触发');
         console.log('recorder.onstop: recordedBlobs.length:', globalMediaRecorderRef.recordedBlobs.length);
         console.log('recorder.onstop: endTime - startTime:', globalMediaRecorderRef.endTime - globalMediaRecorderRef.startTime);
+        
+        // 清除分段上传定时器（已移除）
+        // clearInterval(segmentUploadInterval);
 
         try {
-          if (globalMediaRecorderRef.recordedBlobs.length === 0) {
+          if (globalMediaRecorderRef.recordedBlobs.length === 0 && 
+              globalMediaRecorderRef.audioBlobs.length === 0 && 
+              globalMediaRecorderRef.webcamBlobs.length === 0) {
             console.error('No video data recorded!');
             return;
           }
@@ -298,84 +301,60 @@ export function useRecordingScheduler() {
             URL.revokeObjectURL(url);
           }, 100);
 
-          // 上传录屏数据至后端
-          // 使用新的分段上传API
-          console.log('使用新API上传录制数据...');
-          const recordingDuration = globalMediaRecorderRef.endTime - globalMediaRecorderRef.startTime;
-          console.log('录制时长:', recordingDuration, '毫秒');
-
+          // 录制结束后统一上传所有数据
+          console.log('录制结束，开始统一上传所有数据...');
+          
+          // 构建上传数据对象
+          const uploadForm: RecordingUploadForm = {
+            trajectory: null as unknown as File, // 先设置为null，后面再赋值
+            audio_state_changes: globalMediaRecorderRef.audioStateChanges || [],
+            camera_state_changes: globalMediaRecorderRef.cameraStateChanges || [],
+            total_duration: actualDuration // 添加录制总时长（毫秒）
+          };
+          
+          // 添加屏幕录制数据
+          if (globalMediaRecorderRef.recordedBlobs.length > 0) {
+            const screenBlob = new Blob(globalMediaRecorderRef.recordedBlobs, { type: recorder.mimeType });
+            uploadForm.screen_recording = new File([screenBlob], 'screen_recording.webm', { type: screenBlob.type });
+          }
+          
+          // 添加音频数据
+          if (globalMediaRecorderRef.audioBlobs.length > 0) {
+            const audioBlob = new Blob(globalMediaRecorderRef.audioBlobs, { type: globalMediaRecorderRef.audioMimeType || 'audio/webm' });
+            uploadForm.audio = new File([audioBlob], 'audio_recording.webm', { type: audioBlob.type });
+          }
+          
+          // 添加摄像头数据
+          if (globalMediaRecorderRef.webcamBlobs.length > 0) {
+            const webcamBlob = new Blob(globalMediaRecorderRef.webcamBlobs, { type: globalMediaRecorderRef.webcamMimeType || recorder.mimeType });
+            uploadForm.webcam_recording = new File([webcamBlob], 'webcam_recording.webm', { type: webcamBlob.type });
+          }
+          
+          // 添加轨迹数据
+          const trajectoryData = {
+            mouse: globalMediaRecorderRef.mouseData || [],
+            whiteboard: globalMediaRecorderRef.whiteboardData || []
+          };
+          const trajectoryBlob = new Blob([JSON.stringify(trajectoryData)], { type: 'application/json' });
+          uploadForm.trajectory = new File([trajectoryBlob], 'trajectory.json', { type: 'application/json' });
+          
           try {
-            // 生成轨迹数据
-            const trajectoryData = {
-              mouse: globalMediaRecorderRef.mouseData,
-              whiteboard: globalMediaRecorderRef.whiteboardData
-            };
+            // 执行统一上传
+            console.log('正在上传完整录制数据...');
+            const uploadResponse = await uploadRecording(uploadForm);
+            console.log('完整录制数据上传成功！', uploadResponse);
             
-            const trajectoryBlob = new Blob([JSON.stringify(trajectoryData)], { type: 'application/json' });
-
-            // 创建上传表单数据
-            const formData = new FormData();
-            
-            // 添加录屏文件
-            if (globalMediaRecorderRef.recordedBlobs.length > 0) {
-              const screenBlob = new Blob(globalMediaRecorderRef.recordedBlobs, { type: recorder.mimeType });
-              formData.append('screen_recording', new File([screenBlob], 'screen_recording.webm', { type: screenBlob.type }));
-              formData.append('screen_start_time', '0');
-              formData.append('screen_end_time', recordingDuration.toString());
-            }
-            
-            // 添加摄像头文件
-            if (globalMediaRecorderRef.webcamBlobs.length > 0) {
-              const webcamBlob = new Blob(globalMediaRecorderRef.webcamBlobs, { type: globalMediaRecorderRef.webcamMimeType || recorder.mimeType });
-              formData.append('webcam_recording', new File([webcamBlob], 'webcam_recording.webm', { type: webcamBlob.type }));
-              formData.append('webcam_start_time', '0');
-              formData.append('webcam_end_time', recordingDuration.toString());
-            }
-            
-            // 添加麦克风文件
-            if (globalMediaRecorderRef.audioBlobs.length > 0) {
-              const audioBlob = new Blob(globalMediaRecorderRef.audioBlobs, { type: globalMediaRecorderRef.audioMimeType || 'audio/webm' });
-              formData.append('audio_recording', new File([audioBlob], 'audio.webm', { type: audioBlob.type }));
-              formData.append('audio_start_time', '0');
-              formData.append('audio_end_time', recordingDuration.toString());
-            }
-            
-            // 添加轨迹数据
-            formData.append('trajectory', new File([trajectoryBlob], 'trajectory.json', { type: trajectoryBlob.type }));
-            
-            // 添加设备状态变化记录
-            formData.append('audio_state_changes', JSON.stringify(globalMediaRecorderRef.audioStateChanges || []));
-            formData.append('camera_state_changes', JSON.stringify(globalMediaRecorderRef.cameraStateChanges || []));
-            
-            console.log('formData创建完成，包含:', [...formData.entries()].map(([key]) => key));
-
-            console.log('开始上传录屏数据...');
-
-            // 检查API函数是否可用
-            console.log('uploadRecording函数是否可用:', typeof uploadRecording);
-
-            // 构建上传数据对象
-            const uploadData = {
-              audio: globalMediaRecorderRef.audioBlobs.length > 0 ? new File([new Blob(globalMediaRecorderRef.audioBlobs, { type: globalMediaRecorderRef.audioMimeType || 'audio/webm' })], 'audio.webm', { type: globalMediaRecorderRef.audioMimeType || 'audio/webm' }) : undefined,
-              trajectory: new File([trajectoryBlob], 'trajectory.json', { type: trajectoryBlob.type }),
-              screen_recording: globalMediaRecorderRef.recordedBlobs.length > 0 ? new File([new Blob(globalMediaRecorderRef.recordedBlobs, { type: recorder.mimeType })], 'screen_recording.webm', { type: recorder.mimeType }) : undefined,
-              webcam_recording: globalMediaRecorderRef.webcamBlobs.length > 0 ? new File([new Blob(globalMediaRecorderRef.webcamBlobs, { type: globalMediaRecorderRef.webcamMimeType || recorder.mimeType })], 'webcam_recording.webm', { type: globalMediaRecorderRef.webcamMimeType || recorder.mimeType }) : undefined,
-              audio_state_changes: globalMediaRecorderRef.audioStateChanges || [],
-              camera_state_changes: globalMediaRecorderRef.cameraStateChanges || []
-            };
-            
-            console.log('使用统一上传API上传完整录制数据...');
-            const response = await uploadRecording(uploadData);
-            
-            console.log('录屏数据上传成功！', response);
+            // 不需要调用completeRecordingSession，因为我们已经一次性上传了所有数据
+            // 旧的分段上传逻辑已被移除
           } catch (uploadError) {
-            console.error('录屏数据上传失败：', uploadError);
+            console.error('录制数据上传失败:', uploadError);
             // 打印更详细的错误信息
             if (uploadError instanceof Error) {
               console.error('上传错误详情:', uploadError.message);
               console.error('上传错误堆栈:', uploadError.stack);
             }
           }
+          
         } catch (error) {
           console.error('录制结束处理失败：', error);
           // 打印更详细的错误信息

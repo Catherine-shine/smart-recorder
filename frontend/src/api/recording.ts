@@ -9,6 +9,16 @@ import type {
   InitRecordingSessionResponse,
   CompleteRecordingSessionResponse,
 } from '../types/api/apiTypes';
+import type { PlaybackVideoItem } from '../types/playback/playbackbody';
+
+// 联调专用：新增日志打印函数
+const logApi = (api: string, params: any, res: any, err?: any) => {
+  console.log(`[API联调] ${api}`, {
+    参数: params,
+    响应: res,
+    错误: err,
+  });
+};
 
 /**
  * 初始化录制会话
@@ -66,6 +76,10 @@ export const uploadRecording = async (form: RecordingUploadForm): Promise<Record
   if (form.camera_state_changes) {
     formData.append('camera_state_changes', JSON.stringify(form.camera_state_changes));
   }
+  // 添加录制总时长
+  if (form.total_duration !== undefined && form.total_duration !== null) {
+    formData.append('total_duration', form.total_duration.toString());
+  }
 
   return request.post('/recordings', formData, {
     headers: {
@@ -74,6 +88,7 @@ export const uploadRecording = async (form: RecordingUploadForm): Promise<Record
     timeout: 60000 // 1分钟超时
   });
 };
+
 
 /**
  * 获取录制详情
@@ -85,11 +100,32 @@ export const getRecordingDetail = async (hashed: RecordingHashed): Promise<Recor
   const startTime = Date.now();
   
   try {
-    const response = await request.get(`/recordings/${hashed}`);
+    // 响应拦截器会自动返回response.data（非blob类型）
+    const recordingDetail = await request.get(`/recordings/${hashed}`) as RecordingDetailResponse;
     console.log('=== 录制详情获取完成 ===', hashed, '耗时:', Date.now() - startTime, 'ms');
-    return response.data;
+    console.log('录制详情内容:', recordingDetail);
+    return recordingDetail;
   } catch (error) {
     console.error('=== 获取录制详情失败 ===', hashed, '错误:', error);
+    throw error;
+  }
+};
+
+/**
+ * 获取会话回放数据
+ * @param sessionId 会话ID
+ * @returns 会话回放数据
+ */
+export const getSessionPlaybackData = async (sessionId: string): Promise<any> => {
+  console.log('=== 开始获取会话回放数据 ===', sessionId);
+  const startTime = Date.now();
+  
+  try {
+    const response = await request.get(`/recordings/sessions/${sessionId}/playback`);
+    console.log('=== 会话回放数据获取完成 ===', sessionId, '耗时:', Date.now() - startTime, 'ms');
+    return response.data;
+  } catch (error) {
+    console.error('=== 获取会话回放数据失败 ===', sessionId, '错误:', error);
     throw error;
   }
 };
@@ -182,6 +218,21 @@ export const downloadRecordingSubtitledVideo = async (hashed: RecordingHashed): 
     responseType: 'blob',
   });
   return response.data;
+};
+
+/**
+ * 获取录制轨迹数据
+ * @param hashed 录制的hashid
+ */
+export const getRecordingTrajectory = async (hashed: RecordingHashed): Promise<PlaybackVideoItem['trajectoryData']> => {
+  try {
+    const trajectoryData = await request.get(`/recordings/${hashed}/trajectory`) as PlaybackVideoItem['trajectoryData'];
+    console.log('轨迹数据获取完成:', trajectoryData);
+    return trajectoryData;
+  } catch (error) {
+    console.error('获取轨迹数据失败:', error);
+    return { mouse: [], whiteboard: [], audioStateChanges: [], cameraStateChanges: [] };
+  }
 };
 
 /**

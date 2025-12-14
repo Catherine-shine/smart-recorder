@@ -7,10 +7,12 @@ import './index.css';
 
 const { Text } = Typography;
 
-// 格式化时间：秒 -> 分:秒（如 65s -> 1:05）
+// 格式化时间：秒 -> 分:秒（如 65s -> 1:05），确保处理NaN和无效值
 const formatTime = (seconds: number): string => {
-  const min = Math.floor(seconds / 60);
-  const sec = Math.floor(seconds % 60);
+  // 确保时间值有效
+  const validSeconds = typeof seconds === 'number' && !isNaN(seconds) && isFinite(seconds) ? seconds : 0;
+  const min = Math.floor(validSeconds / 60);
+  const sec = Math.floor(validSeconds % 60);
   return `${min}:${sec.toString().padStart(2, '0')}`;
 };
 
@@ -44,8 +46,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     <Space orientation="vertical" className="progress-bar-container">
       <Slider
         min={0}
-        max={duration}
-        value={currentTime}
+        max={typeof duration === 'number' && !isNaN(duration) && isFinite(duration) && duration > 0 ? duration : 1}
+        value={typeof currentTime === 'number' && !isNaN(currentTime) ? currentTime : 0}
         onChange={handleProgressChange}
         onAfterChange={handleProgressAfterChange}
         tooltip={{ formatter: tooltipFormatter }}

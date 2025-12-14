@@ -1,5 +1,6 @@
-  export const formatDuration = (seconds: number): string => {
-  const min = Math.floor(seconds / 60);
-  const sec = Math.floor(seconds % 60);
-  return `${min}:${sec.toString().padStart(2, '0')}`;
+export const formatDuration = (seconds?: number) => { // 加?允许undefined
+  if (seconds === undefined || seconds === null || isNaN(seconds)) return '00:00';
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };

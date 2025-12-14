@@ -14,6 +14,7 @@ export interface RecordingUploadForm {
   webcam_recording?: File; // 摄像头录制文件（可选）
   audio_state_changes?: Array<{ timestamp: number; isEnabled: boolean }>; // 音频状态变化记录
   camera_state_changes?: Array<{ timestamp: number; isEnabled: boolean }>; // 摄像头状态变化记录
+  total_duration?: number; // 录制总时长（毫秒）
 }
 
 /** 上传录制数据的响应 */
@@ -24,13 +25,15 @@ export interface RecordingUploadResponse {
 /** 录制详情响应 */
 export interface RecordingDetailResponse {
   hashid: RecordingHashed;
-  trajectory: string; // 轨迹数据内容（JSON字符串）
+  sessionId?: string; // 录制会话ID（可选）
+  trajectory: string | any; // 轨迹数据内容（JSON字符串或对象）
   audioUrl: string; // 音频下载链接
   screenRecordingUrl: string | null; // 录屏下载链接
   webcamRecordingUrl: string | null; // 摄像头文件下载链接
   subtitledVideoUrl: string | null; // 带字幕视频下载链接
   subtitleUrl: string; // 字幕下载链接
   createdAt: number; // 创建时间戳（毫秒）
+  duration: number; // 录制时长（秒）
 }
 
 /** 录制列表项响应 */

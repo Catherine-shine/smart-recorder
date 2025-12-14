@@ -2,14 +2,15 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import { Button } from 'antd';
-import { MinusOutlined } from '@ant-design/icons';
+import { MinusOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import './index.css';
 
 interface WebcamFloatingProps {
   webcamRef?: React.RefObject<HTMLVideoElement>;
+  webcamActive?: boolean;
 }
 
-const WebcamFloating: React.FC<WebcamFloatingProps> = ({ webcamRef }) => {
+const WebcamFloating: React.FC<WebcamFloatingProps> = ({ webcamRef, webcamActive = false }) => {
   const { webcamUrl } = useSelector((state: RootState) => state.playback);
   // 使用传入的ref或创建新的ref
   const videoRef = webcamRef || useRef<HTMLVideoElement>(null);
@@ -81,34 +82,26 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({ webcamRef }) => {
       className="webcam-floating-container"
       style={{
         left: `${position.x}px`,
-        top: `${position.y}px`,
-        transform: isMinimized ? 'scale(0.5)' : 'scale(1)',
-        transition: 'transform 0.3s ease'
+        top: `${position.y}px`
       }}
       onMouseDown={handleMouseDown}
     >
-      <div 
-        className="webcam-floating-header"
-      >
-        <span>摄像头</span>
-        <div className="webcam-floating-controls">
-          <Button 
-            type="text" 
-            icon={<MinusOutlined />} 
-            onClick={toggleMinimize}
-            size="small"
-          />
+      <video 
+        ref={videoRef} 
+        src={webcamUrl} 
+        className="webcam-video"
+        playsInline
+        autoPlay={false} // 明确设置为不自动播放（React中正确的驼峰命名）
+        onError={handleVideoError}
+        // 不再在加载完成后暂停视频，让playBackBody控制播放状态
+      />
+      {/* 摄像头未开启时的提示 */}
+      {!webcamActive && (
+        <div className="webcam-inactive-overlay">
+          <VideoCameraOutlined style={{ fontSize: '32px', color: '#ccc', marginBottom: '8px' }} />
+          <div className="webcam-inactive-text">摄像头未开启</div>
         </div>
-      </div>
-      <div className="webcam-floating-content">
-        <video 
-          ref={videoRef} 
-          src={webcamUrl} 
-          className="webcam-video"
-          playsInline
-          onError={handleVideoError}
-        />
-      </div>
+      )}
     </div>
   );
 };

@@ -20,6 +20,12 @@ export interface PlaybackVideoItem {
   createTime?: string; // 录制时间，可选
   isLocalRecord?: boolean;
   hashid?: string; // 后端视频的hashid，用于下载链接
+  trajectoryData?: {
+    mouse: any[];
+    whiteboard: any[];
+    audioStateChanges: Array<{ timestamp: number; isEnabled: boolean }>;
+    cameraStateChanges: Array<{ timestamp: number; isEnabled: boolean }>;
+  };
 }
 
 export interface PlaybackListProps {
