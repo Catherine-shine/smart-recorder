@@ -22,14 +22,41 @@ const PlaybackModule: React.FC = () => {
  const [whiteboardOperations, setWhiteboardOperations] = useState<any[]>([]);
   
 
+  // const handleSelectRecording = async (recordingId: string) => {
+  //   try {
+  //     const data = await getRecordingDetail(recordingId) as RecordingDetailResponseWithWhiteboard;
+  //     setWhiteboardOperations(data.whiteboard?.operations || []);
+  //   } catch (err) {
+  //     message.error('加载白板轨迹失败');
+  //   }
+  // };
   const handleSelectRecording = async (recordingId: string) => {
-    try {
-      const data = await getRecordingDetail(recordingId) as RecordingDetailResponseWithWhiteboard;
-      setWhiteboardOperations(data.whiteboard?.operations || []);
-    } catch (err) {
-      message.error('加载白板轨迹失败');
+  try {
+    setLoading(true);
+    const data = await getRecordingDetail(recordingId) as RecordingDetailResponseWithWhiteboard;
+    
+    // 1. 设置白板数据
+    setWhiteboardOperations(data.whiteboard?.operations || []);
+    
+    // 2. 更新选中的录制项
+    setSelectedRecording(data);
+    
+    // 3. 根据后端返回的URL设置视频播放地址
+    // 优先使用带字幕的视频，否则使用屏幕录制
+    const videoUrl = data.subtitledVideoUrl || data.screenRecordingUrl;
+    if (videoUrl) {
+      // 这里可能需要dispatch到Redux store，或者直接设置状态
+      // 取决于你的架构
+      console.log('选中录制的视频URL:', videoUrl);
     }
-  };
+    
+  } catch (err) {
+    console.error('加载录制详情失败:', err);
+    message.error('加载录制详情失败');
+  } finally {
+    setLoading(false);
+  }
+};
   // 视频时间同步：秒 → 毫秒（白板用毫秒）
   const handleVideoTimeUpdate = (timeInSeconds: number) => {
     setVideoCurrentTime(timeInSeconds * 1000);

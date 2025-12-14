@@ -1,4 +1,3 @@
-
 import type { RootState } from '../../../store';
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useRef, useState } from 'react';
@@ -145,15 +144,7 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
           if (!isDuplicate) {
             // 3. 生成 Blob URL（可直接在 video 中播放）
             const blobUrl = URL.createObjectURL(videoBlob);
-            const newVideoItem: PlaybackVideoItem = {
-              id: uuidv4(), // 唯一 ID
-              title: `本地录屏_${createTime}`,
-              url: blobUrl,
-              duration: Math.floor(lastRecordingDuration / 1000), // 转为秒（适配原有 formatDuration）
-              createTime,
-              isLocalRecord: true, // 标记为本地录制视频
-              hashid: undefined, // 后端返回的hashid，初始为undefined
-            };
+            let uploadHashid: string | null = null; // 提前声明hashid变量
 
             // 4. 上传视频到后端（带重试机制）
             try {
@@ -177,7 +168,7 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
                   });
 
                   // 更新视频项，添加后端hashid
-                  newVideoItem.hashid = uploadResponse.hashid;
+                  uploadHashid = uploadResponse.hashid;
                   message.success('视频已上传到服务器！');
                   uploadSuccess = true;
                 } catch (error) {
@@ -194,6 +185,17 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
               console.error('上传视频到后端失败:', error);
               message.error('上传视频到服务器失败，将使用本地下载');
             }
+
+            // 创建视频项
+            const newVideoItem: PlaybackVideoItem = {
+              id: uuidv4(), // 唯一 ID
+              title: `本地录屏_${createTime}`,
+              url: blobUrl,
+              duration: Math.floor(lastRecordingDuration / 1000), // 转为秒（适配原有 formatDuration）
+              createTime,
+              isLocalRecord: true, // 标记为本地录制视频
+              hashid: uploadHashid, // 使用提前声明的变量
+            };
 
             // 5. 更新本地视频列表（使用函数式更新避免闭包问题）
             setLocalVideoList(prevList => {
@@ -263,6 +265,12 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording}) => {
     setVideoLoading(true);
     dispatch(setPlaybackUrl(video.url));
     dispatch(setCurrentVideo(video)); // 将当前视频信息存储到Redux中
+    
+    // 🔴 添加这一行：调用父组件的回调，传递hashid
+    if (onSelectRecording && video.hashid) {
+      onSelectRecording(video.hashid);
+    }
+    
     // 切换视频时将列表中的时间传入进度条的slidermax中，确保不是NaN或Infinity
     const validDuration = isNaN(video.duration) || !isFinite(video.duration) ? 0 : video.duration;
     dispatch(setDuration(validDuration));

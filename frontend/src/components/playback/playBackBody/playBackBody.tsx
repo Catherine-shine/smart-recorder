@@ -20,8 +20,14 @@ import { Card, Row, Col, message, Spin, Typography } from 'antd';
 import React, { useRef, useEffect, useState } from "react";
 import './index.css';
 
-const PlayBackBody: React.FC = () => {
+interface PlayBackBodyProps {
+  onTimeUpdate?: (timeInSeconds: number) => void;
+}
+
+const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate: onTimeUpdateProp }) => {
     const dispatch = useDispatch();
+    // const { onTimeUpdate: onTimeUpdateProp } = props;
+  
   // 从 Redux 中获取所有状态
     const {
       playbackUrl,
@@ -51,6 +57,9 @@ const PlayBackBody: React.FC = () => {
       const video = videoRef.current;
       if (video) {
         dispatch(setCurrentTime(video.currentTime));
+        if (onTimeUpdateProp) {
+        onTimeUpdateProp(video.currentTime);
+      }
       }
     };
     
