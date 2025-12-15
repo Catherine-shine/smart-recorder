@@ -1,4 +1,3 @@
-
 import PlaybackList from "../../components/playback/playBackList/playBackList";
 import {  Row, Col, message} from 'antd';
 import React ,{useState} from "react";
@@ -116,46 +115,27 @@ const PlaybackModule: React.FC = () => {
   };
 
   return (
-    <div className="playback-container">
-      <div className="playback-content">
-          <Row gutter={[0, 20]}>
-            {/* 第一行：列表 + 白板回放 */}
-            <Col xs={24}>
-            {/* 整体布局：桌面端左列表右白板，移动端上列表下白板 */}
-              <Row gutter={[20, 20]} className="playback-layout">
-                {/* 回放列表：桌面端占8列，平板占6列，移动端占24列 */}
-                <Col xs={24} sm={6} md={6} lg={5} className="playback-list-col">
-                  <PlaybackList
-                  onSelectRecording={handleSelectRecording} 
-                  onSelectLocalRecording={handleSelectLocalRecording}
-                  />
-                </Col>
+  <div className="playback-container">
+    <div className="playback-content">
+      <Row gutter={[20, 20]} className="playback-layout">
+        {/* 回放列表 */}
+        <Col xs={24} sm={6} md={6} lg={5} className="playback-list-col">
+          <PlaybackList
+            onSelectRecording={handleSelectRecording} 
+            onSelectLocalRecording={handleSelectLocalRecording}
+          />
+        </Col>
 
-                {/* 白板回放区域：桌面端占16列，平板占18列，移动端占24列 */}
-                <Col xs={24} sm={18} md={18} lg={19} className="playback-player-col">
-                {/* 仅添加必要高度，避免布局塌陷 */}
-                <div style={{ height: 500 }}>
-                  <WhiteboardPlayback
-                  operations={whiteboardOperations} // 传入白板数据
-                  currentTime={videoCurrentTime}    // 与视频时间同步
-                  isDarkMode={false}
-                  />
-                </div>
-                </Col>
-                
-              </Row>
-            </Col>
-            {/* 第二行：视频播放器 */}
-            <Col xs={24}>
-              <PlayBackBody 
-              onTimeUpdate={handleVideoTimeUpdate} // 接收视频时间
-              />
-            </Col>
-        </Row>
-      </div>
-       
+        {/* 播放器区域 */}
+        <Col xs={24} sm={18} md={18} lg={19} className="playback-player-col">
+          <PlayBackBody 
+            onTimeUpdate={handleVideoTimeUpdate}
+          />
+        </Col>
+      </Row>
     </div>
-  );
+  </div>
+);
 };
 
 export default PlaybackModule;

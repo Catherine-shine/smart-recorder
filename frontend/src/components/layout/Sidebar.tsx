@@ -52,9 +52,8 @@ const Sidebar: React.FC = () => {
       path: '/playback',
       // 增加回放子菜单
       children: [
-        { key: 'playback-video', label: '视频回放', path: '/playback?view=video' },
-        { key: 'playback-whiteboard', label: '白板回放', path: '/playback?view=whiteboard' },
-        { key: 'playback-all', label: '完整回放', path: '/playback?view=all' }
+        { key: 'playback-video', label: '录制列表', path: '/playback?view=video' },
+        { key: 'playback-whiteboard', label: '录屏回放', path: '/playback?view=all' }
       ]
     },
     { 
