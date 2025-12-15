@@ -1,6 +1,8 @@
 // src/utils/recording/RecordingScheduler.ts
 import { useCallback, useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { saveRecording } from '../db';
+import { v4 as uuidv4 } from 'uuid';
 import {
   startRecording,
   pauseRecording,
@@ -8,6 +10,8 @@ import {
   endRecording,
   resetRecordingState,
   selectRecordingStatus,
+  selectCollectedData,
+  collectData,
 } from '../../store/slices/recordingSlice';
 import { RECORDING_STATUS } from '../../types/common';
 import { uploadRecording } from '../../api/recording';
@@ -58,6 +62,13 @@ window.globalMediaRecorderRef = globalMediaRecorderRef;
 export function useRecordingScheduler() {
   const dispatch = useAppDispatch();
   const recordingStatus = useAppSelector(selectRecordingStatus);
+  const collectedData = useAppSelector(selectCollectedData);
+  
+  // 使用 ref 追踪最新的 collectedData，解决闭包问题
+  const collectedDataRef = useRef(collectedData);
+  useEffect(() => {
+    collectedDataRef.current = collectedData;
+  }, [collectedData]);
 
   
   // 用于跟踪调用次数的ref
@@ -288,71 +299,57 @@ export function useRecordingScheduler() {
           }
 
           // 自动下载（可选）
-          const videoBlob = new Blob(globalMediaRecorderRef.recordedBlobs, { type: recorder.mimeType });
-          const url = URL.createObjectURL(videoBlob);
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = url;
-          a.download = `录屏_${new Date().toLocaleString().replace(/[/: ]/g, '_')}.${recorder.mimeType.includes('webm') ? 'webm' : 'mp4'}`;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }, 100);
+          // const videoBlob = new Blob(globalMediaRecorderRef.recordedBlobs, { type: recorder.mimeType });
+          // const url = URL.createObjectURL(videoBlob);
+          // const a = document.createElement('a');
+          // a.style.display = 'none';
+          // a.href = url;
+          // a.download = `录屏_${new Date().toLocaleString().replace(/[/: ]/g, '_')}.${recorder.mimeType.includes('webm') ? 'webm' : 'mp4'}`;
+          // document.body.appendChild(a);
+          // a.click();
+          // setTimeout(() => {
+          //   document.body.removeChild(a);
+          //   URL.revokeObjectURL(url);
+          // }, 100);
 
-          // 录制结束后统一上传所有数据
-          console.log('录制结束，开始统一上传所有数据...');
-          
-          // 构建上传数据对象
-          const uploadForm: RecordingUploadForm = {
-            trajectory: null as unknown as File, // 先设置为null，后面再赋值
-            audio_state_changes: globalMediaRecorderRef.audioStateChanges || [],
-            camera_state_changes: globalMediaRecorderRef.cameraStateChanges || [],
-            total_duration: actualDuration // 添加录制总时长（毫秒）
-          };
-          
-          // 添加屏幕录制数据
-          if (globalMediaRecorderRef.recordedBlobs.length > 0) {
-            const screenBlob = new Blob(globalMediaRecorderRef.recordedBlobs, { type: recorder.mimeType });
-            uploadForm.screen_recording = new File([screenBlob], 'screen_recording.webm', { type: screenBlob.type });
-          }
-          
-          // 添加音频数据
-          if (globalMediaRecorderRef.audioBlobs.length > 0) {
-            const audioBlob = new Blob(globalMediaRecorderRef.audioBlobs, { type: globalMediaRecorderRef.audioMimeType || 'audio/webm' });
-            uploadForm.audio = new File([audioBlob], 'audio_recording.webm', { type: audioBlob.type });
-          }
-          
-          // 添加摄像头数据
-          if (globalMediaRecorderRef.webcamBlobs.length > 0) {
-            const webcamBlob = new Blob(globalMediaRecorderRef.webcamBlobs, { type: globalMediaRecorderRef.webcamMimeType || recorder.mimeType });
-            uploadForm.webcam_recording = new File([webcamBlob], 'webcam_recording.webm', { type: webcamBlob.type });
-          }
-          
-          // 添加轨迹数据
-          const trajectoryData = {
-            mouse: globalMediaRecorderRef.mouseData || [],
-            whiteboard: globalMediaRecorderRef.whiteboardData || []
-          };
-          const trajectoryBlob = new Blob([JSON.stringify(trajectoryData)], { type: 'application/json' });
-          uploadForm.trajectory = new File([trajectoryBlob], 'trajectory.json', { type: 'application/json' });
-          
+          // 保存到 IndexedDB
           try {
-            // 执行统一上传
-            console.log('正在上传完整录制数据...');
-            const uploadResponse = await uploadRecording(uploadForm);
-            console.log('完整录制数据上传成功！', uploadResponse);
+            const recordingId = uuidv4();
+            const timestamp = globalMediaRecorderRef.startTime;
+            const currentCollectedData = collectedDataRef.current;
+
+            console.log('Saving recording to IndexedDB:', recordingId);
             
-            // 不需要调用completeRecordingSession，因为我们已经一次性上传了所有数据
-            // 旧的分段上传逻辑已被移除
-          } catch (uploadError) {
-            console.error('录制数据上传失败:', uploadError);
-            // 打印更详细的错误信息
-            if (uploadError instanceof Error) {
-              console.error('上传错误详情:', uploadError.message);
-              console.error('上传错误堆栈:', uploadError.stack);
+            const videoBlob = new Blob(globalMediaRecorderRef.recordedBlobs, { type: recorder.mimeType });
+            
+            let audioBlob = undefined;
+            if (globalMediaRecorderRef.audioBlobs.length > 0) {
+              audioBlob = new Blob(globalMediaRecorderRef.audioBlobs, { type: globalMediaRecorderRef.audioMimeType || 'audio/webm' });
             }
+            
+            let webcamBlob = undefined;
+            if (globalMediaRecorderRef.webcamBlobs.length > 0) {
+              webcamBlob = new Blob(globalMediaRecorderRef.webcamBlobs, { type: globalMediaRecorderRef.webcamMimeType || recorder.mimeType });
+            }
+
+            await saveRecording({
+              id: recordingId,
+              timestamp: timestamp,
+              duration: actualDuration,
+              videoBlob: videoBlob,
+              audioBlob: audioBlob,
+              webcamBlob: webcamBlob,
+              whiteboardData: globalMediaRecorderRef.whiteboardData,
+              mouseData: globalMediaRecorderRef.mouseData,
+              name: `录制_${new Date(timestamp).toLocaleString()}`
+            });
+            
+            console.log('Recording saved to IndexedDB successfully');
+            alert('录制已保存到本地');
+
+          } catch (error) {
+            console.error('保存录制失败：', error);
+            alert('保存录制失败');
           }
           
         } catch (error) {
@@ -370,10 +367,11 @@ export function useRecordingScheduler() {
       };
 
       // 9. 开始录制
-      recorder.start(1000);
+      recorder.start();
       
       // 9. 触发Redux开始录制Action - 确保在recorder.start()之后调用，避免状态更新过早
       dispatch(startRecording());
+      globalMediaRecorderRef.startTime = Date.now();
       console.log('Redux状态更新为RECORDING，当前recordingStatus:', RECORDING_STATUS.RECORDING);
 
     } catch (err) {
@@ -504,6 +502,7 @@ export function useRecordingScheduler() {
   // 收集白板数据（供外部组件调用，如白板组件）
   const collectWhiteboardData = useCallback((whiteboardData: any) => {
     if (recordingStatus !== RECORDING_STATUS.RECORDING) return;
+    console.log('RecordingScheduler: pushing whiteboard data', whiteboardData.id);
     globalMediaRecorderRef.whiteboardData.push(whiteboardData);
   }, [recordingStatus]);
 
@@ -568,9 +567,9 @@ export function useRecordingScheduler() {
           
           // 根据当前录制状态决定是否立即开始录制
           if (recordingStatus === RECORDING_STATUS.RECORDING) {
-            globalMediaRecorderRef.audioInstance.start(1000);
+            globalMediaRecorderRef.audioInstance.start();
           } else if (recordingStatus === RECORDING_STATUS.PAUSED) {
-            globalMediaRecorderRef.audioInstance.start(1000);
+            globalMediaRecorderRef.audioInstance.start();
             globalMediaRecorderRef.audioInstance.pause();
           }
           
@@ -656,9 +655,9 @@ export function useRecordingScheduler() {
           
           // 根据当前录制状态决定是否立即开始录制
           if (recordingStatus === RECORDING_STATUS.RECORDING) {
-            globalMediaRecorderRef.webcamInstance.start(1000);
+            globalMediaRecorderRef.webcamInstance.start();
           } else if (recordingStatus === RECORDING_STATUS.PAUSED) {
-            globalMediaRecorderRef.webcamInstance.start(1000);
+            globalMediaRecorderRef.webcamInstance.start();
             globalMediaRecorderRef.webcamInstance.pause();
           }
           

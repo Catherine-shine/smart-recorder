@@ -1,5 +1,5 @@
 "use client"
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect } from 'react'
 import {
 	DefaultToolbar,
 	DrawToolbarItem,
@@ -42,8 +42,11 @@ function WhiteboardContent() {
 			data: shape.type === 'erase' ? { shapeId: shape.id } : shape,
 			timestamp: Date.now()
 		}));
+		
 		// 2. 新增逻辑：仅录制中，存入recordingSlice的collectedData
+		// console.log('collectSingleWhiteboardAction:', actionType, 'status:', recordingStatus);
 		if (recordingStatus === 1) { // 匹配RECORDING_STATUS.RECORDING的值
+			console.log('Collecting whiteboard data:', shape.id);
 			collectWhiteboardData({
 				id: shape.id,
 				type: actionType,
@@ -95,8 +98,40 @@ function WhiteboardContent() {
 		// 获取编辑器实例
 		const editor = useEditor();
 
-		// 用tldraw的useValue监听store变化（替代直接传onStoreChange，更稳定）
-		useValue('whiteboard-store-changes', () => handleStoreChange, [handleStoreChange]);
+		// 使用 editor.store.listen 监听变化
+		useEffect(() => {
+			const cleanup = editor.store.listen((event) => {
+				const { changes } = event;
+				
+				// 处理新增的形状
+				Object.values(changes.added).forEach((record: any) => {
+					if (record.typeName === 'shape') {
+						let actionType: 'draw' | 'text' | 'select' = 'draw';
+						if (record.type === 'text') actionType = 'text';
+						collectSingleWhiteboardAction(record, actionType);
+					}
+				});
+
+				// 处理更新的形状
+				Object.values(changes.updated).forEach((change: any) => {
+					const [from, to] = change;
+					if (to.typeName === 'shape') {
+						let actionType: 'draw' | 'text' | 'select' = 'draw';
+						if (to.type === 'text') actionType = 'text';
+						collectSingleWhiteboardAction(to, actionType);
+					}
+				});
+
+				// 处理删除的形状
+				Object.values(changes.removed).forEach((record: any) => {
+					if (record.typeName === 'shape') {
+						collectSingleWhiteboardAction(record, 'erase');
+					}
+				});
+			});
+
+			return () => cleanup();
+		}, [editor, collectSingleWhiteboardAction]);
 		
 		// 用useValue监听工具变化
 		useValue('tool-change', () => {
@@ -149,11 +184,9 @@ function WhiteboardContent() {
 	)
 }
 
-// 主应用组件，提供Redux Provider
+// 主应用组件
 export default function WhiteboardApp() {
 	return (
-		<Provider store={store}>
-			<WhiteboardContent />
-		</Provider>
+		<WhiteboardContent />
 	)
 }

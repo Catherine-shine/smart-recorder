@@ -8,7 +8,7 @@ import WhiteboardPlayback from "../../components/playback/playBackWhiteboard/pla
 import { getRecordingDetail, getSessionPlaybackData } from "../../api/recording"; // 导入封装的接口
 import type { RecordingDetailResponse } from "../../types/api/apiTypes";
 import { useDispatch } from 'react-redux';
-import { setDuration, setTrajectoryData } from "../../store/slices/playbackSlice";
+import { setDuration, setTrajectoryData, setPlaybackUrl, setAudioUrl, setWebcamUrl } from "../../store/slices/playbackSlice";
 
 interface RecordingDetailResponseWithWhiteboard extends RecordingDetailResponse {
   whiteboard?: {
@@ -42,25 +42,52 @@ const PlaybackModule: React.FC = () => {
       setSelectedRecording(recordingData);
       
       // 更新Redux中的录制时长
-      // 优先使用后端API直接返回的duration（秒），如果没有则尝试从轨迹数据中提取
+      // 优先使用后端API直接返回的duration（秒）
       if (recordingData.duration && recordingData.duration > 0) {
         dispatch(setDuration(recordingData.duration));
-      } else if (recordingData.trajectory) {
+      } 
+
+      // 处理轨迹数据
+      if (recordingData.trajectory) {
         try {
-          const trajectoryData = JSON.parse(recordingData.trajectory);
+          const trajectoryData = typeof recordingData.trajectory === 'string' 
+            ? JSON.parse(recordingData.trajectory) 
+            : recordingData.trajectory;
           
           // 如果后端没有返回duration，则尝试从轨迹数据中提取
-          if (trajectoryData.duration) {
+          if ((!recordingData.duration || recordingData.duration <= 0) && trajectoryData.duration) {
             dispatch(setDuration(trajectoryData.duration));
           }
           
           if (trajectoryData) {
             dispatch(setTrajectoryData(trajectoryData));
+            
+            // 更新白板操作数据
+            // 尝试多种可能的结构
+            const ops = trajectoryData.whiteboardData || 
+                       (trajectoryData.whiteboard && trajectoryData.whiteboard.operations) || 
+                       trajectoryData.whiteboard || 
+                       [];
+            setWhiteboardOperations(ops);
           }
         } catch (error) {
           console.error('Failed to parse trajectory data:', error);
           message.error('解析轨迹数据失败');
         }
+      } else {
+        // 如果没有轨迹数据，清空
+        setWhiteboardOperations([]);
+      }
+
+      // 设置播放地址
+      if (recordingData.screenRecordingUrl) {
+        dispatch(setPlaybackUrl(recordingData.screenRecordingUrl));
+      }
+      if (recordingData.audioUrl) {
+        dispatch(setAudioUrl(recordingData.audioUrl));
+      }
+      if (recordingData.webcamRecordingUrl) {
+        dispatch(setWebcamUrl(recordingData.webcamRecordingUrl));
       }
       
       message.success('加载录制内容成功');
@@ -71,6 +98,18 @@ const PlaybackModule: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleSelectLocalRecording = (recording: any) => {
+    // 本地录制数据结构中，whiteboardData 已经是操作数组
+    // 需要将绝对时间戳转换为相对时间戳（相对于录制开始时间）
+    const startTime = recording.timestamp;
+    const normalizedOperations = (recording.whiteboardData || []).map((op: any) => ({
+      ...op,
+      timestamp: op.timestamp - startTime
+    }));
+    setWhiteboardOperations(normalizedOperations);
+  };
+
   // 视频时间同步：秒 → 毫秒（白板用毫秒）
   const handleVideoTimeUpdate = (timeInSeconds: number) => {
     setVideoCurrentTime(timeInSeconds * 1000);
@@ -88,6 +127,7 @@ const PlaybackModule: React.FC = () => {
                 <Col xs={24} sm={6} md={6} lg={5} className="playback-list-col">
                   <PlaybackList
                   onSelectRecording={handleSelectRecording} 
+                  onSelectLocalRecording={handleSelectLocalRecording}
                   />
                 </Col>
 
