@@ -1,0 +1,4 @@
+*.webm
+*.vtt
+*.json
+cache/
