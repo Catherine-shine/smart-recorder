@@ -8,9 +8,18 @@ import './index.css';
 interface WebcamFloatingProps {
   webcamRef?: React.RefObject<HTMLVideoElement>;
   webcamActive?: boolean;
+  visible?: boolean;
+  onLoadedMetadata?: () => void;
+  onError?: () => void;
 }
 
-const WebcamFloating: React.FC<WebcamFloatingProps> = ({ webcamRef, webcamActive = false }) => {
+const WebcamFloating: React.FC<WebcamFloatingProps> = ({ 
+  webcamRef, 
+  webcamActive = false,
+  visible = true,
+  onLoadedMetadata,
+  onError
+}) => {
   const { webcamUrl } = useSelector((state: RootState) => state.playback);
   // 使用传入的ref或创建新的ref
   const videoRef = webcamRef || useRef<HTMLVideoElement>(null);
@@ -75,6 +84,9 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({ webcamRef, webcamActive
       console.error('错误代码:', video.error.code);
       console.error('错误消息:', video.error.message);
     }
+    if (onError) {
+      onError();
+    }
   };
 
   return (
@@ -82,7 +94,8 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({ webcamRef, webcamActive
       className="webcam-floating-container"
       style={{
         left: `${position.x}px`,
-        top: `${position.y}px`
+        top: `${position.y}px`,
+        display: visible ? 'block' : 'none'
       }}
       onMouseDown={handleMouseDown}
     >
@@ -93,6 +106,7 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({ webcamRef, webcamActive
         playsInline
         autoPlay={false} // 明确设置为不自动播放（React中正确的驼峰命名）
         onError={handleVideoError}
+        onLoadedMetadata={onLoadedMetadata}
         // 不再在加载完成后暂停视频，让playBackBody控制播放状态
       />
       {/* 摄像头未开启时的提示 */}

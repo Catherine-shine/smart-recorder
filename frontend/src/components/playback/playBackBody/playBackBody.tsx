@@ -894,12 +894,13 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     <>
       <div>
         {/* 摄像头悬浮窗 */}
-        {showWebcam && (
-          <WebcamFloating 
-            webcamRef={webcamRef} 
-            webcamActive={webcamActive} 
-          />
-        )}
+        <WebcamFloating 
+          webcamRef={webcamRef} 
+          webcamActive={webcamActive} 
+          visible={showWebcam}
+          onLoadedMetadata={handleWebcamLoadedMetadata}
+          onError={handleWebcamError}
+        />
         <Card
           title="录屏回放"
           variant="outlined"
@@ -936,16 +937,6 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
             >
               您的浏览器不支持HTML5音频播放，请升级浏览器
             </audio>
-            
-            {/* 隐藏的摄像头视频元素 */}
-            <video
-              ref={webcamRef}
-              className="hidden-webcam"
-              onLoadedMetadata={handleWebcamLoadedMetadata}
-              onError={handleWebcamError}
-            >
-              您的浏览器不支持HTML5视频播放，请升级浏览器
-            </video>
             
             {/* 摄像头未开启提示已移至悬浮窗 */}
           </div>

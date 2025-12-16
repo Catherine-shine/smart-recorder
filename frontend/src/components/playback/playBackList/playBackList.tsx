@@ -79,7 +79,9 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording, onSelectL
     // 设置轨迹数据
     const trajectoryData = {
       whiteboard: recording.whiteboardData || [],
-      mouse: recording.mouseData || []
+      mouse: recording.mouseData || [],
+      audioStateChanges: recording.audioStateChanges || [],
+      cameraStateChanges: recording.cameraStateChanges || []
     };
     dispatch(setTrajectoryData(trajectoryData));
 

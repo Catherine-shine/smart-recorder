@@ -343,6 +343,8 @@ export function useRecordingScheduler() {
               webcamBlob: webcamBlob,
               whiteboardData: globalMediaRecorderRef.whiteboardData,
               mouseData: globalMediaRecorderRef.mouseData,
+              audioStateChanges: globalMediaRecorderRef.audioStateChanges,
+              cameraStateChanges: globalMediaRecorderRef.cameraStateChanges,
               name: `录制_${new Date(timestamp).toLocaleString()}`
             });
             

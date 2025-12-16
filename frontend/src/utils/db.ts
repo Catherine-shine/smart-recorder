@@ -12,6 +12,8 @@ interface RecordingDB extends DBSchema {
       webcamBlob?: Blob;
       whiteboardData: any[];
       mouseData: any[];
+      audioStateChanges?: any[];
+      cameraStateChanges?: any[];
       name: string;
       isUploaded: boolean;
     };
@@ -47,6 +49,8 @@ export const saveRecording = async (recording: {
   webcamBlob?: Blob;
   whiteboardData: any[];
   mouseData: any[];
+  audioStateChanges?: any[];
+  cameraStateChanges?: any[];
   name: string;
 }) => {
   const db = await initDB();
