@@ -50,7 +50,10 @@ const Sidebar: React.FC = () => {
       label: '回放',
       description: '查看录制内容',
       path: '/playback'
+<<<<<<< HEAD
       // 移除回放子菜单
+=======
+>>>>>>> 2edef114e5c9184ab17eb54beb0b0a71351a60ad
     },
     { 
       key: 'settings', 
