@@ -49,12 +49,7 @@ const Sidebar: React.FC = () => {
       icon: <PlayCircleOutlined />, 
       label: '回放',
       description: '查看录制内容',
-      path: '/playback',
-      // 增加回放子菜单
-      children: [
-        { key: 'playback-video', label: '录制列表', path: '/playback?view=video' },
-        { key: 'playback-whiteboard', label: '录屏回放', path: '/playback?view=all' }
-      ]
+      path: '/playback'
     },
     { 
       key: 'settings', 
