@@ -10,6 +10,8 @@ export interface MediaStreamState {
   error: string | null;
   constraints: MediaStreamConstraints;
   isCameraPreviewVisible: boolean;
+  selectedAudioDeviceId: string | null;
+  selectedVideoDeviceId: string | null;
 }
 
 // 初始状态
@@ -23,7 +25,9 @@ const initialState: MediaStreamState = {
     video: true,
     audio: true
   },
-  isCameraPreviewVisible: false
+  isCameraPreviewVisible: false,
+  selectedAudioDeviceId: null,
+  selectedVideoDeviceId: null
 };
 
 export const mediastreamSlice = createSlice({
@@ -35,6 +39,16 @@ export const mediastreamSlice = createSlice({
       state.mediaStream = action.payload;
     },
     
+    // 设置选中的音频设备ID
+    setSelectedAudioDeviceId: (state, action: PayloadAction<string | null>) => {
+      state.selectedAudioDeviceId = action.payload;
+    },
+
+    // 设置选中的视频设备ID
+    setSelectedVideoDeviceId: (state, action: PayloadAction<string | null>) => {
+      state.selectedVideoDeviceId = action.payload;
+    },
+
     // 设置摄像头状态
     setCameraEnabled: (state, action: PayloadAction<boolean>) => {
       state.isCameraEnabled = action.payload;
@@ -81,6 +95,8 @@ export const {
   setError,
   setConstraints,
   setCameraPreviewVisible,
+  setSelectedAudioDeviceId,
+  setSelectedVideoDeviceId,
   resetState,
 } = mediastreamSlice.actions;
 

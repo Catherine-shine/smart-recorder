@@ -16,6 +16,7 @@ import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { selectLastRecordingDuration } from '../../../store/slices/recordingSlice';
 import { setCameraPreviewVisible } from '../../../store/slices/mediastreamSlice';
 import CameraPreview from './cameraPreview';
+import DeviceSelector from './DeviceSelector';
 import { RECORDING_STATUS } from '../../../types/common';
 
 const ControlPanel: React.FC = () => {
@@ -110,26 +111,34 @@ const ControlPanel: React.FC = () => {
         </Tooltip>
 
         {/* 摄像头控制 */}
-        <Tooltip title={isCameraOn ? "关闭摄像头" : "打开摄像头"} overlayStyle={{ opacity: 0.8 }}>
-          <Button
-            {...baseButtonProps}
-            type={isCameraOn ? "primary" : "default"}
-            icon={<CameraOutlined />}
-            onClick={wrappedToggleCamera}
-            loading={isLoading}
-          />
-        </Tooltip>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip title={isCameraOn ? "关闭摄像头" : "打开摄像头"} overlayStyle={{ opacity: 0.8 }}>
+            <Button
+              {...baseButtonProps}
+              style={{ ...baseButtonProps.style, borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+              type={isCameraOn ? "primary" : "default"}
+              icon={<CameraOutlined />}
+              onClick={wrappedToggleCamera}
+              loading={isLoading}
+            />
+          </Tooltip>
+          <DeviceSelector type="video" />
+        </div>
 
         {/* 麦克风控制 */}
-        <Tooltip title={isMicOn ? "关闭麦克风" : "打开麦克风"} overlayStyle={{ opacity: 0.8 }}>
-          <Button
-            {...baseButtonProps}
-            type={isMicOn ? "primary" : "default"}
-            icon={isMicOn ? <AudioOutlined /> : <AudioMutedOutlined />}
-            onClick={wrappedToggleMicrophone}
-            loading={isLoading}
-          />
-        </Tooltip>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip title={isMicOn ? "关闭麦克风" : "打开麦克风"} overlayStyle={{ opacity: 0.8 }}>
+            <Button
+              {...baseButtonProps}
+              style={{ ...baseButtonProps.style, borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+              type={isMicOn ? "primary" : "default"}
+              icon={isMicOn ? <AudioOutlined /> : <AudioMutedOutlined />}
+              onClick={wrappedToggleMicrophone}
+              loading={isLoading}
+            />
+          </Tooltip>
+          <DeviceSelector type="audio" />
+        </div>
 
         {/* 摄像头预览控制 */}
         <Tooltip

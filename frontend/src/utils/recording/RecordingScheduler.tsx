@@ -63,6 +63,8 @@ export function useRecordingScheduler() {
   const dispatch = useAppDispatch();
   const recordingStatus = useAppSelector(selectRecordingStatus);
   const collectedData = useAppSelector(selectCollectedData);
+  const selectedAudioDeviceId = useAppSelector(state => state.mediastream.selectedAudioDeviceId);
+  const selectedVideoDeviceId = useAppSelector(state => state.mediastream.selectedVideoDeviceId);
   
   // 使用 ref 追踪最新的 collectedData，解决闭包问题
   const collectedDataRef = useRef(collectedData);
@@ -523,7 +525,7 @@ export function useRecordingScheduler() {
       // 取消静音 - 尝试重新获取麦克风流
       try {
         const audioConstraints: MediaStreamConstraints = {
-          audio: true
+          audio: selectedAudioDeviceId ? { deviceId: { exact: selectedAudioDeviceId } } : true
         };
         
         navigator.mediaDevices.getUserMedia(audioConstraints).then(stream => {
@@ -617,7 +619,7 @@ export function useRecordingScheduler() {
       // 打开摄像头 - 尝试重新获取摄像头流
       try {
         const cameraConstraints: MediaStreamConstraints = {
-          video: true,
+          video: selectedVideoDeviceId ? { deviceId: { exact: selectedVideoDeviceId } } : true,
           audio: false
         };
         
