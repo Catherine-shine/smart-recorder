@@ -2,6 +2,23 @@ export type PlayStatus = 'playing' | 'paused' | 'stopped';
 
 export type BlobUrlType = string | { video: string; audio: string };
 
+export type PlaybackRateOption = {
+  label: string;
+  value: number;
+};
+export interface PlaybackRateProps {
+  value: number; // 当前倍速
+  onChange: (rate: number) => void; // 倍速变更回调
+}
+
+export interface ProgressBarProps {
+  onChange: (time: number) => void; 
+}
+
+export interface PlayBackBodyProps {
+  onTimeUpdate?: (timeInSeconds: number) => void;
+}
+
 
 export interface PlayButtonProps {
   status: PlayStatus; 

@@ -71,3 +71,51 @@
   z-index: 2; /* Canvas在图片上方 */
   display: block;
 }
+
+/* 暗色主题样式 */
+body.dark .whiteboard-playback-card {
+  background-color: #1a1f2e;
+  border-color: #373f51;
+}
+
+body.dark .whiteboard-playback-card-head {
+  background-color: #1a1f2e;
+  border-bottom-color: #373f51;
+}
+
+body.dark .whiteboard-playback-title {
+  color: #ffffff !important;
+}
+
+body.dark .whiteboard-playback-content {
+  background-color: #0a0e17;
+}
+
+body.dark .whiteboard-playback-canvas {
+  background-color: #0a0e17;
+}
+
+body.dark .whiteboard-playback-image-wrapper {
+  border-color: #373f51;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* 回放控制栏样式 */
+body.dark .whiteboard-playback-controls {
+  background-color: #1a1f2e;
+  border-color: #373f51;
+  color: #ffffff;
+}
+
+body.dark .whiteboard-playback-controls button {
+  color: #ffffff;
+}
+
+body.dark .whiteboard-playback-controls button:hover {
+  background-color: #373f51;
+}
+
+/* 无数据提示文字 */
+body.dark .whiteboard-playback-no-data {
+  color: #ffffff;
+}

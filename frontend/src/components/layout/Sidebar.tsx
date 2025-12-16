@@ -42,31 +42,24 @@ const Sidebar: React.FC = () => {
       icon: <EditOutlined />, 
       label: '画笔工具',
       description: '在白板上绘图',
-      path: '/'
+      path: '/' 
     },
     { 
       key: 'play', 
       icon: <PlayCircleOutlined />, 
       label: '回放',
       description: '查看录制内容',
-      path: '/playback',
-      // 增加回放子菜单
-      children: [
-        { key: 'playback-video', label: '录制列表', path: '/playback?view=video' },
-        { key: 'playback-whiteboard', label: '录屏回放', path: '/playback?view=all' }
-      ]
+      path: '/playback'
+      // 移除回放子菜单
     },
     { 
       key: 'settings', 
       icon: <SettingOutlined />, 
       label: '设置',
       description: '应用设置',
-      path: null
+      path: null 
     },
   ];
-
-  // 子菜单状态
-  const [expandedSubMenu, setExpandedSubMenu] = useState<string | null>(null);
 
   // 路由变化时自动同步激活工具
   React.useEffect(() => {
@@ -178,274 +171,96 @@ const Sidebar: React.FC = () => {
       >
         <div className="sidebar-menu">
           {tools.map(tool => {
-            if (tool.children && tool.children.length > 0) {
-              // 有子菜单的工具项（如回放）
-              return (
-                <div key={tool.key} className="sidebar-tool-with-submenu">
-                  <Tooltip 
-                    title={tool.label} 
-                    placement="right"
-                    color={isDarkMode ? '#2d3748' : '#f8fafc'}
-                    arrow={{ pointAtCenter: true, style: { color: isDarkMode ? '#374151' : '#e2e8f0' } }}
-                    styles={{ 
-                      root: { 
-                        borderRadius: 10, 
-                        boxShadow: isDarkMode 
-                          ? '0 4px 15px rgba(0, 0, 0, 0.3)' 
-                          : '0 4px 15px rgba(0, 0, 0, 0.1)',
-                        border: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0',
-                        padding: '8px 16px',
-                        fontSize: 14,
-                      } 
-                    }}
-                  >
-                    <div
-                      className={`tool-button ${activeTool === tool.key ? 'active' : ''}`}
-                      onClick={() => {
-                        // 如果点击的是回放工具，切换子菜单展开状态
-                        setExpandedSubMenu(expandedSubMenu === tool.key ? null : tool.key);
-                        handleToolClick(tool.key, tool.path);
-                      }}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: 64,
-                        width: 64,
-                        cursor: 'pointer',
-                        fontSize: 24,
-                        color: activeTool === tool.key 
-                          ? (isDarkMode ? '#f9fafb' : '#1e293b') 
-                          : (isDarkMode ? '#94a3b8' : '#64748b'),
-                        background: activeTool === tool.key 
-                          ? (isDarkMode 
-                            ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
-                            : 'linear-gradient(135deg, #007bff 0%, #6366f1 100%)')
-                          : 'transparent',
-                        borderRadius: 20,
-                        border: 'none',
-                        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                        boxShadow: activeTool === tool.key 
-                          ? (isDarkMode 
-                            ? '0 0 20px rgba(59, 130, 246, 0.4)' 
-                            : '0 0 20px rgba(0, 123, 255, 0.3)')
-                          : 'none',
-                      }}
-                      onMouseEnter={(e) => {
-                        const el = e.currentTarget;
-                        el.style.color = isDarkMode ? '#f9fafb' : '#1e293b';
-                        el.style.background = isDarkMode 
-                          ? 'rgba(59, 130, 246, 0.2)' 
-                          : 'rgba(0, 123, 255, 0.1)';
-                        el.style.transform = 'scale(1.1)';
-                        el.style.boxShadow = isDarkMode 
-                          ? '0 0 15px rgba(59, 130, 246, 0.2)' 
-                          : '0 0 15px rgba(0, 123, 255, 0.1)';
-                      }}
-                      onMouseLeave={(e) => {
-                        const el = e.currentTarget;
-                        el.style.color = activeTool === tool.key 
-                          ? (isDarkMode ? '#f9fafb' : '#1e293b') 
-                          : (isDarkMode ? '#94a3b8' : '#64748b');
-                        el.style.background = activeTool === tool.key 
-                          ? (isDarkMode 
-                            ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
-                            : 'linear-gradient(135deg, #007bff 0%, #6366f1 100%)')
-                          : 'transparent';
-                        el.style.transform = 'scale(1)';
-                        el.style.boxShadow = activeTool === tool.key 
-                          ? (isDarkMode 
-                            ? '0 0 20px rgba(59, 130, 246, 0.4)' 
-                            : '0 0 20px rgba(0, 123, 255, 0.3)')
-                          : 'none';
-                      }}
-                    >
-                      <button
-                        className={`tool-button ${activeTool === tool.key ? 'active' : ''}`}
-                        onClick={() => {
-                          setExpandedSubMenu(expandedSubMenu === tool.key ? null : tool.key);
-                          handleToolClick(tool.key, tool.path);
-                        }}
-                        aria-label={tool.label}
-                      >
-                        <div className="tool-icon-wrapper">
-                          {tool.icon}
-                        </div>
-                        <span className="tool-label">{tool.label}</span>
-                      </button>
-                    </div>
-                  </Tooltip>
-                  
-                  {/* 子菜单 */}
-                  {expandedSubMenu === tool.key && (
-                    <div className="sidebar-submenu">
-                      {tool.children.map(subItem => (
-                        <Tooltip 
-                          key={subItem.key} 
-                          title={subItem.label} 
-                          placement="right"
-                          color={isDarkMode ? '#2d3748' : '#f8fafc'}
-                          arrow={{ pointAtCenter: true, style: { color: isDarkMode ? '#374151' : '#e2e8f0' } }}
-                          styles={{ 
-                            root: { 
-                              borderRadius: 10, 
-                              boxShadow: isDarkMode 
-                                ? '0 4px 15px rgba(0, 0, 0, 0.3)' 
-                                : '0 4px 15px rgba(0, 0, 0, 0.1)',
-                              border: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0',
-                              padding: '8px 16px',
-                              fontSize: 14,
-                            } 
-                          }}
-                        >
-                          <div
-                            className={`submenu-item ${activeTool === subItem.key ? 'active' : ''}`}
-                            onClick={() => handleToolClick(subItem.key, subItem.path)}
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              height: 50,
-                              width: 50,
-                              margin: '8px auto',
-                              cursor: 'pointer',
-                              fontSize: 18,
-                              color: isDarkMode ? '#94a3b8' : '#64748b',
-                              background: 'transparent',
-                              borderRadius: 15,
-                              border: 'none',
-                              transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                            }}
-                            onMouseEnter={(e) => {
-                              const el = e.currentTarget;
-                              el.style.color = isDarkMode ? '#f9fafb' : '#1e293b';
-                              el.style.background = isDarkMode 
-                                ? 'rgba(59, 130, 246, 0.2)' 
-                                : 'rgba(0, 123, 255, 0.1)';
-                              el.style.transform = 'scale(1.1)';
-                              el.style.boxShadow = isDarkMode 
-                                ? '0 0 10px rgba(59, 130, 246, 0.2)' 
-                                : '0 0 10px rgba(0, 123, 255, 0.1)';
-                            }}
-                            onMouseLeave={(e) => {
-                              const el = e.currentTarget;
-                              el.style.color = isDarkMode ? '#94a3b8' : '#64748b';
-                              el.style.background = 'transparent';
-                              el.style.transform = 'scale(1)';
-                              el.style.boxShadow = 'none';
-                            }}
-                          >
-                            <button
-                              className={`submenu-item ${activeTool === subItem.key ? 'active' : ''}`}
-                              onClick={() => handleToolClick(subItem.key, subItem.path)}
-                              aria-label={subItem.label}
-                            >
-                              <div className="submenu-icon-wrapper">
-                                {subItem.key === 'playback-video' && <PlayCircleOutlined />}
-                                {subItem.key === 'playback-whiteboard' && <EditOutlined />}
-                                {subItem.key === 'playback-all' && <MenuOutlined />}
-                              </div>
-                              <span className="submenu-label">{subItem.label}</span>
-                            </button>
-                          </div>
-                        </Tooltip>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            } else {
-              // 没有子菜单的工具项（如画笔、设置）
-              return (
-                <Tooltip 
-                  key={tool.key} 
-                  title={tool.label} 
-                  placement="right"
-                  color={isDarkMode ? '#2d3748' : '#f8fafc'}
-                  arrow={{ pointAtCenter: true, style: { color: isDarkMode ? '#374151' : '#e2e8f0' } }}
-                  styles={{ 
-                    root: { 
-                      borderRadius: 10, 
-                      boxShadow: isDarkMode 
-                        ? '0 4px 15px rgba(0, 0, 0, 0.3)' 
-                        : '0 4px 15px rgba(0, 0, 0, 0.1)',
-                      border: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0',
-                      padding: '8px 16px',
-                      fontSize: 14,
-                    } 
+            // 统一渲染所有工具，不再区分是否有子菜单
+            return (
+              <Tooltip 
+                key={tool.key} 
+                title={tool.label} 
+                placement="right"
+                color={isDarkMode ? '#2d3748' : '#f8fafc'}
+                arrow={{ pointAtCenter: true, style: { color: isDarkMode ? '#374151' : '#e2e8f0' } }}
+                styles={{ 
+                  root: { 
+                    borderRadius: 10, 
+                    boxShadow: isDarkMode 
+                      ? '0 4px 15px rgba(0, 0, 0, 0.3)' 
+                      : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                    border: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0',
+                    padding: '8px 16px',
+                    fontSize: 14,
+                  } 
+                }}
+              >
+                <div
+                  className={`tool-button ${activeTool === tool.key ? 'active' : ''}`}
+                  onClick={() => handleToolClick(tool.key, tool.path)}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: 64,
+                    width: 64,
+                    cursor: 'pointer',
+                    fontSize: 24,
+                    color: activeTool === tool.key 
+                      ? (isDarkMode ? '#f9fafb' : '#1e293b') 
+                      : (isDarkMode ? '#94a3b8' : '#64748b'),
+                    background: activeTool === tool.key 
+                      ? (isDarkMode 
+                        ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
+                        : 'linear-gradient(135deg, #007bff 0%, #6366f1 100%)')
+                      : 'transparent',
+                    borderRadius: 20,
+                    border: 'none',
+                    transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                    boxShadow: activeTool === tool.key 
+                      ? (isDarkMode 
+                        ? '0 0 20px rgba(59, 130, 246, 0.4)' 
+                        : '0 0 20px rgba(0, 123, 255, 0.3)')
+                      : 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget;
+                    el.style.color = isDarkMode ? '#f9fafb' : '#1e293b';
+                    el.style.background = isDarkMode 
+                      ? 'rgba(59, 130, 246, 0.2)' 
+                      : 'rgba(0, 123, 255, 0.1)';
+                    el.style.transform = 'scale(1.1)';
+                    el.style.boxShadow = isDarkMode 
+                      ? '0 0 15px rgba(59, 130, 246, 0.2)' 
+                      : '0 0 15px rgba(0, 123, 255, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget;
+                    el.style.color = activeTool === tool.key 
+                      ? (isDarkMode ? '#f9fafb' : '#1e293b') 
+                      : (isDarkMode ? '#94a3b8' : '#64748b');
+                    el.style.background = activeTool === tool.key 
+                      ? (isDarkMode 
+                        ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
+                        : 'linear-gradient(135deg, #007bff 0%, #6366f1 100%)')
+                      : 'transparent';
+                    el.style.transform = 'scale(1)';
+                    el.style.boxShadow = activeTool === tool.key 
+                      ? (isDarkMode 
+                        ? '0 0 20px rgba(59, 130, 246, 0.4)' 
+                        : '0 0 20px rgba(0, 123, 255, 0.3)')
+                      : 'none';
                   }}
                 >
-                  <div
+                  <button
                     className={`tool-button ${activeTool === tool.key ? 'active' : ''}`}
                     onClick={() => handleToolClick(tool.key, tool.path)}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: 64,
-                      width: 64,
-                      cursor: 'pointer',
-                      fontSize: 24,
-                      color: activeTool === tool.key 
-                        ? (isDarkMode ? '#f9fafb' : '#1e293b') 
-                        : (isDarkMode ? '#94a3b8' : '#64748b'),
-                      background: activeTool === tool.key 
-                        ? (isDarkMode 
-                          ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
-                          : 'linear-gradient(135deg, #007bff 0%, #6366f1 100%)')
-                        : 'transparent',
-                      borderRadius: 20,
-                      border: 'none',
-                      transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                      boxShadow: activeTool === tool.key 
-                        ? (isDarkMode 
-                          ? '0 0 20px rgba(59, 130, 246, 0.4)' 
-                          : '0 0 20px rgba(0, 123, 255, 0.3)')
-                        : 'none',
-                    }}
-                    onMouseEnter={(e) => {
-                      const el = e.currentTarget;
-                      el.style.color = isDarkMode ? '#f9fafb' : '#1e293b';
-                      el.style.background = isDarkMode 
-                        ? 'rgba(59, 130, 246, 0.2)' 
-                        : 'rgba(0, 123, 255, 0.1)';
-                      el.style.transform = 'scale(1.1)';
-                      el.style.boxShadow = isDarkMode 
-                        ? '0 0 15px rgba(59, 130, 246, 0.2)' 
-                        : '0 0 15px rgba(0, 123, 255, 0.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      const el = e.currentTarget;
-                      el.style.color = activeTool === tool.key 
-                        ? (isDarkMode ? '#f9fafb' : '#1e293b') 
-                        : (isDarkMode ? '#94a3b8' : '#64748b');
-                      el.style.background = activeTool === tool.key 
-                        ? (isDarkMode 
-                          ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
-                          : 'linear-gradient(135deg, #007bff 0%, #6366f1 100%)')
-                        : 'transparent';
-                      el.style.transform = 'scale(1)';
-                      el.style.boxShadow = activeTool === tool.key 
-                        ? (isDarkMode 
-                          ? '0 0 20px rgba(59, 130, 246, 0.4)' 
-                          : '0 0 20px rgba(0, 123, 255, 0.3)')
-                        : 'none';
-                    }}
+                    aria-label={tool.label}
                   >
-                    <button
-                      className={`tool-button ${activeTool === tool.key ? 'active' : ''}`}
-                      onClick={() => handleToolClick(tool.key, tool.path)}
-                      aria-label={tool.label}
-                    >
-                      <div className="tool-icon-wrapper">
-                        {tool.icon}
-                      </div>
-                      <span className="tool-label">{tool.label}</span>
-                    </button>
-                  </div>
-                </Tooltip>
-              );
-            }
+                    <div className="tool-icon-wrapper">
+                      {tool.icon}
+                    </div>
+                    <span className="tool-label">{tool.label}</span>
+                  </button>
+                </div>
+              </Tooltip>
+            );
           })}
         </div>
       </Sider>

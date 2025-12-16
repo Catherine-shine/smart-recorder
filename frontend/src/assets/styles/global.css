@@ -11,6 +11,13 @@ body {
   color: #1d2129; /* 主文字色 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 暗色主题基础样式 */
+body.dark {
+  background-color: #0a0e17; /* 更深的背景色 */
+  color: #ffffff; /* 更亮的文字色 */
 }
 
 /* 布局容器样式 */
@@ -33,10 +40,20 @@ body {
   overflow: hidden;
 }
 
+/* 暗色主题下的卡片样式 */
+body.dark .module-card {
+  background: #1a1f2e;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1), 0 1px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+}
+
 /* 卡片悬浮效果（细腻的交互） */
 .module-card:hover {
   box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.04);
   transform: translateY(-1px);
+}
+
+body.dark .module-card:hover {
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
 }
 
 /* 模块标题样式 */
@@ -49,11 +66,35 @@ body {
   background-color: #fafbfc;
 }
 
+body.dark .module-title {
+  color: #ffffff;
+  border-bottom: 1px solid #373f51;
+  background-color: #1a1f2e;
+}
+
 /* 模块内容区 */
 .module-content {
   padding: 20px;
   height: calc(100% - 60px); /* 减去标题高度 */
   overflow: auto;
+}
+
+/* 暗色主题下的滚动条样式 */
+body.dark .module-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+body.dark .module-content::-webkit-scrollbar-track {
+  background: #1a1f2e;
+}
+
+body.dark .module-content::-webkit-scrollbar-thumb {
+  background: #373f51;
+  border-radius: 4px;
+}
+
+body.dark .module-content::-webkit-scrollbar-thumb:hover {
+  background: #4a5568;
 }
 
 /* 占位加载样式 */
@@ -65,6 +106,10 @@ body {
   align-items: center;
   justify-content: center;
   color: #86909c; /* 次要文字色 */
+}
+
+body.dark .placeholder-loading {
+  color: #b0b8c1;
 }
 
 /* 按钮通用样式覆盖（飞书风格） */
@@ -98,6 +143,10 @@ body {
   background-color: transparent !important;
 }
 
+body.dark .ant-btn-ghost {
+  border: 1px solid #373f51 !important;
+}
+
 /* 卡片组件覆盖（飞书风格） */
 .ant-card {
   border-radius: 12px !important;
@@ -110,6 +159,10 @@ body {
   padding: 0 20px !important;
 }
 
+body.dark .ant-card-head {
+  border-bottom: 1px solid #373f51 !important;
+}
+
 .ant-card-body {
   padding: 20px !important;
 }
@@ -120,6 +173,167 @@ body {
   background-color: #e5e6eb !important;
 }
 
+body.dark .ant-switch {
+  background-color: #373f51 !important;
+}
+
 .ant-switch-checked {
   background-color: #007bff !important;
+}
+
+/* 添加设置浮窗的暗色主题样式 */
+.settings-modal-content {
+  transition: all 0.3s ease;
+}
+
+body.dark .settings-modal-content {
+  color: #ffffff;
+}
+
+.settings-section-title {
+  color: #1d2129;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+body.dark .settings-section-title {
+  color: #ffffff;
+}
+
+.settings-item-label .label-text {
+  color: #1d2129;
+  font-weight: 500;
+}
+
+body.dark .settings-item-label .label-text {
+  color: #ffffff;
+}
+
+.settings-item-label .label-description {
+  color: #86909c;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+body.dark .settings-item-label .label-description {
+  color: #b0b8c1;
+}
+
+.settings-divider {
+  border-color: #f0f2f5;
+  margin: 20px 0;
+}
+
+body.dark .settings-divider {
+  border-color: #373f51;
+}
+
+/* 添加模态框的暗色主题样式 */
+.settings-modal .ant-modal-content {
+  background: #ffffff;
+  border-radius: 12px;
+}
+
+body.dark .settings-modal .ant-modal-content {
+  background: #1a1f2e;
+}
+
+body.dark .settings-modal .ant-modal-header {
+  border-bottom: 1px solid #373f51;
+}
+
+body.dark .settings-modal .ant-modal-title {
+  color: #ffffff;
+}
+
+/* 添加侧边栏的暗色主题样式 */
+.sidebar {
+  background-color: #ffffff;
+  transition: all 0.3s ease;
+  border-right: 1px solid #f0f2f5;
+}
+
+body.dark .sidebar {
+  background-color: #1a1f2e;
+  border-right: 1px solid #373f51;
+}
+
+/* 侧边栏菜单样式 */
+.sidebar-menu {
+  padding: 20px 0;
+}
+
+/* 侧边栏工具按钮样式 */
+.tool-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.tool-icon-wrapper {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+/* 工具图标文字样式 */
+.tool-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+body.dark .tool-label {
+  color: #ffffff;
+}
+
+/* 确保所有控制栏和工具栏的图标文字都是白色 */
+body.dark .simple-switch-icon {
+  color: #ffffff;
+}
+
+/* 录制控制面板暗色主题 */
+body.dark .control-panel-card .ant-card-head {
+  background-color: #1a1f2e;
+  border-bottom-color: #373f51;
+  color: #ffffff;
+}
+
+body.dark .control-panel-card .ant-card-body {
+  background-color: #1a1f2e;
+  color: #ffffff;
+}
+
+body.dark .simple-switch-icon {
+  color: #ffffff;
+}
+
+body.dark .simple-switch-icon.activated {
+  color: #3b82f6;
+}
+
+/* 回放列表暗色主题 */
+body.dark .video-item {
+  background-color: #1a1f2e;
+  border-color: #373f51;
+  color: #ffffff;
+}
+
+body.dark .video-item:hover {
+  background-color: #373f51;
+  border-color: #4a5568;
+}
+
+/* 白板卡片头部暗色主题样式 */
+body.dark .lark-card .ant-card-head {
+  background-color: #1a1f2e !important;
+  border-bottom-color: #373f51 !important;
+}
+
+body.dark .lark-card .ant-card-head-title {
+  color: #ffffff !important;
 }

@@ -1,6 +1,6 @@
 //布局组件，包装所有路由页面
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ConfigProvider, theme } from 'antd';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
@@ -10,6 +10,15 @@ import type { RouteLayoutProps } from '../types/router';
 export const RouteLayout: React.FC<RouteLayoutProps> = ({ children }) => {
   const { theme: currentTheme } = useSelector((state: RootState) => state.layout);
   const isDark = currentTheme === 'dark';
+
+  // 根据主题切换body类名
+  useEffect(() => {
+    if (isDark) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  }, [isDark]);
 
   return (
     <ConfigProvider

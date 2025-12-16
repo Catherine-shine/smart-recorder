@@ -12,9 +12,7 @@ import {
 	useEditor,
 	useValue
 } from 'tldraw'
-import { Provider } from 'react-redux'
-import { store } from '../../../store'
-import { useAppDispatch } from '../../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { addAction, setIsDrawing } from '../../../store/slices/whiteboardSlice'
 import { useRecordingScheduler } from '../../../utils/recording/RecordingScheduler'; // 核心Hook
 
@@ -26,6 +24,8 @@ import './sync-custom-people-menu.css'
 // 白板内容组件，用于与Redux集成
 function WhiteboardContent() {
 	const dispatch = useAppDispatch()
+	// 获取当前主题
+	const { theme } = useAppSelector(state => state.layout)
 	// 从录制Hook中解构：收集数据方法 + 录制状态
 	const { 
 		recordingStatus, 
@@ -177,6 +177,7 @@ function WhiteboardContent() {
 			<Tldraw 
 				store={muti_store} // 取消注释即可恢复多人协作（需解决图片上传问题）
 				components={components}
+				className={theme === 'dark' ? 'tldraw__editor--dark' : ''}
 				// 兜底：同时绑定onStoreChange确保兼容性
 				// onStoreChange 已弃用，改为通过 useValue 监听 store 变化
 			/>

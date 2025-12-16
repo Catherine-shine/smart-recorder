@@ -4,28 +4,9 @@
   overflow: hidden;
 }
 
-/* 主题样式 */
-.main-layout.theme-light .header {
+/* 主题样式 - 现在统一使用body.dark前缀 */
+.main-layout .header {
   background: #001529;
-}
-.main-layout.theme-dark {
-  background: #1f2937 !important;
-  color: #f9fafb;
-}
-
-.main-layout.theme-dark .header {
-  background: #141414;
-}
-
-.main-layout.theme-dark .content-area {
-  background: #272e3b;
-}
-
-.main-layout.theme-dark .whiteboard-section,
-.main-layout.theme-dark .video-section,
-.main-layout.theme-dark .control-section {
-  background: #1f1f1f;
-  border: 1px solid #303030;
 }
 
 /* 录制状态样式 */
@@ -49,6 +30,7 @@
   padding: 16px;
   position: relative;
   overflow: auto;
+  transition: background-color 0.3s ease;
 }
 
 /* 工作区网格布局 */
@@ -68,6 +50,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .video-section {
@@ -77,6 +60,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .control-section {
@@ -86,6 +70,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 16px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* 移动端适配 */
@@ -115,16 +100,24 @@
   }
 }
 
-/* 暗色主题支持 */
-@media (prefers-color-scheme: dark) {
-  .content-area {
-    background: #141414;
-  }
-  
-  .whiteboard-section,
-  .video-section,
-  .control-section {
-    background: #1f1f1f;
-    border: 1px solid #303030;
-  }
+/* 暗色主题支持 - 与全局暗色主题保持一致 */
+body.dark .main-layout {
+  background: #0a0e17 !important;
+  color: #ffffff;
+}
+
+body.dark .main-layout .header {
+  background: #1a1f2e !important;
+}
+
+body.dark .content-area {
+  background: #0a0e17;
+}
+
+body.dark .whiteboard-section,
+body.dark .video-section,
+body.dark .control-section {
+  background: #1a1f2e;
+  border: 1px solid #373f51;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1), 0 1px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px 0 rgba(0, 0, 0, 0.06);
 }

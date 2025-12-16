@@ -1,39 +1,26 @@
-import type { RootState } from '../../../store';
-import { useSelector, useDispatch } from 'react-redux';
-import { useEffect, useRef, useState } from 'react';
-import { setPlaybackUrl, setDuration, setRecordList, resetPlaybackState, setCurrentVideo, setWebcamUrl, setAudioUrl, setTrajectoryData } from '../../../store/slices/playbackSlice';
-import { RECORDING_STATUS } from '../../../types/common'
-// 引入录制切片的选择器和action
-import { 
-  selectCollectedData, 
-  selectLastRecordingDuration,
-  selectRecordingStatus,
-  resetRecordingState,
-  setLastRecordingDuration,
-  collectData
-} from '../../../store/slices/recordingSlice';
-import type { PlayStatus } from '../../../types/playback/playbackbody';
-import {  Card, Empty, Typography, Tag, Spin, message, Tabs, Button, Modal } from 'antd';
-import { UploadOutlined, DeleteOutlined, HddOutlined } from '@ant-design/icons';
+
+import { useDispatch } from 'react-redux';
+import { useEffect, useState } from 'react';
+import { setPlaybackUrl, setDuration, resetPlaybackState,  setWebcamUrl, setAudioUrl, setTrajectoryData } from '../../../store/slices/playbackSlice';
+import {  Card, Empty, Typography, Tag, Spin, message,  Button, Modal } from 'antd';
+import { UploadOutlined, DeleteOutlined, } from '@ant-design/icons';
 import React from "react";
 import { formatDuration } from '../../../utils/playback/playback';
-import { v4 as uuidv4 } from 'uuid'; // 需安装：npm install uuid
 import { uploadRecording } from '../../../api/recording';
 import { getRecordings, deleteRecording as deleteLocalRecording } from '../../../utils/db';
-
 import './index.css';
-import type { RecordingListItem } from '../../../types/api/apiTypes'; // 按实际路径调整
 
 
-const { Text, Title } = Typography;
+
+const { Text} = Typography;
 interface PlaybackListProps {
   onSelectRecording?: (recordingId: string) => Promise<void>;
   onSelectLocalRecording?: (recording: any) => void;
 }
-// 初始 Mock 数据
 
 
-const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording, onSelectLocalRecording}) => {
+
+const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) => {
   const dispatch = useDispatch();
   const [localRecordings, setLocalRecordings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -110,7 +97,7 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording, onSelectL
       });
 
       // 更新本地状态为已上传
-      // await updateRecordingStatus(recording.id, true); // 需要在db.ts中实现
+  
       messageApi.success({ content: '上传成功', key: 'upload' });
       
       // 刷新列表

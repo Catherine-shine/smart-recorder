@@ -9,23 +9,19 @@ import {
   setIsPlayEnded,
   setVideoLoading,
   setPlaybackStatus,
-  stopPlayback,
 } from '../../../store/slices/playbackSlice';
-import type { RecordingUploadForm } from '../../../types/api/apiTypes';
 import PlayButton from './playButton/playButton';
-import type { PlayStatus } from '../../../types/playback/playbackbody';
 import ProgressBar from './progressBar/progressBar';
 import VolumeControl from './volumeControl/volumeControl';
 import PlaybackRate from './playBackRate/playBackRate';
-import { Card, Row, Col, Spin, Typography, message, Button, Empty } from 'antd';
+import { Card, Row, Col, Spin, Typography, message, Button,  } from 'antd';
 import React, { useRef, useEffect, useState } from "react";
 import { VideoCameraOutlined } from '@ant-design/icons';
 import WebcamFloating from '../webcamFloating/webcamFloating';
+import type{PlayBackBodyProps} from '../../../types/playback/playbackbody';
 import './index.css';
 
-interface PlayBackBodyProps {
-  onTimeUpdate?: (timeInSeconds: number) => void;
-}
+
 
 const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
   const dispatch = useDispatch();
@@ -46,13 +42,11 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     status: playStatus,
     volume,
     isMuted,
-    currentTime,
     duration,
     playbackRate,
     isPlayEnded,
     videoLoading,
     currentVideo,
-    trajectoryData,
     mediaTimestamps,
   } = useSelector((state: RootState) => state.playback);
 
@@ -88,7 +82,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     return () => clearTimeout(timer);
   }, []);
   
-  // 优先使用Redux中保存的视频url，兜底用测试地址（建议替换为本地视频）
+  // 优先使用Redux中保存的视频url
   const videoSrc = (typeof playbackUrl === 'object' && playbackUrl !== null ? playbackUrl.video : playbackUrl) || '';
   // 从Redux中获取麦克风音频url
   const audioSrc = audioUrl || '';
@@ -103,7 +97,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     const audioChanges = mediaTimestamps.audio || [];
     
     // 添加播放时间阈值（100ms），避免在播放初始时立即播放媒体
-    const PLAY_THRESHOLD = 0.1; // 100ms
+    const PLAY_THRESHOLD = 0.1; 
     
     console.log('controlMediaByTimestamps called:', {
       currentTime,
@@ -130,7 +124,6 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     for (let i = cameraChanges.length - 1; i >= 0; i--) {
       const change = cameraChanges[i];
       if (change.timestamp <= currentTimeMs) {
-        // 使用isEnabled字段（布尔值）而不是status字段（字符串）
         isCameraActive = change.isEnabled;
         lastCameraChange = change;
         break;
@@ -143,7 +136,6 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     for (let i = audioChanges.length - 1; i >= 0; i--) {
       const change = audioChanges[i];
       if (change.timestamp <= currentTimeMs) {
-        // 使用isEnabled字段（布尔值）而不是status字段（字符串）
         isAudioActive = change.isEnabled;
         lastAudioChange = change;
         break;
@@ -186,7 +178,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
         }
       }
       
-      // 控制摄像头播放（主组件接管，与音频一致的阈值判断）
+      // 控制摄像头播放
       const webcam = webcamRef.current;
       if (webcam) {
         if (isCameraActive) {
@@ -238,7 +230,6 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
       
       // 优先使用Redux中已有的时长（来自后端），如果没有则从视频元素获取
       if (duration <= 0) {
-        // 确保获取到有效的时长（类型检查 + 非NaN检查 + 正值检查）
         if (typeof video.duration === 'number' && !isNaN(video.duration) && video.duration > 0) {
           dispatch(setDuration(video.duration));
         } else {
@@ -296,7 +287,6 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
         initialAudioActive
       });
       
-      // 更新状态
       setWebcamActive(initialCameraActive);
       setAudioActive(initialAudioActive);
       
@@ -364,7 +354,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
   const syncMediaTime = (targetTime: number, callback?: () => void) => {
     const webcam = webcamRef.current;
     const audio = audioRef.current;
-    const syncThreshold = 0.05; // 提高同步精度
+    const syncThreshold = 0.05; 
     let syncedCount = 0;
     const totalMedia = (webcam ? 1 : 0) + (audio ? 1 : 0);
     
@@ -382,7 +372,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
         const seekableStart = webcam.seekable.start(0);
         const seekableEnd = webcam.seekable.end(0);
         
-        // 确保目标时间在可跳转范围内（与音频逻辑一致）
+        // 确保目标时间在可跳转范围内
         if (targetTime >= seekableStart && targetTime <= seekableEnd) {
           if (Math.abs(webcam.currentTime - targetTime) > syncThreshold) {
             try {
@@ -555,7 +545,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
       return;
     }
     
-    // 确保我们有有效的时长
+    // 确保效的时长
     if (isNaN(video.duration) || video.duration <= 0) {
       console.log('Attempting to get duration before play:', video.duration);
       // 如果没有有效的时长，尝试再次获取
@@ -572,16 +562,16 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
       }
     }
     
-    // 步骤1：播放主视频
+    // 播放主视频
     video.play()
       .then(() => {
         console.log('Main video playing, readyState:', video.readyState);
         
-        // 步骤2：强制同步所有媒体时间，但不立即播放摄像头和麦克风
+        // 强制同步所有媒体时间，但不立即播放摄像头和麦克风
         syncMediaTime(video.currentTime, () => {
           console.log('All media synced, starting playback of other media');
           
-          // 步骤3：准备摄像头视频（如果可用）但不播放
+          // 准备摄像头视频（如果可用）但不播放
           const webcamPromise = webcam && webcam.src && webcam.src !== 'about:blank' && webcam.src !== '' 
             ? new Promise<void>((resolve) => {
                 // 确保摄像头已准备就绪
@@ -602,7 +592,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
               })
             : Promise.resolve();
           
-          // 步骤4：准备音频（如果可用）但不播放
+          // 准备音频（如果可用）但不播放
           const audioPromise = audio && audio.src && audio.src !== 'about:blank' && audio.src !== ''
             ? new Promise<void>((resolve) => {
                 // 确保音频已准备就绪
@@ -623,14 +613,14 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
               })
             : Promise.resolve();
           
-          // 步骤5：等待所有媒体准备完成
+          // 等待所有媒体准备完成
           return Promise.all([webcamPromise, audioPromise]);
         });
         
         return Promise.resolve();
       })
       .then(() => {
-        // 步骤6：设置初始的摄像头和麦克风状态
+        // 设置初始的摄像头和麦克风状态
         const video = videoRef.current;
         if (video) {
           controlMediaByTimestamps(video.currentTime);
@@ -844,7 +834,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     let syncTimer: NodeJS.Timeout;
 
     if (playStatus === 'playing') {
-      // 每50ms同步一次，比onTimeUpdate更频繁
+      // 每50ms同步一次
       syncTimer = setInterval(() => {
         const video = videoRef.current;
         if (video && video.readyState >= 1) {
@@ -893,7 +883,6 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
   return (
     <>
       <div>
-        {/* 摄像头悬浮窗 */}
         <WebcamFloating 
           webcamRef={webcamRef} 
           webcamActive={webcamActive} 
@@ -928,7 +917,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
               您的浏览器不支持HTML5视频播放，请升级浏览器
             </video>
             
-            {/* 隐藏的音频元素，用于播放麦克风音频 */}
+    
             <audio
               ref={audioRef}
               className="hidden-audio"
@@ -938,14 +927,14 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
               您的浏览器不支持HTML5音频播放，请升级浏览器
             </audio>
             
-            {/* 摄像头未开启提示已移至悬浮窗 */}
+          
           </div>
 
-          {/* 下载链接区域 - 对所有视频显示 */}
+    
           {playbackUrl && (
             <div className="download-links-container" style={{ marginTop: '16px' }}>
               <Typography.Text strong>下载链接：</Typography.Text>
-              {/* 对于本地视频，显示基本的视频文件下载链接 */}
+             
               {(!currentVideo || !currentVideo.hashid) && (
                 <a 
                   href={typeof playbackUrl === 'string' ? playbackUrl : playbackUrl.video} 
@@ -957,7 +946,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
                   视频文件
                 </a>
               )}
-              {/* 对于后端视频，显示完整的下载链接 */}
+            
               {currentVideo && currentVideo.hashid && (
                 <>
                   <a 
@@ -1000,7 +989,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
             </div>
           )}
 
-          {/* 控制栏容器 */}
+        
           <div className="playback-controls-parent">
             <Row
               gutter={[12, 16]}

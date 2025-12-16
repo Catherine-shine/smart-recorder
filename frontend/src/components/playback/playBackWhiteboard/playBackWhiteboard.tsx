@@ -263,7 +263,7 @@ const PlayBackWhiteboard: React.FC<PlayBackWhiteboardProps> = ({
         flex: 1, 
         position: 'relative', 
         overflow: 'hidden',
-        backgroundColor: isDarkMode ? '#000' : '#f5f5f5',
+        backgroundColor: isDarkMode ? '#0a0e17' : '#f5f5f5',
         borderRadius: 4,
         marginBottom: 16
       }}>

@@ -1,17 +1,17 @@
 .webcam-floating-container {
-  position: absolute;
+  position: fixed;
   width: 240px;
   height: 180px;
   background-color: #000;
   border: 2px solid #fff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
+  z-index: 9999;
   cursor: move;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease, left 0s, top 0s;
 }
 
 .webcam-video {

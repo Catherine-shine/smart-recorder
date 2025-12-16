@@ -64,6 +64,11 @@ export interface RecordingComposeEventDetail {
   collectedData: CollectedData;
 }
 
+export interface MediaStateChange {
+  timestamp: number; // 相对于录屏开始的时间戳（毫秒）
+  isEnabled: boolean; // 设备是否开启
+}
+
 // 扩展WindowEventMap，添加自定义事件类型
 declare global {
   interface WindowEventMap {

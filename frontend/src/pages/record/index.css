@@ -84,3 +84,26 @@
 }
 
 /* 其他原有样式保持不变，此处省略重复代码 */
+
+/* 添加暗色主题样式 */
+body.dark .workspace-grid {
+  background-color: #1f2937;
+  transition: background-color 0.3s ease;
+}
+
+body.dark .whiteboard-section {
+  background-color: #2d3748;
+  border-color: #4a5568;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 确保控制面板在暗色模式下的文字颜色正确 */
+body.dark .control-panel-container {
+  color: #e2e8f0;
+}
+
+/* 确保tldraw编辑器在暗色模式下能正确显示 */
+body.dark .whiteboard-section .lark-card {
+  background-color: #2d3748;
+  border-color: #4a5568;
+}

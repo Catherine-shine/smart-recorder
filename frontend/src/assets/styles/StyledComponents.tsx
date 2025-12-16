@@ -1,6 +1,8 @@
 import styled from 'styled-components';
 import { Button, Card, Tag, Layout } from 'antd';
 import { motion } from 'framer-motion';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 
 const { Content } = Layout;
 
@@ -19,6 +21,12 @@ export const EduCard = styled(Card)`
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     border: 1px solid #e5e7eb;
     height: 100%;
+    
+    /* 暗色主题适配 */
+    body.dark & {
+      border: 1px solid #4a5568;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
   }
 `;
 
@@ -29,12 +37,24 @@ export const StatusText = styled.p`
   font-size: 14px;
   text-align: center;
   padding: 8px 0;
+  
+  /* 暗色主题适配 */
+  body.dark & {
+    color: #a0aec0;
+  }
 `;
+
 // 全局布局容器
 export const AppContainer = styled(Layout)`
   && {
     min-height: 100vh;
     background-color: #f5f7fa;
+    
+    /* 暗色主题适配 */
+    body.dark & {
+      background-color: #1f2937;
+      color: white;
+    }
   }
 `;
 
@@ -53,73 +73,13 @@ export const HeaderContainer = styled(motion.header)`
   z-index: 100;
 
   // 深色模式适配
-  ${({ theme }) => theme.dark && `
+  body.dark & {
     background-color: #1f2937;
     color: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  `}
-`;
-
-/** 侧边栏Logo容器样式（Sidebar组件使用）对应 LogoBox */
-export const LogoBox = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background-color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2);
-  }
-
-  // 深色模式适配
-  ${({ theme }) => theme.dark && `
-    background-color: #7c3aed;
-    color: white;
-  `}
-`;
-
-/** 录制状态闪烁圆点（Header/Sidebar使用）对应 BlinkDot */
-export const BlinkDot = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #ef4444;
-  animation: blink 1s infinite alternate;
-  margin-right: 8px;
-
-  @keyframes blink {
-    from { opacity: 1; }
-    to { opacity: 0.3; }
-  }
-
-  // 暂停状态样式
-  &.paused {
-    background-color: #faad14;
-    animation: none;
   }
 `;
 
-
-// 侧边栏容器（紫色渐变+圆角，全局常驻）
-export const SidebarContainer = styled.div`
-  width: 240px;
-  height: calc(100vh - 60px);
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
-  border-radius: 20px;
-  margin: 20px 0 20px 20px;
-  padding: 24px 0;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
-  overflow: hidden;
-  flex-shrink: 0;
-`;
-
-// 右侧内容区容器
 export const MainContent = styled(Content)`
   && {
     flex: 1;
@@ -143,6 +103,12 @@ export const StyledCard = styled(Card)`
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     border: 1px solid #e5e7eb;
     height: 100%;
+    
+    /* 暗色主题适配 */
+    body.dark & {
+      border: 1px solid #4a5568;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
   }
 `;
 
@@ -174,10 +140,22 @@ export const VideoItem = styled.div`
   margin-bottom: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
+  background-color: white;
 
   &:hover {
     background-color: #f9fafb;
     border-color: #d1d5db;
+  }
+  
+  /* 暗色主题适配 */
+  body.dark & {
+    background-color: #2d3748;
+    border: 1px solid #4a5568;
+    
+    &:hover {
+      background-color: #4a5568;
+      border-color: #718096;
+    }
   }
 `;
 
@@ -197,3 +175,4 @@ export const FadeIn = styled(motion.div)`
 export const ButtonMotion = styled(motion.div)`
   display: inline-block;
 `;
+

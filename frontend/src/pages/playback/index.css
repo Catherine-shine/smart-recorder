@@ -170,3 +170,43 @@
     padding: 10px 15px;
   }
 }
+
+/* 添加暗色主题样式 */
+body.dark .screen-playback-container {
+  background-color: #1a1f2e;
+  border-color: #373f51;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.dark .screen-playback-header {
+  background-color: #1a1f2e;
+  border-bottom-color: #373f51;
+  color: #ffffff;
+  transition: background-color 0.3s ease, border-bottom-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark .playback-player-col {
+  background-color: #0f1419;
+  border-color: #373f51;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+body.dark .playback-list-col {
+  background-color: #0f1419;
+  border-color: #373f51;
+  color: #ffffff;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* 确保视频容器在暗色模式下正确显示 */
+body.dark .video-wrapper {
+  background-color: #080c14;
+  transition: background-color 0.3s ease;
+}
+
+body.dark .no-recording-placeholder {
+  background-color: #0f1419;
+  color: #ffffff;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

@@ -1,3 +1,10 @@
+/* 添加暗色主题样式 */
+body.dark {
+  --card-bg: #1a1f2e;
+  --border-color: #373f51;
+  --text-primary: #ffffff;
+}
+
 /* 浮动工具栏容器 */
 .floating-toolbar-container {
   position: fixed;
@@ -28,7 +35,7 @@
   align-items: center;
   padding: 0;
   gap: 16px;
-  transition: width 0.3s ease, padding 0.3s ease;
+  transition: width 0.3s ease, padding 0.3s ease, background-color 0.3s ease;
   overflow: hidden;
 }
 
@@ -50,6 +57,7 @@
   width: 60%;
   height: 1px;
   background-color: var(--border-color, #e8e8e8);
+  transition: background-color 0.3s ease;
 }
 
 /* 颜色选择组 */
@@ -68,7 +76,7 @@
   border-radius: 50%;
   cursor: pointer;
   border: 1px solid var(--border-color, #e8e8e8);
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.3s ease;
 }
 
 /* 颜色点激活状态 */
@@ -110,6 +118,7 @@
   font-size: 10px;
   color: var(--text-primary);
   opacity: 0.7;
+  transition: color 0.3s ease;
 }
 .floating-opacity-dot-group {
   display: flex;
@@ -122,7 +131,7 @@
   border-radius: 50%;
   cursor: pointer;
   border: 1px solid var(--border-color);
-  transition: all 0.2s ease;
+  transition: all 0.2s ease, border-color 0.3s ease;
 }
 .floating-opacity-dot.active {
   border: 2px solid #007bff;
@@ -147,13 +156,12 @@
   cursor: pointer;
   background-color: #ff4d4f20;
   border: 1px solid var(--border-color);
-  transition: all 0.2s ease;
+  transition: all 0.2s ease, border-color 0.3s ease;
 }
 .floating-eraser-size-dot.active {
   border: 2px solid #ff4d4f;
   box-shadow: 0 0 0 1px #ff4d4f;
 }
-
 
 /* 收放按钮样式 */
 .floating-toggle-button {
@@ -161,11 +169,12 @@
   height: 56px;
   margin-left: 12px;
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* 工具按钮基础样式 */
 .floating-tool-button {
-  transition: all 0.2s ease;
+  transition: all 0.2s ease, color 0.3s ease;
   border: none !important;
   background-color: transparent !important;
   color: var(--text-primary, #333) !important;
@@ -201,4 +210,43 @@
   background-color: rgba(0, 123, 255, 0.12) !important;
   color: #007bff !important;
   border-color: #007bff !important;
+}
+
+/* 暗色主题下的额外调整 */
+body.dark .floating-toolbar-container {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .floating-toggle-button {
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+}
+
+body.dark .floating-expanded-toolbar {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .floating-line-width-bar {
+  border-color: var(--border-color);
+  transition: border-color 0.3s ease;
+}
+
+body.dark .floating-line-width-bar.active {
+  border-color: #007bff;
+}
+
+body.dark .floating-tool-button:hover {
+  color: #ffffff !important;
+  background-color: rgba(0, 123, 255, 0.08) !important;
+}
+
+body.dark .floating-opacity-dot {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .floating-eraser-size-dot {
+  background-color: rgba(255, 77, 79, 0.2);
+}
+
+body.dark .floating-eraser-size-dot.active {
+  background-color: rgba(255, 77, 79, 0.3);
 }

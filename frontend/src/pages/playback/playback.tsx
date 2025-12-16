@@ -3,35 +3,25 @@ import {  Row, Col, message} from 'antd';
 import React ,{useState} from "react";
 import './index.css';
 import PlayBackBody from "../../components/playback/playBackBody/playBackBody";
-import WhiteboardPlayback from "../../components/playback/playBackWhiteboard/playBackWhiteboard";
-import { getRecordingDetail, getSessionPlaybackData } from "../../api/recording"; // 导入封装的接口
+import { getRecordingDetail} from "../../api/recording"; // 导入封装的接口
 import type { RecordingDetailResponse } from "../../types/api/apiTypes";
 import { useDispatch } from 'react-redux';
 import { setDuration, setTrajectoryData, setPlaybackUrl, setAudioUrl, setWebcamUrl } from "../../store/slices/playbackSlice";
 
 interface RecordingDetailResponseWithWhiteboard extends RecordingDetailResponse {
   whiteboard?: {
-    operations: any[]; // 或导入 WhiteboardOperation 类型
+    operations: any[]; 
   };
 }
-//注明组件的 ts 类型是 React 函数式组件（React.FC）
+
 const PlaybackModule: React.FC = () => { 
   const dispatch = useDispatch();
   const [selectedRecording, setSelectedRecording] = useState<any>(null);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false); // 播放状态
   const [loading, setLoading] = useState(false); // 接口加载状态
  const [whiteboardOperations, setWhiteboardOperations] = useState<any[]>([]);
   
 
-  // const handleSelectRecording = async (recordingId: string) => {
-  //   try {
-  //     const data = await getRecordingDetail(recordingId) as RecordingDetailResponseWithWhiteboard;
-  //     setWhiteboardOperations(data.whiteboard?.operations || []);
-  //   } catch (err) {
-  //     message.error('加载白板轨迹失败');
-  //   }
-  // };
   const handleSelectRecording = async (recordingId: string) => {
     try {
       setLoading(true);

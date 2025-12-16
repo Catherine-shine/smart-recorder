@@ -1,4 +1,4 @@
-// src/components/Recording/ControlPanel/ControlPanel.tsx
+
 import React, { useState } from 'react';
 import { Button, Space, Tooltip, type ButtonProps } from 'antd';
 import {
@@ -27,14 +27,13 @@ const ControlPanel: React.FC = () => {
     handleResume,
     handleEnd,
     toggleMicrophone,
-    toggleCamera, // 直接使用hooks的方法，删除重复实现
+    toggleCamera, 
   } = useRecordingScheduler();
 
   const dispatch = useAppDispatch();
   const isCameraOn = useAppSelector(state => state.mediastream.isCameraEnabled);
   const isMicOn = useAppSelector(state => state.mediastream.isMicrophoneEnabled);
   const isCameraPreviewVisible = useAppSelector(state => state.mediastream.isCameraPreviewVisible);
-  const lastRecordingDuration = useAppSelector(selectLastRecordingDuration);
   const [isLoading, setIsLoading] = useState(false);
 
   // 包装方法：添加loading状态
@@ -50,16 +49,6 @@ const ControlPanel: React.FC = () => {
     setIsLoading(false);
   };
 
-  // 格式化时长
-  const formatDuration = (duration: number): string => {
-    if (!duration || isNaN(duration)) return '0秒';
-    const seconds = Math.floor(duration / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}分${remainingSeconds}秒`;
-  };
-
-  // 基础按钮Props
   const baseButtonProps: ButtonProps = {
     size: 'small',
     shape: 'circle',

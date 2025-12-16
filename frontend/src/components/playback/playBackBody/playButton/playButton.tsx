@@ -9,32 +9,29 @@ const PlayButton: React.FC<PlayButtonProps> = ({
   status,
   onPlay,
   onPause,
-  // 停止操作建议单独按钮，这里保留但调整逻辑
-  onStop,
   videoSrc = '',
   isPlayEnded 
 }) => {
   // 禁用条件：停止态且无视频源
   const isButtonDisabled = status === 'stopped' && !videoSrc;
 
-  // 修复核心：重新定义状态流转逻辑
   const handleButtonClick = () => {
     switch (status) {
       case 'stopped':
-        onPlay(); // 停止→播放
+        onPlay(); 
         break;
       case 'playing':
-        onPause(); // 播放→暂停
+        onPause(); 
         break;
       case 'paused':
-        onPlay(); // 暂停→继续播放 ✅ 修复关键
+        onPlay(); 
         break;
       default:
         break;
     }
   };
 
-  // 修复文案/图标：与逻辑匹配
+ 
   const getButtonConfig = () => {
     switch (status) {
       case 'playing':
@@ -45,7 +42,7 @@ const PlayButton: React.FC<PlayButtonProps> = ({
       case 'paused':
          return {
           icon: <PlayCircleOutlined />,
-          ariaLabel: '继续播放', // 修复：暂停态点击是继续播放
+          ariaLabel: '继续播放',
         };
       case 'stopped':
           return {

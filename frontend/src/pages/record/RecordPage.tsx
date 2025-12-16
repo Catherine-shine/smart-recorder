@@ -13,7 +13,6 @@ import './index.css';
 
 
 
-
 // 白板卡片（仅优化外部样式，不修改内部白板组件）
 const WhiteboardCard = () => (
   <Card 
@@ -36,7 +35,8 @@ const WhiteboardCard = () => (
       header: { 
         padding: '12px 24px', // 最小化头部内边距，释放高度
         borderBottom: '1px solid var(--border-color)',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)'
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        // 暗色主题下的样式将通过CSS变量和全局样式实现
       },
       body: { 
         padding: 0, // 完全去掉body内边距

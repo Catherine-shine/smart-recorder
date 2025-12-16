@@ -119,3 +119,136 @@
   background-color: #f0f2f5;
   color: #666;
 }
+
+/* 添加暗色主题样式 */
+body.dark .playback-list-card {
+  background-color: #1a1f2e;
+  border-color: #373f51;
+  color: #ffffff;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark .playback-list {
+  background-color: #1a1f2e;
+  color: #ffffff;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark .playback-item {
+  background-color: #242c3d;
+  border-color: #373f51;
+  color: #ffffff;
+  transition: all 0.3s ease;
+}
+
+body.dark .playback-item:hover {
+  background-color: #373f51;
+  border-color: #4a5568;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark .playback-item.selected {
+  background-color: #1e40af;
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+body.dark .playback-item-content {
+  color: #ffffff;
+}
+
+body.dark .playback-item-info {
+  color: #ffffff;
+}
+
+body.dark .playback-item-meta {
+  color: #b0b8c1;
+}
+
+body.dark .playback-item-meta .ant-tag {
+  background-color: #373f51;
+  color: #ffffff;
+  border-color: #4a5568;
+}
+
+body.dark .playback-item-actions {
+  color: #ffffff;
+}
+
+body.dark .playback-item-actions .ant-btn {
+  color: #b0b8c1;
+  background-color: transparent;
+  border-color: transparent;
+}
+
+body.dark .playback-item-actions .ant-btn:hover {
+  color: #ffffff;
+  background-color: #373f51;
+  border-color: #4a5568;
+}
+
+body.dark .playback-item-actions .ant-btn-danger {
+  color: #ef4444;
+}
+
+body.dark .playback-item-actions .ant-btn-danger:hover {
+  color: #ffffff;
+  background-color: #ef4444;
+  border-color: #ef4444;
+}
+
+body.dark .playback-item .ant-card-body {
+  background-color: #242c3d;
+  color: #ffffff;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 加载容器暗色主题 */
+body.dark .loading-container {
+  background-color: #1a1f2e;
+  color: #ffffff;
+}
+
+body.dark .loading-container .ant-spin {
+  color: #ffffff;
+}
+
+body.dark .loading-container .ant-spin-dot-item {
+  background-color: #ffffff;
+}
+
+/* 旧样式暗色主题适配 */
+body.dark .video-list-container {
+  background-color: #1a1f2e;
+  color: #ffffff;
+}
+
+body.dark .playback-list-item {
+  background-color: #242c3d;
+  border-color: #373f51;
+  color: #ffffff;
+}
+
+body.dark .playback-list-item:hover {
+  background-color: #373f51;
+  border-color: #4a5568;
+}
+
+body.dark .playback-list-item.active {
+  background-color: #1e40af;
+  border-left-color: #3b82f6;
+}
+
+body.dark .video-title {
+  color: #ffffff;
+}
+
+body.dark .video-meta {
+  color: #b0b8c1;
+}
+
+body.dark .duration-tag {
+  background-color: #373f51;
+  color: #ffffff;
+  border-color: #4a5568;
+}

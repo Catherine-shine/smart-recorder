@@ -1,20 +1,10 @@
 import React from 'react';
 import { Select, Space } from 'antd';
-import { PlaySquareOutlined } from '@ant-design/icons';
 import type { SelectProps } from 'antd/es/select';
+import type { PlaybackRateOption, PlaybackRateProps } from '../../../../types/playback/playbackbody';
 import './index.css';
 
-// 倍速选项类型
-export type PlaybackRateOption = {
-  label: string;
-  value: number;
-};
 
-// 组件Props类型
-interface PlaybackRateProps {
-  value: number; // 当前倍速
-  onChange: (rate: number) => void; // 倍速变更回调
-}
 
 // 预设倍速选项
 const rateOptions: PlaybackRateOption[] = [
@@ -24,14 +14,12 @@ const rateOptions: PlaybackRateOption[] = [
 ];
 
 const PlaybackRate: React.FC<PlaybackRateProps> = ({ value, onChange }) => {
-  // 倍速选择变更处理
   const handleRateChange: SelectProps<number>['onChange'] = (newRate) => {
     onChange(newRate);
   };
 
   return (
-    <Space align="center">
-      {/* <PlaySquareOutlined /> */}
+    <Space align="center"> 
       <Select
         value={value}
         onChange={handleRateChange}

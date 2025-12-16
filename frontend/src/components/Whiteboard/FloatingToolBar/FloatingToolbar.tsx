@@ -9,7 +9,7 @@ import {
   AudioOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
-import type { ToolType, ColorType, LineWidthType, FloatingToolbarProps } from '../../../types/whiteboard/floatingToolbar';
+import type { ColorType, LineWidthType, FloatingToolbarProps } from '../../../types/whiteboard/floatingToolbar';
 import type { OpacityType, EraserSizeType } from '../../../types/whiteboard/floatingToolbar';
 // 新增透明度/橡皮擦大小状态
 

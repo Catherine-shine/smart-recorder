@@ -1,4 +1,4 @@
-// src/utils/recording/RecordingScheduler.ts
+
 import { useCallback, useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { saveRecording } from '../db';
@@ -11,19 +11,12 @@ import {
   resetRecordingState,
   selectRecordingStatus,
   selectCollectedData,
-  collectData,
 } from '../../store/slices/recordingSlice';
 import { RECORDING_STATUS } from '../../types/common';
-import { uploadRecording } from '../../api/recording';
-import type { RecordingUploadForm } from '../../types/api/apiTypes';
+import type{MediaStateChange} from '../../types/recording/controlPanel';
 import { setCameraEnabled, setMicrophoneEnabled } from '../../store/slices/mediastreamSlice';
 
 
-// 媒体设备状态变化记录
-interface MediaStateChange {
-  timestamp: number; // 相对于录屏开始的时间戳（毫秒）
-  isEnabled: boolean; // 设备是否开启
-}
 
 // 全局单例引用，确保只有一个MediaRecorder实例在运行
 const globalMediaRecorderRef = {
@@ -153,8 +146,7 @@ export function useRecordingScheduler() {
       const startTime = Date.now();
       globalMediaRecorderRef.startTime = startTime;
       // 以下字段用于旧的分段上传逻辑，已不再需要
-      // globalMediaRecorderRef.lastSegmentTime = startTime;
-      // globalMediaRecorderRef.segmentIndex = 0;
+      
       
       // 初始化设备状态变化记录 - 默认关闭摄像头和麦克风
       globalMediaRecorderRef.audioStateChanges = [{

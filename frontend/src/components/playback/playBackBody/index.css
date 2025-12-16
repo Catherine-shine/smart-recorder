@@ -1,33 +1,48 @@
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box; /* 让宽高包含边框和内边距，核心修复盒模型偏差 */
+  box-sizing: border-box;
 }
 
 :root {
   --video-border-radius: 8px;
-  --video-border-color: #979797; /* Ant Design 主色示例 */
+  --video-border-color: #979797;
   --video-max-width: 1200px;
+  --bg-color: #ffffff;
+  --border-color: #e0e0e0;
+  --text-color: #333333;
+  --secondary-text-color: #666666;
+  --highlight-color: #007bff;
+  --hover-color: #f5f5f5;
+  --dark-bg-color: #1a1f2e;
+  --dark-border-color: #373f51;
+  --dark-text-color: #ffffff;
+  --dark-secondary-text-color: #b0b8c1;
+  --dark-hover-color: #373f51;
 }
 
+/* 回放卡片样式 */
 .playback-card {
   width: 100%;
   border-radius: var(--card-border-radius) !important;
   box-shadow: 0 2px 8px var(--card-shadow-color) !important;
   padding: var(--spacing-md) !important;
   box-sizing: border-box;
+  background-color: var(--bg-color);
+  transition: background-color 0.3s ease;
 }
 
 /* 隐藏音频元素 */
 .hidden-audio {
-    display: none;
+  display: none;
 }
 
 /* 隐藏摄像头视频元素 */
 .hidden-webcam {
-    display: none;
+  display: none;
 }
 
+/* 卡片头部样式 */
 .playback-card .ant-card-head {
   padding: var(--spacing-sm) 0 !important;
   margin-bottom: var(--spacing-md) !important;
@@ -41,20 +56,20 @@
   padding: 0;
 }
 
-/* ===================== 视频容器：适配+加载状态 ===================== */
+/* 视频容器样式 */
 .video-wrapper {
-    border: 5px solid #979797;
-      border-radius: var(--video-border-radius);
-  position: relative; 
+  border: 5px solid #979797;
+  border-radius: var(--video-border-radius);
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-   max-width: var(--video-max-width);
+  max-width: var(--video-max-width);
   margin-bottom: var(--spacing-md);
   width: 100%;
   box-sizing: border-box;
-  position: relative; /* 为加载遮罩做准备 */
 }
+
 .video-wrapper:hover {
   border-color: #1890ff;
 }
@@ -74,36 +89,38 @@
   z-index: 1;
 }
 
+/* 视频元素样式 */
 .playback-video {
   width: 100%;
   height: 450px;
   max-width: var(--video-max-width);
-  aspect-ratio: 16/9; /* 16:9固定比例 */
+  aspect-ratio: 16/9;
   border: none !important;
-  object-fit: contain; /* 避免视频拉伸 */
-  background-color: #000; /* 加载前黑色背景 */
-  outline: none; /* 去掉焦点边框 */
+  object-fit: contain;
+  background-color: #000;
+  outline: none;
   transition: border-color 0.2s ease;
-   pointer-events: auto;
+  pointer-events: auto;
 }
 
-/* ===================== 控制栏布局优化 ===================== */
+/* 控制栏父容器 */
 .playback-controls-parent {
   width: 100%;
-  max-width: var(--video-max-width); /* 与视频最大宽度一致 */
+  max-width: var(--video-max-width);
   margin: 0 auto;
   box-sizing: border-box;
   padding: 0 var(--spacing-xs);
 }
 
+/* 控制栏布局 */
 .playback-controls {
   width: 100%;
   max-width: var(--video-max-width);
   margin: 0 auto;
   align-items: center;
-  justify-content: space-between; /* 子元素两端分布，更紧凑 */
-  row-gap: var(--spacing-sm); /* 移动端换行间距 */
-  column-gap: var(--spacing-xs); /* 列间距 */
+  justify-content: space-between;
+  row-gap: var(--spacing-sm);
+  column-gap: var(--spacing-xs);
 }
 
 /* 控制项通用样式 */
@@ -113,21 +130,168 @@
   justify-content: center;
   min-height: var(--control-item-height);
   box-sizing: border-box;
-  flex: 1; /* 移动端控件自适应宽度 */
-  min-width: 60px; /* 最小宽度，避免挤压 */
+  flex: 1;
+  min-width: 60px;
+  color: var(--text-color);
+  transition: all 0.3s ease;
 }
 
 /* 进度条容器 */
 .progress-bar-container {
-  flex: 1 1 100%; /* 移动端独占一行，大屏占比最大 */
+  flex: 1 1 100%;
   min-height: 40px;
   padding: var(--spacing-xs) 0;
   box-sizing: border-box;
 }
 
-/* 播放按钮样式优化 */
+/* 播放按钮样式 */
 .playback-button-container {
   width: 50px;
   height: 30px;
-  flex: 0 0 auto; /* 按钮不伸缩 */
+  flex: 0 0 auto;
+}
+
+/* ===================== 暗色主题样式 ===================== */
+body.dark .playback-card {
+  background-color: var(--dark-bg-color);
+  border-color: var(--dark-border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.dark .playback-card .ant-card-head {
+  background-color: var(--dark-bg-color);
+  border-bottom-color: var(--dark-border-color);
+  color: var(--dark-text-color);
+}
+
+body.dark .playback-card .ant-card-body {
+  background-color: var(--dark-bg-color);
+  color: var(--dark-text-color);
+}
+
+body.dark .video-wrapper {
+  border-color: var(--dark-border-color);
+  background-color: var(--dark-bg-color);
+}
+
+body.dark .video-wrapper:hover {
+  border-color: var(--highlight-color);
+}
+
+body.dark .playback-video {
+  background-color: #080c14;
+}
+
+body.dark .video-loading {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* 控制栏暗色主题 */
+body.dark .playback-controls-parent {
+  background-color: var(--dark-bg-color);
+  color: var(--dark-text-color);
+}
+
+body.dark .playback-controls {
+  color: var(--dark-text-color);
+}
+
+body.dark .control-item {
+  color: var(--dark-text-color);
+}
+
+body.dark .control-item:hover {
+  color: var(--highlight-color);
+}
+
+body.dark .progress-bar-container {
+  background-color: var(--dark-bg-color);
+}
+
+body.dark .playback-button-container {
+  background-color: var(--dark-bg-color);
+}
+
+/* 按钮暗色主题 */
+body.dark .ant-btn {
+  color: var(--dark-text-color);
+  background-color: var(--dark-hover-color);
+  border-color: var(--dark-border-color);
+}
+
+body.dark .ant-btn:hover {
+  color: var(--dark-text-color);
+  background-color: var(--dark-border-color);
+  border-color: var(--dark-border-color);
+}
+
+body.dark .ant-btn-primary {
+  background-color: var(--highlight-color) !important;
+  border-color: var(--highlight-color) !important;
+}
+
+body.dark .ant-btn-primary:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+/* 空状态组件暗色主题 */
+body.dark .ant-empty {
+  color: var(--dark-text-color);
+}
+
+body.dark .ant-empty .ant-empty-description {
+  color: var(--dark-secondary-text-color);
+}
+
+/* 旋转加载动画暗色主题 */
+body.dark .ant-spin {
+  color: var(--dark-text-color);
+}
+
+body.dark .ant-spin .ant-spin-dot-item {
+  background-color: var(--dark-text-color);
+}
+
+/* 滑块组件暗色主题 */
+body.dark .ant-slider {
+  color: var(--highlight-color);
+}
+
+body.dark .ant-slider-track {
+  background-color: var(--highlight-color);
+}
+
+body.dark .ant-slider-rail {
+  background-color: var(--dark-border-color);
+}
+
+body.dark .ant-slider-handle {
+  border-color: var(--highlight-color);
+  background-color: #ffffff;
+}
+
+/* 选择器组件暗色主题 */
+body.dark .ant-select-selector {
+  background-color: var(--dark-bg-color) !important;
+  border-color: var(--dark-border-color) !important;
+  color: var(--dark-text-color) !important;
+}
+
+body.dark .ant-select-dropdown {
+  background-color: var(--dark-bg-color) !important;
+  border-color: var(--dark-border-color) !important;
+}
+
+body.dark .ant-select-item-option-content {
+  color: var(--dark-text-color) !important;
+}
+
+body.dark .ant-select-item-option:hover {
+  background-color: var(--dark-hover-color) !important;
+}
+
+/* 确保所有文本在暗色模式下清晰可见 */
+body.dark .ant-typography {
+  color: var(--dark-text-color);
 }
