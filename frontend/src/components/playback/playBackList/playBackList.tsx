@@ -161,7 +161,14 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording, onSelectL
                 <Text strong ellipsis>{item.name}</Text>
                 <div className="playback-item-meta">
                   <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {new Date(item.timestamp).toLocaleString()}
+                    {new Date(item.timestamp).toLocaleString(undefined, {
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: false
+                    })}
                   </Text>
                   <Tag color="blue">{formatDuration(item.duration / 1000)}</Tag>
                 </div>
@@ -193,21 +200,11 @@ const PlaybackList: React.FC<PlaybackListProps> = ({onSelectRecording, onSelectL
   return (
     <div className="playback-list-container">
       {contextHolder}
-      <Tabs
-        defaultActiveKey="local"
-        items={[
-          {
-            key: 'local',
-            label: (
-              <span>
-                <HddOutlined />
-                本地录制
-              </span>
-            ),
-            children: loading ? <div className="loading-container"><Spin /></div> : renderLocalList(),
-          },
-        ]}
-      />
+      {loading ? (
+        <div className="loading-container"><Spin /></div>
+      ) : (
+        renderLocalList()
+      )}
     </div>
   );
 };

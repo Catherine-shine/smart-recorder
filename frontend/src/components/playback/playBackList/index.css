@@ -7,9 +7,79 @@
 .playback-list {
   flex: 1;
   overflow-y: auto;
-  max-height: 500px; /* 限制列表最大高度，超出滚动 */
+  /* max-height: 600px; */
+  height: 100%;
+  padding: 4px; /* 增加内边距，避免阴影被切断 */
 }
 
+.playback-item {
+  margin-bottom: 12px;
+  border-radius: 8px !important; /* 覆盖 Antd Card 默认圆角 */
+  transition: all 0.3s;
+  border: 1px solid #f0f0f0;
+  height: 82px; /* 固定高度，防止内容换行撑开 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.playback-item:last-child {
+  margin-bottom: 0;
+}
+
+.playback-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+  border-color: #40a9ff;
+}
+
+.playback-item.selected {
+  border-color: #1890ff;
+  background-color: #e6f7ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+}
+
+.playback-item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.playback-item-info {
+  flex: 1;
+  overflow: hidden;
+  margin-right: 8px;
+  white-space: nowrap; /* 强制不换行 */
+}
+
+.playback-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  white-space: nowrap; /* 强制不换行 */
+  overflow: hidden;
+}
+
+.playback-item-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0; /* 默认隐藏操作按钮 */
+  transition: opacity 0.2s;
+}
+
+/* 选中状态或悬停状态下显示操作按钮 */
+.playback-item:hover .playback-item-actions,
+.playback-item.selected .playback-item-actions {
+  opacity: 1;
+}
+
+/* 确保 Antd Card body 的 padding 合适 */
+.playback-item .ant-card-body {
+  padding: 12px !important;
+}
+
+/* 旧样式保留，以防万一 */
 .video-list-container {
   display: flex;
   flex-direction: column;

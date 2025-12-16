@@ -51,14 +51,15 @@
   height: 100%;
   padding: var(--inner-spacing) !important;
   margin-right: calc(var(--inner-spacing) / 2);
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  /* background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); */
+  /* border-radius: 8px; */
+  /* border: 1px solid #dee2e6; */
+  /* box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); */
   display: flex;
   flex-direction: column;
   flex-shrink: 0; /* 防止被压缩 */
-  overflow: auto;
+  min-width: 240px; /* 增加最小宽度，防止内容被过度挤压 */
+  overflow: hidden; /* 改为hidden，让内部的list滚动 */
 }
 
 /* 播放器列 - 统一一个定义 */
@@ -84,9 +85,11 @@
 
 /* 列表内部容器 */
 .playback-list-container {
-  padding-left: 20px; /* 增加左边距 */
+  /* padding-left: 20px; */
   height: 100%;
-  overflow: auto;
+  overflow: hidden; /* 让内部的list滚动 */
+  display: flex;
+  flex-direction: column;
 }
 
 .screen-playback-video-container {
