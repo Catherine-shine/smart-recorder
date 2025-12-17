@@ -167,17 +167,71 @@ export function useRecordingScheduler() {
         audio: true, // 可选：录制系统音频
       } as MediaStreamConstraints);
 
-      // 3. 默认关闭麦克风：直接生成空白音频数据，不请求麦克风权限
-      console.log('默认关闭麦克风，开始生成空白音频数据');
+      // 3. 获取麦克风流，但默认禁用（静音）
+      // 这样整个录制过程都会有音频文件，静音部分也会被录制
+      try {
+        const audioConstraints: MediaStreamConstraints = {
+          audio: selectedAudioDeviceId ? { deviceId: { exact: selectedAudioDeviceId } } : true
+        };
+        const audioStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+        globalMediaRecorderRef.audioStream = audioStream;
+        
+        // 默认禁用音轨（静音）
+        audioStream.getAudioTracks().forEach(track => {
+          track.enabled = false;
+        });
+        
+        // 创建音频 MediaRecorder
+        const audioTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp3'];
+        let audioSelectedMimeType = 'audio/webm';
+        for (const type of audioTypes) {
+          if (MediaRecorder.isTypeSupported(type)) {
+            audioSelectedMimeType = type;
+            break;
+          }
+        }
+        globalMediaRecorderRef.audioMimeType = audioSelectedMimeType;
+        globalMediaRecorderRef.audioBlobs = [];
+        
+        const audioRecorder = new MediaRecorder(audioStream, { mimeType: audioSelectedMimeType });
+        globalMediaRecorderRef.audioInstance = audioRecorder;
+        
+        audioRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            globalMediaRecorderRef.audioBlobs.push(e.data);
+          }
+        };
+        
+        console.log('麦克风流已获取，默认静音状态');
+      } catch (error) {
+        console.warn('获取麦克风流失败，将不录制音频:', error);
+      }
+      
       globalMediaRecorderRef.isMicMuted = true;
       dispatch(setMicrophoneEnabled(false));
       
-      // 默认关闭摄像头：直接生成空白视频数据，不请求摄像头权限
-      console.log('默认关闭摄像头，开始生成空白视频数据');
+      // 4. 获取摄像头流，但默认禁用（黑屏）
+      // 这样整个录制过程都会有摄像头文件，黑屏部分也会被录制
+      try {
+        const cameraConstraints: MediaStreamConstraints = {
+          video: selectedVideoDeviceId ? { deviceId: { exact: selectedVideoDeviceId } } : true,
+          audio: false
+        };
+        const webcamStream = await navigator.mediaDevices.getUserMedia(cameraConstraints);
+        globalMediaRecorderRef.webcamStream = webcamStream;
+        
+        // 默认禁用视频轨（黑屏）
+        webcamStream.getVideoTracks().forEach(track => {
+          track.enabled = false;
+        });
+        
+        console.log('摄像头流已获取，默认关闭状态');
+      } catch (error) {
+        console.warn('获取摄像头流失败，将不录制摄像头:', error);
+      }
+      
       globalMediaRecorderRef.isCameraMuted = true;
       dispatch(setCameraEnabled(false));
-      
-      // 初始化时不自动生成空白数据，只在设备状态变化时记录状态变化
       
       globalMediaRecorderRef.stream = captureStream;
 
@@ -195,17 +249,22 @@ export function useRecordingScheduler() {
       
       console.log('Selected video MIME type:', selectedMimeType);
       
-      // 4. 默认关闭摄像头：直接生成空白视频数据，不请求摄像头权限
-      console.log('默认关闭摄像头，开始生成空白视频数据');
-      globalMediaRecorderRef.isCameraMuted = true;
-      dispatch(setCameraEnabled(false));
-      
       // 保存摄像头使用的MIME类型
       globalMediaRecorderRef.webcamMimeType = selectedMimeType;
       
-      // 确保webcamBlobs数组已初始化
-      if (!globalMediaRecorderRef.webcamBlobs) {
+      // 创建摄像头 MediaRecorder（如果有摄像头流）
+      if (globalMediaRecorderRef.webcamStream) {
         globalMediaRecorderRef.webcamBlobs = [];
+        const webcamRecorder = new MediaRecorder(globalMediaRecorderRef.webcamStream, {
+          mimeType: selectedMimeType,
+        });
+        globalMediaRecorderRef.webcamInstance = webcamRecorder;
+        
+        webcamRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            globalMediaRecorderRef.webcamBlobs.push(e.data);
+          }
+        };
       }
       
       const recorder = new MediaRecorder(captureStream, {
@@ -214,35 +273,14 @@ export function useRecordingScheduler() {
       globalMediaRecorderRef.instance = recorder;
       globalMediaRecorderRef.recordedBlobs = [];
       
-      // 7. 监听视频分片数据（仅收集数据，不实时上传）
+      // 监听视频分片数据（仅收集数据，不实时上传）
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           globalMediaRecorderRef.recordedBlobs.push(e.data);
         }
       };
       
-      // 音频分段数据处理（仅收集数据，不实时上传）
-      if (globalMediaRecorderRef.audioInstance) {
-        globalMediaRecorderRef.audioInstance.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            globalMediaRecorderRef.audioBlobs.push(e.data);
-          }
-        };
-      }
-      
-      // 摄像头分段数据处理（仅收集数据，不实时上传）
-      if (globalMediaRecorderRef.webcamInstance) {
-        globalMediaRecorderRef.webcamInstance.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            globalMediaRecorderRef.webcamBlobs.push(e.data);
-          }
-        };
-      }
-      
-      // 定期上传逻辑已移除，改为录制结束后统一上传
-      
-      // 设置分段上传定时器（每5秒上传一次）- 已移除
-      // const segmentUploadInterval = setInterval(uploadSegment, 5000);
+      // 音频和摄像头的 ondataavailable 已在上面设置
       
       // 8. 监听录制结束事件
       recorder.onstop = async () => {
@@ -364,10 +402,22 @@ export function useRecordingScheduler() {
         }
       };
 
-      // 9. 开始录制
+      // 9. 开始录制 - 同时启动所有 MediaRecorder
       recorder.start();
       
-      // 9. 触发Redux开始录制Action - 确保在recorder.start()之后调用，避免状态更新过早
+      // 启动音频录制（如果有）
+      if (globalMediaRecorderRef.audioInstance) {
+        globalMediaRecorderRef.audioInstance.start();
+        console.log('音频 MediaRecorder 已启动');
+      }
+      
+      // 启动摄像头录制（如果有）
+      if (globalMediaRecorderRef.webcamInstance) {
+        globalMediaRecorderRef.webcamInstance.start();
+        console.log('摄像头 MediaRecorder 已启动');
+      }
+      
+      // 触发Redux开始录制Action - 确保在recorder.start()之后调用，避免状态更新过早
       dispatch(startRecording());
       globalMediaRecorderRef.startTime = Date.now();
       console.log('Redux状态更新为RECORDING，当前recordingStatus:', RECORDING_STATUS.RECORDING);
@@ -378,7 +428,7 @@ export function useRecordingScheduler() {
       dispatch(resetRecordingState()); // 失败时重置状态
       cleanupRecording();
     }
-  }, [dispatch, recordingStatus]);
+  }, [dispatch, recordingStatus, selectedAudioDeviceId, selectedVideoDeviceId]);
 
   // 暂停录屏
   const handlePause = useCallback(() => {
@@ -511,6 +561,7 @@ export function useRecordingScheduler() {
   }, [recordingStatus]);
 
   // 切换麦克风状态（静音/取消静音）
+  // 注意：静音时不停止录制，而是禁用音轨，这样音频文件会包含静音区间，与视频保持同步
   const toggleMicrophone = useCallback(() => {
     if (!globalMediaRecorderRef.isInitialized) return;
     
@@ -518,25 +569,29 @@ export function useRecordingScheduler() {
     const relativeTimestamp = Date.now() - globalMediaRecorderRef.startTime;
     
     if (globalMediaRecorderRef.isMicMuted) {
-      // 取消静音 - 尝试重新获取麦克风流
-      try {
+      // 取消静音
+      if (globalMediaRecorderRef.audioStream) {
+        // 如果已有音频流，直接启用音轨
+        globalMediaRecorderRef.audioStream.getAudioTracks().forEach(track => {
+          track.enabled = true;
+        });
+        
+        // 记录状态变化
+        globalMediaRecorderRef.audioStateChanges.push({
+          timestamp: relativeTimestamp,
+          isEnabled: true
+        });
+        
+        globalMediaRecorderRef.isMicMuted = false;
+        dispatch(setMicrophoneEnabled(true));
+        console.log('麦克风已取消静音（启用音轨）');
+      } else {
+        // 如果没有音频流，需要获取新的
         const audioConstraints: MediaStreamConstraints = {
           audio: selectedAudioDeviceId ? { deviceId: { exact: selectedAudioDeviceId } } : true
         };
         
         navigator.mediaDevices.getUserMedia(audioConstraints).then(stream => {
-          // 保存状态变化记录
-          globalMediaRecorderRef.audioStateChanges.push({
-            timestamp: relativeTimestamp,
-            isEnabled: true
-          });
-          
-          // 停止之前的音频流
-          if (globalMediaRecorderRef.audioStream) {
-            globalMediaRecorderRef.audioStream.getTracks().forEach(track => track.stop());
-          }
-          
-          // 保存新的音频流
           globalMediaRecorderRef.audioStream = stream;
           
           // 创建新的MediaRecorder实例
@@ -550,10 +605,8 @@ export function useRecordingScheduler() {
             }
           }
           
-          // 保存选择的音频MIME类型，确保与空白音频格式一致
           globalMediaRecorderRef.audioMimeType = audioSelectedMimeType;
-          
-          globalMediaRecorderRef.audioInstance = new MediaRecorder(globalMediaRecorderRef.audioStream, {
+          globalMediaRecorderRef.audioInstance = new MediaRecorder(stream, {
             mimeType: audioSelectedMimeType,
           });
           
@@ -571,28 +624,30 @@ export function useRecordingScheduler() {
             globalMediaRecorderRef.audioInstance.pause();
           }
           
+          // 记录状态变化
+          globalMediaRecorderRef.audioStateChanges.push({
+            timestamp: relativeTimestamp,
+            isEnabled: true
+          });
+          
           globalMediaRecorderRef.isMicMuted = false;
           dispatch(setMicrophoneEnabled(true));
-          console.log('麦克风已取消静音');
+          console.log('麦克风已取消静音（新建音频流）');
         }).catch(error => {
-        console.error('重新获取麦克风流失败:', error);
+          console.error('获取麦克风流失败:', error);
         });
-      } catch (error) {
-        console.error('切换麦克风状态失败:', error);
       }
     } else {
-      // 静音 - 停止麦克风流
-      if (globalMediaRecorderRef.audioInstance) {
-        globalMediaRecorderRef.audioInstance.stop();
-        globalMediaRecorderRef.audioInstance = null;
-      }
+      // 静音 - 禁用音轨但不停止录制，这样音频会包含静音区间
+      const relativeTimestamp = Date.now() - globalMediaRecorderRef.startTime;
       
       if (globalMediaRecorderRef.audioStream) {
-        globalMediaRecorderRef.audioStream.getTracks().forEach(track => track.stop());
-        globalMediaRecorderRef.audioStream = null;
+        globalMediaRecorderRef.audioStream.getAudioTracks().forEach(track => {
+          track.enabled = false;
+        });
       }
       
-      // 保存状态变化记录
+      // 记录状态变化
       globalMediaRecorderRef.audioStateChanges.push({
         timestamp: relativeTimestamp,
         isEnabled: false
@@ -600,11 +655,12 @@ export function useRecordingScheduler() {
       
       globalMediaRecorderRef.isMicMuted = true;
       dispatch(setMicrophoneEnabled(false));
-      console.log('麦克风已静音');
+      console.log('麦克风已静音（禁用音轨，继续录制）');
     }
-  }, [recordingStatus]);
+  }, [recordingStatus, selectedAudioDeviceId, dispatch]);
 
   // 切换摄像头状态（关闭/打开）
+  // 注意：关闭时不停止录制，而是禁用视频轨，这样视频文件会包含黑屏区间，与录屏保持同步
   const toggleCamera = useCallback(() => {
     if (!globalMediaRecorderRef.isInitialized) return;
     
@@ -612,26 +668,30 @@ export function useRecordingScheduler() {
     const relativeTimestamp = Date.now() - globalMediaRecorderRef.startTime;
     
     if (globalMediaRecorderRef.isCameraMuted) {
-      // 打开摄像头 - 尝试重新获取摄像头流
-      try {
+      // 打开摄像头
+      if (globalMediaRecorderRef.webcamStream) {
+        // 如果已有摄像头流，直接启用视频轨
+        globalMediaRecorderRef.webcamStream.getVideoTracks().forEach(track => {
+          track.enabled = true;
+        });
+        
+        // 记录状态变化
+        globalMediaRecorderRef.cameraStateChanges.push({
+          timestamp: relativeTimestamp,
+          isEnabled: true
+        });
+        
+        globalMediaRecorderRef.isCameraMuted = false;
+        dispatch(setCameraEnabled(true));
+        console.log('摄像头已打开（启用视频轨）');
+      } else {
+        // 如果没有摄像头流，需要获取新的
         const cameraConstraints: MediaStreamConstraints = {
           video: selectedVideoDeviceId ? { deviceId: { exact: selectedVideoDeviceId } } : true,
           audio: false
         };
         
         navigator.mediaDevices.getUserMedia(cameraConstraints).then(stream => {
-          // 保存状态变化记录
-          globalMediaRecorderRef.cameraStateChanges.push({
-            timestamp: relativeTimestamp,
-            isEnabled: true
-          });
-          
-          // 停止之前的摄像头流
-          if (globalMediaRecorderRef.webcamStream) {
-            globalMediaRecorderRef.webcamStream.getTracks().forEach(track => track.stop());
-          }
-          
-          // 保存新的摄像头流
           globalMediaRecorderRef.webcamStream = stream;
           
           // 确保webcamBlobs数组已初始化
@@ -640,8 +700,7 @@ export function useRecordingScheduler() {
           }
           
           // 创建新的MediaRecorder实例
-          // 使用统一的MIME类型确保与空白视频兼容
-          globalMediaRecorderRef.webcamInstance = new MediaRecorder(globalMediaRecorderRef.webcamStream, {
+          globalMediaRecorderRef.webcamInstance = new MediaRecorder(stream, {
             mimeType: globalMediaRecorderRef.webcamMimeType,
           });
           
@@ -659,28 +718,28 @@ export function useRecordingScheduler() {
             globalMediaRecorderRef.webcamInstance.pause();
           }
           
+          // 记录状态变化
+          globalMediaRecorderRef.cameraStateChanges.push({
+            timestamp: relativeTimestamp,
+            isEnabled: true
+          });
+          
           globalMediaRecorderRef.isCameraMuted = false;
           dispatch(setCameraEnabled(true));
-          console.log('摄像头已打开');
+          console.log('摄像头已打开（新建视频流）');
         }).catch(error => {
-          console.error('重新获取摄像头流失败:', error);
+          console.error('获取摄像头流失败:', error);
         });
-      } catch (error) {
-        console.error('切换摄像头状态失败:', error);
       }
     } else {
-      // 关闭摄像头 - 停止摄像头流
-      if (globalMediaRecorderRef.webcamInstance) {
-        globalMediaRecorderRef.webcamInstance.stop();
-        globalMediaRecorderRef.webcamInstance = null;
-      }
-      
+      // 关闭摄像头 - 禁用视频轨但不停止录制，这样视频会包含黑屏区间
       if (globalMediaRecorderRef.webcamStream) {
-        globalMediaRecorderRef.webcamStream.getTracks().forEach(track => track.stop());
-        globalMediaRecorderRef.webcamStream = null;
+        globalMediaRecorderRef.webcamStream.getVideoTracks().forEach(track => {
+          track.enabled = false;
+        });
       }
       
-      // 保存状态变化记录
+      // 记录状态变化
       globalMediaRecorderRef.cameraStateChanges.push({
         timestamp: relativeTimestamp,
         isEnabled: false
@@ -688,9 +747,9 @@ export function useRecordingScheduler() {
       
       globalMediaRecorderRef.isCameraMuted = true;
       dispatch(setCameraEnabled(false));
-      console.log('摄像头已关闭');
+      console.log('摄像头已关闭（禁用视频轨，继续录制）');
     }
-  }, [recordingStatus]);
+  }, [recordingStatus, selectedVideoDeviceId, dispatch]);
 
   // 组件卸载时清理资源
   useEffect(() => {

@@ -1,2 +1,0 @@
-file '/Users/tongxuanlu/code/smart-recorder/backend/uploads/a55b759b9b9a_audio_segment_1.webm'
-file '/Users/tongxuanlu/code/smart-recorder/backend/uploads/cache/silent_11696s.webm'
