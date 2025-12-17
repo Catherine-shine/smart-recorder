@@ -6,6 +6,34 @@
 	flex-direction: column;
 	gap: 12px;
 	width: 320px;
+	position: relative;
+}
+
+/* 收起/展开按钮样式 */
+.room-info-toggle-button {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	z-index: 10;
+}
+
+/* 房间信息内容样式 */
+/* 增加选择器优先级，确保样式能够正确应用 */
+.muti_share_zone .custom-people-menu .room-info-content {
+	overflow: hidden;
+	transition: all 0.3s ease;
+}
+
+.muti_share_zone .custom-people-menu .room-info-content:not(.expanded) {
+	max-height: 0;
+	padding: 0;
+	opacity: 0;
+}
+
+.muti_share_zone .custom-people-menu .room-info-content.expanded {
+	max-height: 500px;
+	padding: 8px 4px;
+	opacity: 1;
 }
 
 .user-section {
@@ -71,4 +99,18 @@
 	color: #aaa;
 	font-size: 12px;
 	margin-left: 8px;
+}
+
+/* Dark theme styles */
+.tl-theme__dark .custom-people-menu {
+	background: #2d2d2d;
+	color: #e0e0e0;
+}
+
+.tl-theme__dark .section-title {
+	color: #ffffff;
+}
+
+.tl-theme__dark .cursor-info {
+	color: #888;
 }

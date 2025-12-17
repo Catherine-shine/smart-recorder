@@ -278,3 +278,13 @@
   font-size: 12px !important;
   display: inline-block;
 }
+
+/* 侧边栏菜单容器 */
+.sidebar-menu {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 8px;
+  gap: 12px;
+}

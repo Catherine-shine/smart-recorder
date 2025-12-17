@@ -177,7 +177,7 @@ function WhiteboardContent() {
 			<Tldraw 
 				store={muti_store} // 取消注释即可恢复多人协作（需解决图片上传问题）
 				components={components}
-				className={theme === 'dark' ? 'tldraw__editor--dark' : ''}
+				className={theme === 'dark' ? 'tl-theme__dark' : ''}
 				// 兜底：同时绑定onStoreChange确保兼容性
 				// onStoreChange 已弃用，改为通过 useValue 监听 store 变化
 			/>

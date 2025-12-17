@@ -175,4 +175,4 @@ export const FadeIn = styled(motion.div)`
 export const ButtonMotion = styled(motion.div)`
   display: inline-block;
 `;
-
+
