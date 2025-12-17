@@ -136,6 +136,11 @@
   transition: all 0.3s ease;
 }
 
+/* 摄像头控制项样式，增加与音量控制的距离 */
+.webcam-control-item {
+  margin-left: 40px;
+}
+
 /* 进度条容器 */
 .progress-bar-container {
   flex: 1 1 100%;
@@ -294,4 +299,142 @@ body.dark .ant-select-item-option:hover {
 /* 确保所有文本在暗色模式下清晰可见 */
 body.dark .ant-typography {
   color: var(--dark-text-color);
+}
+
+/* ===================== 全屏模式样式 ===================== */
+/* 全屏模式下的容器样式 */
+.playback-card:fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  z-index: 9999;
+  border-radius: 0 !important;
+  overflow: hidden;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 全屏模式下的卡片内容区域 */
+.playback-card:fullscreen .ant-card-body {
+  padding: 0 !important;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 全屏模式下的视频容器 */
+.playback-card:fullscreen .video-wrapper {
+  border: none;
+  border-radius: 0;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 全屏模式下的视频元素 */
+.playback-card:fullscreen .playback-video {
+  width: 100%;
+  height: calc(100% - 60px);
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  background-color: #000;
+  position: relative;
+  z-index: 1;
+}
+
+/* 控制栏包装器默认样式 */
+.playback-controls-wrapper {
+  position: relative;
+}
+
+/* 全屏模式下的控制栏容器 */
+.playback-card:fullscreen .playback-controls-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+/* 全屏模式下的控制栏 */
+.playback-card:fullscreen .playback-controls-parent {
+  max-width: none;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 10px 20px !important;
+  margin: 0;
+  z-index: 1000;
+  opacity: 1;
+  pointer-events: auto;
+  position: relative;
+}
+
+/* 全屏模式下的控制栏布局 */
+.playback-card:fullscreen .playback-controls {
+  max-width: none;
+  color: #fff;
+}
+
+/* 全屏模式下的控制项 */
+.playback-card:fullscreen .control-item {
+  color: #fff;
+}
+
+/* 全屏模式下的按钮 */
+.playback-card:fullscreen .ant-btn {
+  color: #fff;
+}
+
+/* 全屏模式下的进度条 */
+.playback-card:fullscreen .progress-bar-container {
+  flex: 1;
+}
+
+/* 全屏模式下的下载链接区域 */
+.playback-card:fullscreen .download-links-container {
+  display: none;
+}
+
+/* 全屏模式下的暗色主题调整 */
+body.dark .playback-card:fullscreen {
+  background-color: var(--dark-bg-color);
+  border-color: var(--dark-bg-color);
+}
+
+body.dark .playback-card:fullscreen .ant-card-body {
+  background-color: var(--dark-bg-color);
+}
+
+body.dark .playback-card:fullscreen .playback-controls-parent {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+body.dark .playback-card:fullscreen .playback-controls {
+  color: var(--dark-text-color);
+}
+
+body.dark .playback-card:fullscreen .control-item {
+  color: var(--dark-text-color);
+}
+
+body.dark .playback-card:fullscreen .ant-btn {
+  color: var(--dark-text-color);
+  background-color: transparent;
+  border-color: transparent;
+}
+
+body.dark .playback-card:fullscreen .ant-btn:hover {
+  color: var(--highlight-color);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: transparent;
 }

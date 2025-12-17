@@ -1,12 +1,61 @@
 /* Custom People Menu Styles */
+.muti_share_zone {
+	position: relative;
+	z-index: 100;
+}
+
+/* 默认（收起）状态：只显示按钮，不显示背景和内边距 */
 .custom-people-menu {
-	background: #f5f5f5;
-	padding: 4px;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
 	width: 320px;
 	position: relative;
+	z-index: 100;
+	min-height: 40px;
+	transition: all 0.3s ease;
+	/* 收起状态：背景透明，无边距 */
+	background: transparent;
+	padding: 0;
+	border: none;
+	box-shadow: none;
+}
+
+/* 展开状态时，为菜单容器添加样式 */
+.custom-people-menu:has(.room-info-content.expanded) {
+	background: #f5f5f5;
+	padding: 4px;
+}
+
+/* 展开状态时，内容区域样式 */
+.custom-people-menu .room-info-content.expanded {
+	max-height: 500px;
+	padding: 8px 4px;
+	opacity: 1;
+}
+
+/* 深色主题下，默认收起状态：确保背景透明 */
+.tl-theme__dark .custom-people-menu {
+	background: transparent !important;
+	color: inherit !important;
+	padding: 0 !important;
+	border: none !important;
+	box-shadow: none !important;
+}
+
+/* 深色主题下，仅展开状态显示背景 */
+.tl-theme__dark .custom-people-menu:has(.room-info-content.expanded) {
+	background: #2d2d2d !important;
+	color: #e0e0e0 !important;
+	padding: 4px !important;
+}
+
+/* 确保深色主题下，收起状态的内容区域完全隐藏 */
+.tl-theme__dark .custom-people-menu .room-info-content:not(.expanded) {
+	max-height: 0 !important;
+	padding: 0 !important;
+	opacity: 0 !important;
+	background: transparent !important;
 }
 
 /* 收起/展开按钮样式 */
@@ -14,7 +63,16 @@
 	position: absolute;
 	top: 4px;
 	right: 4px;
-	z-index: 10;
+	z-index: 1000;
+	cursor: pointer;
+	pointer-events: auto;
+}
+
+/* 收起状态下，调整菜单容器的最小高度，确保按钮与下方工具栏隔开 */
+.muti_share_zone .custom-people-menu .room-info-content:not(.expanded) {
+	max-height: 0;
+	padding: 0;
+	opacity: 0;
 }
 
 /* 房间信息内容样式 */

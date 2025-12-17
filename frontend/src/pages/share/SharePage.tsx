@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { message, Spin, Button, Slider, Switch, Typography, Space } from 'antd';
-import { 
-  PlayCircleOutlined, 
-  PauseCircleOutlined, 
-  SoundOutlined, 
+import {
+  PlayCircleOutlined,
+  PauseCircleOutlined,
+  SoundOutlined,
   MutedOutlined,
   FullscreenOutlined,
   FullscreenExitOutlined,
@@ -13,17 +13,18 @@ import {
 } from '@ant-design/icons';
 import { getRecordingDetail } from '../../api/recording';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { 
-  setPlaybackUrl, 
-  setAudioUrl, 
-  setWebcamUrl, 
-  setDuration, 
+import {
+  setPlaybackUrl,
+  setAudioUrl,
+  setWebcamUrl,
+  setDuration,
   setTrajectoryData,
   resetPlaybackState,
   setCurrentTime,
   setPlaybackStatus
 } from '../../store/slices/playbackSlice';
 import { toggleTheme } from '../../store/slices/layoutSlice';
+import WebcamFloating from '../../components/playback/webcamFloating/webcamFloating';
 import './index.css';
 
 const { Title, Text } = Typography;
@@ -36,8 +37,8 @@ const SharePage: React.FC = () => {
   
   // 本地播放状态
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTimeLocal] = useState(0);
-  const [duration, setDurationLocal] = useState(0);
+  const [currentTimeLocal, setCurrentTimeLocal] = useState(0);
+  const [durationLocal, setDurationLocal] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -54,6 +55,20 @@ const SharePage: React.FC = () => {
   const { playbackUrl, webcamUrl, audioUrl, trajectoryData } = useAppSelector(state => state.playback);
   const { theme } = useAppSelector(state => state.layout);
   const isDarkMode = theme === 'dark';
+
+  // 当playbackUrl变化时，重置时长状态
+  useEffect(() => {
+    if (playbackUrl) {
+      // 重置时长状态，确保使用新视频的时长
+      setDurationLocal(0);
+      // 触发视频加载元数据
+      const video = videoRef.current;
+      if (video) {
+        // 手动加载元数据，确保能获取到正确时长
+        video.load();
+      }
+    }
+  }, [playbackUrl]);
 
   // 加载录制数据
   useEffect(() => {
@@ -232,7 +247,10 @@ const SharePage: React.FC = () => {
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
     if (video && video.duration) {
-      setDurationLocal(video.duration);
+      // 使用视频实际时长更新本地状态和Redux状态
+      const actualDuration = video.duration;
+      setDurationLocal(actualDuration);
+      dispatch(setDuration(actualDuration));
     }
   };
 
@@ -287,7 +305,7 @@ const SharePage: React.FC = () => {
       </header>
 
       <div className="share-main-container">
-        {/* 左侧 3/4 - 视频播放器区域 */}
+        {/* 视频播放器区域 */}
         <div className="share-video-section">
           <div className="share-video-wrapper">
             <video
@@ -296,8 +314,18 @@ const SharePage: React.FC = () => {
               src={playbackUrl as string}
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={handleLoadedMetadata}
-              onEnded={() => setIsPlaying(false)}
+              onLoadedData={handleLoadedMetadata} // 增加此事件监听，确保能获取到正确时长
+              onCanPlayThrough={handleLoadedMetadata} // 增加此事件监听，确保视频可以流畅播放时获取时长
+              onEnded={() => {
+                setIsPlaying(false);
+                // 视频播放结束时，将当前时间设置为视频时长，确保进度条显示正确
+                const video = videoRef.current;
+                if (video) {
+                  setCurrentTimeLocal(video.duration);
+                }
+              }}
               onClick={togglePlay}
+              preload="metadata" // 预加载元数据，有助于更快获取时长
             />
             
             {/* 播放/暂停覆盖按钮 */}
@@ -317,19 +345,19 @@ const SharePage: React.FC = () => {
               className="share-play-btn"
             />
             
-            <span className="share-time">{formatTime(currentTime)}</span>
+            <span className="share-time">{formatTime(currentTimeLocal)}</span>
             
             <Slider
               className="share-progress"
               min={0}
-              max={duration}
+              max={durationLocal}
               step={0.1}
-              value={currentTime}
+              value={currentTimeLocal}
               onChange={handleSeek}
               tooltip={{ formatter: (val) => formatTime(val || 0) }}
             />
             
-            <span className="share-time">{formatTime(duration)}</span>
+            <span className="share-time">{formatTime(durationLocal)}</span>
             
             <Button
               type="text"
@@ -353,32 +381,16 @@ const SharePage: React.FC = () => {
             />
           </div>
         </div>
-        
-        {/* 右侧 1/4 - 摄像头区域 */}
-        <div className="share-sidebar">
-          <div className={`share-webcam-container ${webcamActive ? 'active' : 'inactive'}`}>
-            {webcamUrl ? (
-              <>
-                <video
-                  ref={webcamRef}
-                  className="share-webcam-video"
-                  src={webcamUrl}
-                  muted
-                />
-                {!webcamActive && (
-                  <div className="share-webcam-overlay">
-                    <span>摄像头未开启</span>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="share-webcam-overlay">
-                <span>无摄像头录制</span>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
+      
+      {/* 悬浮摄像头组件 */}
+      <WebcamFloating
+        webcamRef={webcamRef}
+        webcamActive={webcamActive}
+        visible={true}
+        onLoadedMetadata={() => console.log('Webcam loaded metadata')}
+        onError={() => console.error('Webcam error')}
+      />
       
       {/* 音频元素（隐藏） */}
       {audioUrl && (

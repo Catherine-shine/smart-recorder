@@ -82,14 +82,16 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
 
   // 监听selectedId的变化，当Redux持久化状态恢复后，自动选择对应的录制
   useEffect(() => {
-    // 只有当selectedId存在、本地录制列表已加载且与当前选中的录制ID不匹配时才执行
-    if (selectedId && localRecordings.length > 0 && selectedId !== currentSelectedId) {
+    // 只有当selectedId存在且本地录制列表已加载时才执行
+    // 移除selectedId !== currentSelectedId条件，确保每次selectedId变化或组件重新挂载时
+    // 都能重新创建有效的Blob URL，避免使用已失效的Blob URL
+    if (selectedId && localRecordings.length > 0) {
       const selectedRecording = localRecordings.find(recording => recording.id === selectedId);
       if (selectedRecording) {
         handleLocalSelect(selectedRecording);
       }
     }
-  }, [selectedId, localRecordings, currentSelectedId]);
+  }, [selectedId, localRecordings]);
 
   // 处理本地录制选择
   const handleLocalSelect = (recording: any) => {

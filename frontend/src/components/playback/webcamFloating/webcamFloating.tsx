@@ -30,6 +30,9 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({
     y: 20 
   });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  // 用于区分点击和拖动的状态
+  const [clickStartPos, setClickStartPos] = useState({ x: 0, y: 0 });
+  const [clickStartTime, setClickStartTime] = useState(0);
 
   // 监听窗口大小变化，调整位置（可选）
   useEffect(() => {
@@ -43,13 +46,16 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({
 
   // 处理拖拽开始
   const handleMouseDown = (e: React.MouseEvent) => {
+    // 记录点击开始的位置和时间
+    setClickStartPos({ x: e.clientX, y: e.clientY });
+    setClickStartTime(Date.now());
     setIsDragging(true);
     setOffset({
       x: e.clientX - position.x,
       y: e.clientY - position.y
     });
   };
-
+  
   // 处理拖拽移动
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -139,7 +145,27 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({
       
       {/* 最小化时显示摄像头图标 */}
       {isMinimized ? (
-        <div className="webcam-minimized-icon">
+        <div 
+          className="webcam-minimized-icon"
+          onClick={(e) => {
+            e.stopPropagation(); // 防止触发拖拽
+            
+            // 计算鼠标移动距离和点击时间
+            const currentTime = Date.now();
+            const clickDuration = currentTime - clickStartTime;
+            const distance = Math.sqrt(
+              Math.pow(e.clientX - clickStartPos.x, 2) + 
+              Math.pow(e.clientY - clickStartPos.y, 2)
+            );
+            
+            // 如果移动距离很小且点击时间很短，才认为是点击（切换最小化/最大化）
+            // 否则认为是拖动操作，不执行最大化
+            if (distance < 5 && clickDuration < 200) {
+              toggleMinimize(); // 恢复到正常大小
+            }
+          }}
+          style={{ cursor: 'pointer' }}
+        >
           <VideoCameraOutlined style={{ fontSize: '24px', color: '#fff' }} />
         </div>
       ) : (

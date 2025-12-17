@@ -19,7 +19,7 @@ import VolumeControl from './volumeControl/volumeControl';
 import PlaybackRate from './playBackRate/playBackRate';
 import { Card, Row, Col, Spin, Typography, message, Button, Empty } from 'antd';
 import React, { useRef, useEffect, useState } from "react";
-import { VideoCameraOutlined } from '@ant-design/icons';
+import { VideoCameraOutlined, FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons';
 import WebcamFloating from '../webcamFloating/webcamFloating';
 import './index.css';
 
@@ -31,12 +31,16 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
   const dispatch = useDispatch();
   const [messageApi, contextHolder] = message.useMessage();
   const [showWebcam, setShowWebcam] = useState<boolean>(true);
+  // 全屏状态管理
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   // 媒体加载状态追踪
   const [webcamReady, setWebcamReady] = useState<boolean>(false);
   const [audioReady, setAudioReady] = useState<boolean>(false);
   // 摄像头和麦克风的当前状态
   const [webcamActive, setWebcamActive] = useState<boolean>(false);
   const [audioActive, setAudioActive] = useState<boolean>(false);
+  // 用于全屏操作的容器引用
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // 从 Redux 中获取所有状态
   const {
@@ -96,8 +100,21 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
   // 确保videoSrc始终是有效的字符串
   const safeVideoSrc = videoSrc && videoSrc !== 'about:blank' && typeof videoSrc === 'string' ? videoSrc : '';
 
-  // 根据时间戳控制摄像头和麦克风的播放状态
+  // 优化：缓存上一次的设备状态，避免不必要的状态切换
+  const lastMediaStateRef = useRef({
+    isCameraActive: false,
+    isAudioActive: false,
+    currentTime: 0
+  });
+  
+  // 优化：根据时间戳控制摄像头和麦克风的播放状态
   const controlMediaByTimestamps = (currentTime: number) => {
+    // 限制调用频率，避免过度计算
+    if (Math.abs(currentTime - lastMediaStateRef.current.currentTime) < 0.05) {
+      return;
+    }
+    lastMediaStateRef.current.currentTime = currentTime;
+    
     // 使用预处理的媒体时间戳标记
     const cameraChanges = mediaTimestamps.camera || [];
     const audioChanges = mediaTimestamps.audio || [];
@@ -105,70 +122,37 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     // 添加播放时间阈值（100ms），避免在播放初始时立即播放媒体
     const PLAY_THRESHOLD = 0.1; // 100ms
     
-    console.log('controlMediaByTimestamps called:', {
-      currentTime,
-      currentTimeMs: currentTime * 1000,
-      cameraChanges: cameraChanges.length,
-      audioChanges: audioChanges.length,
-      mediaTimestamps,
-      isBelowThreshold: currentTime < PLAY_THRESHOLD
-    });
-    
-    // 只在确实没有需要处理的状态变化时才返回
-    // 如果只有一个媒体没有状态变化记录，仍然需要处理另一个媒体
-    if ((cameraChanges.length === 0 && !webcamRef.current) && (audioChanges.length === 0 && !audioRef.current)) {
-      console.log('No camera or audio changes available and no media elements');
-      return;
-    }
-    
     // 转换currentTime为毫秒，与录制时的时间戳单位匹配
     const currentTimeMs = currentTime * 1000;
     
     // 检查摄像头状态
     let isCameraActive = false;
-    let lastCameraChange = null;
     for (let i = cameraChanges.length - 1; i >= 0; i--) {
       const change = cameraChanges[i];
       if (change.timestamp <= currentTimeMs) {
-        // 使用isEnabled字段（布尔值）而不是status字段（字符串）
         isCameraActive = change.isEnabled;
-        lastCameraChange = change;
         break;
       }
     }
     
     // 检查麦克风状态
-    let isAudioActive = false; // 没有状态变化记录时默认关闭
-    let lastAudioChange = null;
+    let isAudioActive = false;
     for (let i = audioChanges.length - 1; i >= 0; i--) {
       const change = audioChanges[i];
       if (change.timestamp <= currentTimeMs) {
-        // 使用isEnabled字段（布尔值）而不是status字段（字符串）
         isAudioActive = change.isEnabled;
-        lastAudioChange = change;
         break;
       }
     }
     
-    console.log('Media state calculation:', {
-      isCameraActive,
-      isAudioActive,
-      webcamActive,
-      audioActive,
-      playStatus,
-      lastCameraChange,
-      lastAudioChange
-    });
-    
-    // 更新摄像头状态
-    if (isCameraActive !== webcamActive) {
-      console.log(`Camera state changing from ${webcamActive} to ${isCameraActive}`);
+    // 优化：只在状态实际变化时才更新
+    if (isCameraActive !== lastMediaStateRef.current.isCameraActive) {
+      lastMediaStateRef.current.isCameraActive = isCameraActive;
       setWebcamActive(isCameraActive);
     }
     
-    // 更新麦克风状态
-    if (isAudioActive !== audioActive) {
-      console.log(`Audio state changing from ${audioActive} to ${isAudioActive}`);
+    if (isAudioActive !== lastMediaStateRef.current.isAudioActive) {
+      lastMediaStateRef.current.isAudioActive = isAudioActive;
       setAudioActive(isAudioActive);
     }
     
@@ -177,39 +161,31 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
       // 控制音频播放
       const audio = audioRef.current;
       if (audio) {
-        if (isAudioActive) {
-          console.log('Playing audio (above threshold)');
+        if (isAudioActive && audio.paused) {
           audio.play().catch(err => console.warn('Failed to play audio:', err));
-        } else {
-          console.log('Pausing audio');
+        } else if (!isAudioActive && !audio.paused) {
           audio.pause();
         }
       }
       
-      // 控制摄像头播放（主组件接管，与音频一致的阈值判断）
+      // 控制摄像头播放
       const webcam = webcamRef.current;
       if (webcam) {
-        if (isCameraActive) {
-          console.log('Playing webcam (above threshold)');
+        if (isCameraActive && webcam.paused) {
           webcam.play().catch(err => console.warn('Failed to play webcam:', err));
-        } else {
-          console.log('Pausing webcam');
+        } else if (!isCameraActive && !webcam.paused) {
           webcam.pause();
         }
       }
     } else if (currentTime < PLAY_THRESHOLD) {
       // 在阈值内，确保所有媒体都处于暂停状态
-      // 控制音频
       const audio = audioRef.current;
-      if (audio) {
-        console.log('Pausing audio (below threshold)');
+      if (audio && !audio.paused) {
         audio.pause();
       }
       
-      // 控制摄像头
       const webcam = webcamRef.current;
-      if (webcam) {
-        console.log('Pausing webcam (below threshold)');
+      if (webcam && !webcam.paused) {
         webcam.pause();
       }
     }
@@ -371,11 +347,11 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     messageApi.warning('音频加载失败，将跳过音频播放！');
   };
   
-  // 同步所有媒体时间（带就绪检查和seeked确认）
+  // 优化：同步所有媒体时间（带就绪检查和seeked确认）
   const syncMediaTime = (targetTime: number, callback?: () => void) => {
     const webcam = webcamRef.current;
     const audio = audioRef.current;
-    const syncThreshold = 0.05; // 提高同步精度
+    const syncThreshold = 0.1; // 降低同步精度要求，减少不必要的跳转
     let syncedCount = 0;
     const totalMedia = (webcam ? 1 : 0) + (audio ? 1 : 0);
     
@@ -386,23 +362,21 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
       }
     };
 
-    // 同步摄像头时间
+    // 优化：同步摄像头时间
     if (webcam && webcam.readyState >= 1) {
       // 检查是否可跳转
       if (webcam.seekable.length > 0) {
         const seekableStart = webcam.seekable.start(0);
         const seekableEnd = webcam.seekable.end(0);
         
-        // 确保目标时间在可跳转范围内（与音频逻辑一致）
+        // 确保目标时间在可跳转范围内
         if (targetTime >= seekableStart && targetTime <= seekableEnd) {
+          // 只在时间差超过阈值时才同步，减少不必要的seek操作
           if (Math.abs(webcam.currentTime - targetTime) > syncThreshold) {
             try {
               // 监听seeked事件确认跳转完成
               const handleSeeked = () => {
-                console.log('Webcam seeked to:', webcam.currentTime);
                 webcam.removeEventListener('seeked', handleSeeked);
-                // 同步后不自动播放，完全由controlMediaByTimestamps控制
-                webcam.pause();
                 onMediaSynced();
               };
               
@@ -412,10 +386,8 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
               // 设置超时保护
               setTimeout(() => {
                 webcam.removeEventListener('seeked', handleSeeked);
-                // 同步后不自动播放，完全由controlMediaByTimestamps控制
-                webcam.pause();
                 onMediaSynced();
-              }, 300);
+              }, 500); // 延长超时时间，避免频繁触发
             } catch (e) {
               console.warn('Failed to sync webcam time:', e);
               onMediaSynced();
@@ -424,18 +396,16 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
             onMediaSynced();
           }
         } else {
-          console.warn('Webcam target time out of seekable range:', { targetTime, seekableStart, seekableEnd });
           onMediaSynced();
         }
       } else {
-        console.warn('Webcam has no seekable range');
         onMediaSynced();
       }
     } else {
       onMediaSynced();
     }
 
-    // 同步音频时间
+    // 优化：同步音频时间
     if (audio && audio.readyState >= 1) {
       // 检查是否可跳转
       if (audio.seekable.length > 0) {
@@ -444,14 +414,12 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
         
         // 确保目标时间在可跳转范围内
         if (targetTime >= seekableStart && targetTime <= seekableEnd) {
+          // 只在时间差超过阈值时才同步，减少不必要的seek操作
           if (Math.abs(audio.currentTime - targetTime) > syncThreshold) {
             try {
               // 监听seeked事件确认跳转完成
               const handleSeeked = () => {
-                console.log('Audio seeked to:', audio.currentTime);
                 audio.removeEventListener('seeked', handleSeeked);
-                // 同步后不自动播放，完全由controlMediaByTimestamps控制
-                audio.pause();
                 onMediaSynced();
               };
               
@@ -461,10 +429,8 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
               // 设置超时保护
               setTimeout(() => {
                 audio.removeEventListener('seeked', handleSeeked);
-                // 同步后不自动播放，完全由controlMediaByTimestamps控制
-                audio.pause();
                 onMediaSynced();
-              }, 300);
+              }, 500); // 延长超时时间，避免频繁触发
             } catch (e) {
               console.warn('Failed to sync audio time:', e);
               onMediaSynced();
@@ -473,11 +439,9 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
             onMediaSynced();
           }
         } else {
-          console.warn('Audio target time out of seekable range:', { targetTime, seekableStart, seekableEnd });
           onMediaSynced();
         }
       } else {
-        console.warn('Audio has no seekable range');
         onMediaSynced();
       }
     } else {
@@ -708,6 +672,36 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     dispatch(setIsPlayEnded(true));
   };
   
+  // 全屏切换逻辑
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    
+    if (!isFullscreen) {
+      // 进入全屏
+      containerRef.current.requestFullscreen?.();
+      setIsFullscreen(true);
+    } else {
+      // 退出全屏
+      document.exitFullscreen?.();
+      setIsFullscreen(false);
+    }
+  };
+  
+  // 监听全屏状态变化
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    // 添加全屏状态变化监听
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    
+    // 清理事件监听
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+  
   // 主视频源和属性管理
   useEffect(() => {
     const video = videoRef.current;
@@ -904,15 +898,8 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
   return (
     <>
       <div>
-        {/* 摄像头悬浮窗 */}
-        <WebcamFloating 
-          webcamRef={webcamRef} 
-          webcamActive={webcamActive} 
-          visible={showWebcam}
-          onLoadedMetadata={handleWebcamLoadedMetadata}
-          onError={handleWebcamError}
-        />
         <Card
+          ref={containerRef}
           title="录屏回放"
           variant="outlined"
           className="playback-card"
@@ -925,11 +912,20 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
             }
           }}
         >
+          {/* 摄像头悬浮窗 - 移动到Card内部，确保在全屏模式下可见 */}
+          <WebcamFloating 
+            webcamRef={webcamRef} 
+            webcamActive={webcamActive} 
+            visible={showWebcam}
+            onLoadedMetadata={handleWebcamLoadedMetadata}
+            onError={handleWebcamError}
+          />
           <div className="video-wrapper">
             <Spin spinning={videoLoading} className="video-loading" />
             <video
               ref={videoRef}
-              src={safeVideoSrc || ''}
+              // 只在safeVideoSrc有效时才设置src属性
+              src={safeVideoSrc ? safeVideoSrc : undefined}
               controls={false}
               className="playback-video"
               onLoadedMetadata={handleLoadedMetadata}
@@ -943,7 +939,8 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
             {/* 隐藏的音频元素，用于播放麦克风音频 */}
             <audio
               ref={audioRef}
-              src={audioSrc}
+              // 只在audioSrc有效且不是无效的Blob URL时才设置src属性
+              src={audioSrc && typeof audioSrc === 'string' && !audioSrc.startsWith('blob:') ? audioSrc : undefined}
               className="hidden-audio"
               onLoadedMetadata={handleAudioLoadedMetadata}
               onError={handleAudioError}
@@ -1013,54 +1010,67 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
             </div>
           )}
 
-          {/* 控制栏容器 */}
-          <div className="playback-controls-parent">
-            <Row
-              gutter={[12, 16]}
-              align="middle"
-              wrap={true}
-              className="playback-controls"
-            >
-              <Col xs={6} sm={4} md={2}>
-                <PlayButton
-                  isPlayEnded={isPlayEnded}
-                  status={playStatus}
-                  onPlay={handlePlay}
-                  onPause={handlePause}
-                  onStop={handleStop}
-                  videoSrc={videoSrc}
-                />
-              </Col>
+          {/* 控制栏包装器 */}
+          <div className="playback-controls-wrapper">
+            {/* 控制栏容器 */}
+            <div className="playback-controls-parent">
+              <Row
+                gutter={[12, 16]}
+                align="middle"
+                wrap={true}
+                className="playback-controls"
+              >
+                <Col xs={6} sm={4} md={2}>
+                  <PlayButton
+                    isPlayEnded={isPlayEnded}
+                    status={playStatus}
+                    onPlay={handlePlay}
+                    onPause={handlePause}
+                    onStop={handleStop}
+                    videoSrc={videoSrc}
+                  />
+                </Col>
 
-              <Col xs={6} sm={5} md={2} className="control-item">
-                <PlaybackRate value={playbackRate} onChange={handleRateChange} />
-              </Col>
+                <Col xs={6} sm={5} md={2} className="control-item">
+                  <PlaybackRate value={playbackRate} onChange={handleRateChange} />
+                </Col>
 
-              <Col xs={24} sm={24} md={15} className="progress-bar-container">
-                <ProgressBar
-                  onChange={handleProgressChange}
-                />
-              </Col>
+                <Col xs={24} sm={24} md={15} className="progress-bar-container">
+                  <ProgressBar
+                    onChange={handleProgressChange}
+                  />
+                </Col>
 
-              <Col xs={6} sm={5} md={3} className="control-item">
-                <VolumeControl
-                  volume={volume}
-                  isMuted={isMuted}
-                  onVolumeChange={handleVolumeUpdate}
-                  onMuteToggle={handleMuteToggle}
-                />
-              </Col>
-              
-              <Col xs={6} sm={5} md={2} className="control-item">
-                <Button
-                  type="text"
-                  icon={<VideoCameraOutlined />}
-                  onClick={() => setShowWebcam(!showWebcam)}
-                  size="small"
-                  title={showWebcam ? '隐藏摄像头' : '显示摄像头'}
-                />
-              </Col>
-            </Row>
+                <Col xs={6} sm={5} md={3} className="control-item">
+                  <VolumeControl
+                    volume={volume}
+                    isMuted={isMuted}
+                    onVolumeChange={handleVolumeUpdate}
+                    onMuteToggle={handleMuteToggle}
+                  />
+                </Col>
+                
+                <Col xs={6} sm={5} md={2} className="control-item webcam-control-item">
+                  <Button
+                    type="text"
+                    icon={<VideoCameraOutlined />}
+                    onClick={() => setShowWebcam(!showWebcam)}
+                    size="small"
+                    title={showWebcam ? '隐藏摄像头' : '显示摄像头'}
+                  />
+                </Col>
+                
+                <Col xs={6} sm={5} md={2} className="control-item">
+                  <Button
+                    type="text"
+                    icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+                    onClick={toggleFullscreen}
+                    size="small"
+                    title={isFullscreen ? '退出全屏' : '进入全屏'}
+                  />
+                </Col>
+              </Row>
+            </div>
           </div>
         </Card>
       </div>

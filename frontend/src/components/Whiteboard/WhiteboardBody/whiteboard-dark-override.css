@@ -20,11 +20,51 @@
   filter: brightness(0.9) !important;
 }
 
-/* 确保所有tldraw元素都正确应用深色主题 */
-.tl-theme__dark * {
-  /* 确保所有继承的颜色都正确 */
+/* 确保tldraw的UI文本元素正确应用深色主题 */
+.tl-theme__dark .tlui-text,
+.tl-theme__dark .tlui-label,
+.tl-theme__dark .tlui-button__label {
+  /* 确保文本元素继承颜色 */
   color: inherit !important;
 }
+
+/* 确保调色盘相关元素不受全局继承影响 */
+.tl-theme__dark .floating-tool-button,
+.tl-theme__dark .floating-tool-button *,
+.tl-theme__dark .floating-color-selector-group,
+.tl-theme__dark .floating-color-dot {
+  /* 重置颜色继承，允许正常显示图标和颜色 */
+  color: var(--text-primary) !important;
+}
+
+/* 确保Ant Design图标在深色模式下正常显示颜色 */
+.tl-theme__dark .floating-tool-button .anticon,
+.tl-theme__dark .floating-tool-button .anticon * {
+  /* 允许图标使用自身的颜色，不受继承影响 */
+  color: inherit !important;
+}
+
+/* 确保不同工具按钮激活状态下的图标颜色正确 */
+.tl-theme__dark .floating-tool-button.active .anticon {
+  color: #007bff !important;
+}
+
+.tl-theme__dark .floating-tool-button.active.eraser .anticon {
+  color: #ff4d4f !important;
+}
+
+.tl-theme__dark .floating-tool-button.active.text .anticon {
+  color: #52c41a !important;
+}
+
+.tl-theme__dark .floating-tool-button.active.clear .anticon {
+  color: #faad14 !important;
+}
+
+.tl-theme__dark .floating-tool-button.active.device .anticon {
+  color: #007bff !important;
+}
+
 
 /* 确保tldraw的UI元素都正确应用深色主题 */
 .tl-theme__dark .tlui {
