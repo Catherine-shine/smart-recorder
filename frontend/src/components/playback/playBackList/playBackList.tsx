@@ -1,14 +1,15 @@
 
 import { useDispatch } from 'react-redux';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { setPlaybackUrl, setDuration, resetPlaybackState,  setWebcamUrl, setAudioUrl, setTrajectoryData } from '../../../store/slices/playbackSlice';
 import {  Card, Empty, Typography, Tag, Spin, message,  Button, Modal } from 'antd';
 import { UploadOutlined, DeleteOutlined, } from '@ant-design/icons';
 import React from "react";
 import { formatDuration } from '../../../utils/playback/playback';
 import { uploadRecording } from '../../../api/recording';
-import { getRecordings, deleteRecording as deleteLocalRecording } from '../../../utils/db';
+import { getRecordings, deleteRecording as deleteLocalRecording, updateRecordingUploadStatus } from '../../../utils/db';
 import './index.css';
+import { ShareAltOutlined } from '@ant-design/icons';
 
 
 
@@ -107,22 +108,33 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
   // 上传本地录制
   const handleUpload = async (recording: any, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    if (!recording.videoBlob) {
+      messageApi.error({ content: '缺少录屏文件，无法上传', key: 'upload' });
+      return;
+    }
+
     try {
       messageApi.loading({ content: '正在上传...', key: 'upload' });
       
-      const trajectoryData = JSON.stringify({
-        whiteboardData: recording.whiteboardData,
-        mouseData: recording.mouseData
-      });
+      // 轨迹文件不再上传
+      // const trajectoryData = JSON.stringify({
+      //   whiteboardData: recording.whiteboardData,
+      //   mouseData: recording.mouseData
+      // });
 
-      await uploadRecording({
+      const response = await uploadRecording({
         audio: recording.audioBlob || new File([''], 'audio.webm', { type: 'audio/webm' }),
-        trajectory: new File([trajectoryData], 'trajectory.json', { type: 'application/json' }),
+        // trajectory: new File([trajectoryData], 'trajectory.json', { type: 'application/json' }),
         screen_recording: new File([recording.videoBlob], 'screen_recording.webm', { type: recording.videoBlob.type }),
-        webcam_recording: recording.webcamBlob ? new File([recording.webcamBlob], 'webcam_recording.webm', { type: recording.webcamBlob.type }) : undefined
+        webcam_recording: recording.webcamBlob ? new File([recording.webcamBlob], 'webcam_recording.webm', { type: recording.webcamBlob.type }) : undefined,
+        audio_state_changes: recording.audioStateChanges,
+        camera_state_changes: recording.cameraStateChanges,
+        total_duration: recording.duration * 1000
       });
 
-      // 更新本地状态为已上传
+      // 更新本地状态为已上传，并保存hashid
+      await updateRecordingUploadStatus(recording.id, response.hashid);
   
       messageApi.success({ content: '上传成功', key: 'upload' });
       
@@ -132,6 +144,17 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
       console.error('上传失败:', error);
       messageApi.error({ content: '上传失败', key: 'upload' });
     }
+  };
+
+  // 分享录制
+  const handleShare = (hashid: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/share?hashid=${hashid}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      messageApi.success('分享链接已复制到剪贴板');
+    }).catch(() => {
+      messageApi.error('复制失败，请手动复制');
+    });
   };
 
   // 删除本地录制
@@ -187,12 +210,22 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
                 </div>
               </div>
               <div className="playback-item-actions">
-                <Button 
-                  type="text" 
-                  icon={<UploadOutlined />} 
-                  onClick={(e) => handleUpload(item, e)}
-                  title="上传到云端"
-                />
+                {item.isUploaded && item.uploadHashId ? (
+                  <Button 
+                    type="text" 
+                    icon={<ShareAltOutlined />} 
+                    onClick={(e) => handleShare(item.uploadHashId!, e)}
+                    title="分享"
+                    style={{ color: '#52c41a' }}
+                  />
+                ) : (
+                  <Button 
+                    type="text" 
+                    icon={<UploadOutlined />} 
+                    onClick={(e) => handleUpload(item, e)}
+                    title="上传到云端"
+                  />
+                )}
                 <Button 
                   type="text" 
                   danger

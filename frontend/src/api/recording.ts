@@ -61,10 +61,14 @@ export const uploadRecording = async (form: RecordingUploadForm): Promise<Record
   if (form.audio) {
     formData.append('audio', form.audio);
   }
-  formData.append('trajectory', form.trajectory);
-  if (form.screen_recording) {
-    formData.append('screen_recording', form.screen_recording);
-  }
+  // 轨迹文件不再上传
+  // if (form.trajectory) {
+  //   formData.append('trajectory', form.trajectory);
+  // }
+  
+  // 录屏文件必传
+  formData.append('screen_recording', form.screen_recording);
+  
   if (form.webcam_recording) {
     formData.append('webcam_recording', form.webcam_recording);
   }

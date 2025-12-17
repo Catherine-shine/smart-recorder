@@ -9,8 +9,8 @@ export interface InitRecordingSessionResponse {
 /** 上传录制数据的请求参数（FormData） */
 export interface RecordingUploadForm {
   audio?: File; // 音频文件（可选，后端会根据需要生成空白音频）
-  trajectory: File; // 轨迹JSON文件（必传）
-  screen_recording?: File; // 录屏文件（可选）
+  trajectory?: File; // 轨迹JSON文件（不再上传，可选）
+  screen_recording: File; // 录屏文件（必传）
   webcam_recording?: File; // 摄像头录制文件（可选）
   audio_state_changes?: Array<{ timestamp: number; isEnabled: boolean }>; // 音频状态变化记录
   camera_state_changes?: Array<{ timestamp: number; isEnabled: boolean }>; // 摄像头状态变化记录

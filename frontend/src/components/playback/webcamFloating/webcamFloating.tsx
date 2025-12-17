@@ -25,8 +25,21 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({
   const videoRef = webcamRef || useRef<HTMLVideoElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [position, setPosition] = useState({ 
+    x: window.innerWidth - 260, // 默认右上角 (240px width + 20px margin)
+    y: 20 
+  });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  // 监听窗口大小变化，调整位置（可选）
+  useEffect(() => {
+    const handleResize = () => {
+      // 如果需要保持在右上角，可以在这里更新位置
+      // 但为了不打断用户的拖拽位置，这里暂时不强制重置
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 处理拖拽开始
   const handleMouseDown = (e: React.MouseEvent) => {

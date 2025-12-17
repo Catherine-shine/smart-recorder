@@ -9,7 +9,7 @@ import json
 import zipfile
 import tempfile
 import subprocess
-import subprocess
+import ffmpeg
 
 # 创建蓝图
 bp = Blueprint('recordings', __name__)
@@ -26,14 +26,46 @@ FFMPEG_PATH = 'ffmpeg'  # 假设FFmpeg已经安装并在PATH中
 
 def get_file_duration(file_path):
     """
-    获取媒体文件的持续时间（毫秒）
+    获取媒体文件的持续时间（毫秒）- 使用 ffmpeg-python
     """
-    cmd = [FFMPEG_PATH, '-i', file_path, '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=p=0']
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise Exception(f'获取文件时长失败: {result.stderr}')
-    duration_seconds = float(result.stdout.strip())
-    return duration_seconds * 1000
+    print(f"[DEBUG] get_file_duration: 尝试获取文件时长: {file_path}")
+    
+    # 检查文件是否存在
+    if not os.path.exists(file_path):
+        raise Exception(f'文件不存在: {file_path}')
+    
+    # 检查文件大小
+    file_size = os.path.getsize(file_path)
+    print(f"[DEBUG] get_file_duration: 文件大小: {file_size} bytes")
+    
+    if file_size == 0:
+        raise Exception(f'文件为空: {file_path}')
+    
+    try:
+        # 使用 ffmpeg-python 获取文件信息
+        probe = ffmpeg.probe(file_path)
+        print(f"[DEBUG] get_file_duration: probe结果: {json.dumps(probe.get('format', {}), indent=2)}")
+        
+        # 从 format 中获取时长
+        duration_str = probe.get('format', {}).get('duration')
+        if duration_str:
+            duration_seconds = float(duration_str)
+            print(f"[DEBUG] get_file_duration: 成功获取时长: {duration_seconds}秒 ({duration_seconds * 1000}毫秒)")
+            return duration_seconds * 1000
+        
+        # 备用：从 streams 中获取时长
+        streams = probe.get('streams', [])
+        for stream in streams:
+            if 'duration' in stream:
+                duration_seconds = float(stream['duration'])
+                print(f"[DEBUG] get_file_duration: 从stream获取时长: {duration_seconds}秒")
+                return duration_seconds * 1000
+        
+        raise Exception('无法从probe结果中获取时长')
+        
+    except ffmpeg.Error as e:
+        print(f"[DEBUG] get_file_duration: ffmpeg-python错误: {e.stderr.decode() if e.stderr else str(e)}")
+        raise Exception(f'获取文件时长失败: {e}')
 
 def process_recording(session_id):
     """
@@ -392,21 +424,21 @@ def complete_recording(session_id):
 @bp.route('/recordings', methods=['POST'])
 def upload_recording():
     """
-    上传录音和轨迹文件（兼容旧接口）
+    上传录音和录屏文件
     """
-    # 检查是否有轨迹文件
-    if 'trajectory' not in request.files:
-        return jsonify({'error': '缺少轨迹文件'}), 400
+    # 检查是否有录屏文件
+    if 'screen_recording' not in request.files:
+        return jsonify({'error': '缺少录屏文件'}), 400
 
-    trajectory_file = request.files['trajectory']
-
-    # 读取轨迹文件内容以计算哈希
-    trajectory_content = trajectory_file.read()
-    # 重置文件指针以便后续保存
-    trajectory_file.seek(0)
+    screen_recording_file = request.files['screen_recording']
     
-    # 计算 SHA256 哈希的前 12 位作为 ID
-    hash_id = hashlib.sha256(trajectory_content).hexdigest()[:12]
+    # 读取录屏文件前4KB内容以计算哈希（避免读取整个大文件）
+    chunk = screen_recording_file.read(4096)
+    screen_recording_file.seek(0)
+    
+    # 结合时间戳计算哈希，确保唯一性
+    hash_content = chunk + str(time.time()).encode('utf-8')
+    hash_id = hashlib.sha256(hash_content).hexdigest()[:12]
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -421,16 +453,11 @@ def upload_recording():
     # 计算录制时长
     # 优先使用前端传递的总时长
     total_duration = int(request.form.get('total_duration', 10000))  # 默认10秒
-    screen_recording_path = None
+    screen_recording_path = os.path.join(UPLOAD_FOLDER, f'{hash_id}_screen.webm')
+    screen_recording_file.save(screen_recording_path)
     
-    # 处理屏幕录制文件
-    if 'screen_recording' in request.files:
-        screen_recording_file = request.files['screen_recording']
-        screen_recording_filename = f'{hash_id}_screen.webm'
-        screen_recording_path = os.path.join(UPLOAD_FOLDER, screen_recording_filename)
-        screen_recording_file.save(screen_recording_path)
-        
-        # 计算屏幕录制时长
+    # 如果没有传递总时长，尝试从文件获取
+    if 'total_duration' not in request.form:
         try:
             total_duration = get_file_duration(screen_recording_path)
         except Exception as e:
@@ -482,13 +509,22 @@ def upload_recording():
             audio_path = os.path.join(UPLOAD_FOLDER, audio_filename)
             audio_file.save(audio_path)
             
+            print(f"[DEBUG] 音频文件已保存: {audio_path}")
+            print(f"[DEBUG] 音频文件大小: {os.path.getsize(audio_path)} bytes")
+            
             try:
                 # 检查是否有音频状态变化记录
                 if audio_state_changes:
                     print(f"处理音频状态变化: {len(audio_state_changes)} 个变化点")
+                    print(f"[DEBUG] 音频状态变化详情: {audio_state_changes}")
                     
-                    # 预加载原始音频
-                    original_audio_duration = get_file_duration(audio_path)
+                    # 预加载原始音频时长
+                    try:
+                        original_audio_duration = get_file_duration(audio_path)
+                        print(f"[DEBUG] 原始音频时长: {original_audio_duration} ms")
+                    except Exception as duration_err:
+                        print(f"[DEBUG] 获取音频时长失败，使用total_duration: {duration_err}")
+                        original_audio_duration = total_duration
                     
                     # 生成完整的状态变化序列（包括开始和结束）
                     audio_segments = []
@@ -637,7 +673,14 @@ def upload_recording():
                         print("音频状态变化处理完成")
                 else:
                     # 没有状态变化记录，使用原有的时长检查逻辑
-                    audio_duration = get_file_duration(audio_path)
+                    print("[DEBUG] 没有音频状态变化记录，检查音频时长")
+                    try:
+                        audio_duration = get_file_duration(audio_path)
+                        print(f"[DEBUG] 音频文件时长: {audio_duration} ms")
+                    except Exception as duration_err:
+                        print(f"[DEBUG] 获取音频时长失败，跳过时长检查: {duration_err}")
+                        audio_duration = total_duration  # 跳过时长检查
+                    
                     if audio_duration < total_duration:
                         # 需要生成与总时长相同的音频
                         print(f"音频时长({audio_duration})小于总时长({total_duration})，需要合成")
@@ -710,13 +753,22 @@ def upload_recording():
             webcam_recording_path = os.path.join(UPLOAD_FOLDER, webcam_recording_filename)
             webcam_recording_file.save(webcam_recording_path)
             
+            print(f"[DEBUG] 摄像头文件已保存: {webcam_recording_path}")
+            print(f"[DEBUG] 摄像头文件大小: {os.path.getsize(webcam_recording_path)} bytes")
+            
             try:
                 # 检查是否有摄像头状态变化记录
                 if camera_state_changes:
                     print(f"处理摄像头状态变化: {len(camera_state_changes)} 个变化点")
+                    print(f"[DEBUG] 摄像头状态变化详情: {camera_state_changes}")
                     
-                    # 预加载原始摄像头视频
-                    original_video_duration = get_file_duration(webcam_recording_path)
+                    # 预加载原始摄像头视频时长
+                    try:
+                        original_video_duration = get_file_duration(webcam_recording_path)
+                        print(f"[DEBUG] 原始摄像头视频时长: {original_video_duration} ms")
+                    except Exception as duration_err:
+                        print(f"[DEBUG] 获取摄像头视频时长失败，使用total_duration: {duration_err}")
+                        original_video_duration = total_duration
                     
                     # 生成完整的状态变化序列（包括开始和结束）
                     video_segments = []
@@ -865,7 +917,14 @@ def upload_recording():
                         print("摄像头状态变化处理完成")
                 else:
                     # 没有状态变化记录，使用原有的时长检查逻辑
-                    webcam_duration = get_file_duration(webcam_recording_path)
+                    print("[DEBUG] 没有摄像头状态变化记录，检查摄像头视频时长")
+                    try:
+                        webcam_duration = get_file_duration(webcam_recording_path)
+                        print(f"[DEBUG] 摄像头视频时长: {webcam_duration} ms")
+                    except Exception as duration_err:
+                        print(f"[DEBUG] 获取摄像头视频时长失败，跳过时长检查: {duration_err}")
+                        webcam_duration = total_duration  # 跳过时长检查
+                    
                     if webcam_duration < total_duration:
                         # 需要生成与总时长相同的摄像头视频
                         print(f"摄像头视频时长({webcam_duration})小于总时长({total_duration})，需要合成")
@@ -928,23 +987,19 @@ def upload_recording():
             shutil.copy2(webcam_recording_path, cache_black_video)
             print(f"已生成并缓存黑屏视频: {cache_black_video}")
 
-    # 保存轨迹文件
+    # 保存轨迹文件（现在仅包含状态变化信息）
     trajectory_filename = f'{hash_id}.json'
     trajectory_path = os.path.join(UPLOAD_FOLDER, trajectory_filename)
     
-    # 解析轨迹文件内容并添加设备状态变化记录
-    trajectory_data = json.loads(trajectory_content)
+    # 创建轨迹数据对象
+    trajectory_data = {
+        'audioStateChanges': audio_state_changes,
+        'cameraStateChanges': camera_state_changes
+    }
     
-    # 添加音频和摄像头状态变化记录
-    trajectory_data['audioStateChanges'] = audio_state_changes
-    trajectory_data['cameraStateChanges'] = camera_state_changes
-    
-    # 保存更新后的轨迹文件
+    # 保存轨迹文件
     with open(trajectory_path, 'w', encoding='utf-8') as f:
         json.dump(trajectory_data, f, ensure_ascii=False, indent=2)
-    
-    # 重置原始轨迹文件指针（虽然可能不再需要，但保持兼容）
-    trajectory_file.seek(0)
 
     # 生成 VTT 字幕文件
     subtitle_path = os.path.join(UPLOAD_FOLDER, f'{hash_id}_subtitle.vtt')
