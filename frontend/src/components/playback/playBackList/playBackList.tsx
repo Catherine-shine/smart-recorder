@@ -26,6 +26,19 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
+  
+  // 用于跟踪已创建的Blob URL，以便清理
+  const createdUrlsRef = useRef<{video?: string, audio?: string, webcam?: string}>({});
+
+  // 组件卸载时清理URL
+  useEffect(() => {
+    return () => {
+      const urls = createdUrlsRef.current;
+      if (urls.video) URL.revokeObjectURL(urls.video);
+      if (urls.audio) URL.revokeObjectURL(urls.audio);
+      if (urls.webcam) URL.revokeObjectURL(urls.webcam);
+    };
+  }, []);
 
   // 获取本地录制列表
   const fetchLocalRecordings = async () => {
@@ -51,10 +64,23 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
   const handleLocalSelect = (recording: any) => {
     setSelectedId(recording.id);
     
+    // 清理旧的URL
+    const oldUrls = createdUrlsRef.current;
+    if (oldUrls.video) URL.revokeObjectURL(oldUrls.video);
+    if (oldUrls.audio) URL.revokeObjectURL(oldUrls.audio);
+    if (oldUrls.webcam) URL.revokeObjectURL(oldUrls.webcam);
+    
     // 构造播放所需的URL
     const videoUrl = URL.createObjectURL(recording.videoBlob);
     const audioUrl = recording.audioBlob ? URL.createObjectURL(recording.audioBlob) : undefined;
     const webcamUrl = recording.webcamBlob ? URL.createObjectURL(recording.webcamBlob) : undefined;
+    
+    // 保存新的URL引用
+    createdUrlsRef.current = {
+      video: videoUrl,
+      audio: audioUrl,
+      webcam: webcamUrl
+    };
 
     // 更新Redux状态
     dispatch(setPlaybackUrl(videoUrl));

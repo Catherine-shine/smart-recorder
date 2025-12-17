@@ -17,6 +17,11 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({ type }) => {
 
   useEffect(() => {
     const getDevices = async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        console.warn('当前环境不支持媒体设备 API');
+        return;
+      }
+      
       try {
         const allDevices = await navigator.mediaDevices.enumerateDevices();
         const filteredDevices = allDevices.filter(device => 
@@ -35,7 +40,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({ type }) => {
            }
         }
       } catch (error) {
-        console.error('Error enumerating devices:', error);
+        console.error('获取设备列表失败:', error);
       }
     };
 
@@ -58,7 +63,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({ type }) => {
     key: device.deviceId,
     label: (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minWidth: 150 }}>
-        <span>{device.label || `Device ${device.deviceId.slice(0, 8)}...`}</span>
+        <span>{device.label || `设备 ${device.deviceId.slice(0, 8)}...`}</span>
         {selectedDeviceId === device.deviceId && <CheckOutlined />}
       </div>
     ),

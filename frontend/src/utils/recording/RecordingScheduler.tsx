@@ -117,6 +117,8 @@ export function useRecordingScheduler() {
     globalMediaRecorderRef.webcamBlobs = [];
     globalMediaRecorderRef.whiteboardData = [];
     globalMediaRecorderRef.mouseData = [];
+    globalMediaRecorderRef.audioStateChanges = [];
+    globalMediaRecorderRef.cameraStateChanges = [];
     globalMediaRecorderRef.isInitialized = false;
     // 保持摄像头和麦克风的状态不变
     globalMediaRecorderRef.startTime = 0;
