@@ -751,15 +751,28 @@ export function useRecordingScheduler() {
     }
   }, [recordingStatus, selectedVideoDeviceId, dispatch]);
 
-  // 组件卸载时清理资源
+  // 1. 使用 useRef 追踪最新的状态，这样我们在 cleanup 中读取时不需要将其作为依赖项
+  const recordingStatusRef = useRef(recordingStatus);
+
+  // 每次渲染都更新 ref，保证它是最新的
   useEffect(() => {
+    recordingStatusRef.current = recordingStatus;
+  }, [recordingStatus]);
+
+  // 2. 使用空依赖数组的 useEffect，只在组件挂载和卸载时执行
+  useEffect(() => {
+    // 这里的逻辑只在组件 Mount 时执行
+    
     return () => {
-      // 只有在录制状态下才自动结束，暂停状态下不自动结束
-      if (recordingStatus === RECORDING_STATUS.RECORDING) {
+      // 这里的逻辑只在组件 Unmount 时执行
+      // 从 ref 中读取最后的状态，判断是否需要结束录制
+      if (recordingStatusRef.current === RECORDING_STATUS.RECORDING) {
+        console.log('组件卸载，强制结束录制');
+        // 直接调用 handleEnd，它已经使用了 useCallback 且依赖正确
         handleEnd();
       }
     };
-  }, [recordingStatus, handleEnd]);
+  }, [handleEnd]); // 只依赖 handleEnd，不依赖 recordingStatus，避免状态变化触发清理
 
   return {
     recordingStatus,
