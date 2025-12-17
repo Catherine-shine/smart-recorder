@@ -20,6 +20,7 @@ import 'tldraw/tldraw.css'
 import { useSyncDemo } from '@tldraw/sync'
 import { muti_components } from './muti_menu'
 import './sync-custom-people-menu.css'
+import './whiteboard-dark-override.css'
 
 // 白板内容组件，用于与Redux集成
 function WhiteboardContent() {

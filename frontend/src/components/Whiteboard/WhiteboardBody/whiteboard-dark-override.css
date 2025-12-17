@@ -1,0 +1,39 @@
+/* 确保tldraw的minimap（全图预览）正确跟随深色主题 */
+.tl-theme__dark .tlui-minimap {
+  /* 确保minimap容器背景色正确 */
+  background-color: var(--tl-color-panel) !important;
+  border-color: var(--tl-color-divider) !important;
+}
+
+.tl-theme__dark .tlui-minimap__canvas {
+  /* 确保minimap画布背景色正确 */
+  background-color: var(--tl-color-background) !important;
+}
+
+/* 确保minimap中的缩略图边框颜色正确 */
+.tl-theme__dark .tl-overlay--minimap {
+  border-color: var(--tl-color-selected) !important;
+}
+
+/* 确保minimap中的内容颜色正确 */
+.tl-theme__dark .tl-minimap-content {
+  filter: brightness(0.9) !important;
+}
+
+/* 确保所有tldraw元素都正确应用深色主题 */
+.tl-theme__dark * {
+  /* 确保所有继承的颜色都正确 */
+  color: inherit !important;
+}
+
+/* 确保tldraw的UI元素都正确应用深色主题 */
+.tl-theme__dark .tlui {
+  background-color: var(--tl-color-panel) !important;
+  color: var(--tl-color-text) !important;
+}
+
+/* 确保tldraw的面板元素都正确应用深色主题 */
+.tl-theme__dark .tlui-panel {
+  background-color: var(--tl-color-panel) !important;
+  border-color: var(--tl-color-divider) !important;
+}

@@ -94,7 +94,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
   const audioSrc = audioUrl || '';
   
   // 确保videoSrc始终是有效的字符串
-  const safeVideoSrc = videoSrc && videoSrc !== 'about:blank' ? videoSrc : '';
+  const safeVideoSrc = videoSrc && videoSrc !== 'about:blank' && typeof videoSrc === 'string' ? videoSrc : '';
 
   // 根据时间戳控制摄像头和麦克风的播放状态
   const controlMediaByTimestamps = (currentTime: number) => {
@@ -353,10 +353,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
     const video = videoRef.current;
     if (video && video.error) {
       console.error('Video error:', video.error);
-      // 只有在确实有错误代码时才提示
-      if (video.error.code !== MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED || safeVideoSrc) {
-         messageApi.error('主视频加载失败，请检查视频源！');
-      }
+      // 移除主视频加载失败的提示
     }
     dispatch(setVideoLoading(false));
   };
@@ -932,7 +929,7 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
             <Spin spinning={videoLoading} className="video-loading" />
             <video
               ref={videoRef}
-              src={safeVideoSrc}
+              src={safeVideoSrc || ''}
               controls={false}
               className="playback-video"
               onLoadedMetadata={handleLoadedMetadata}

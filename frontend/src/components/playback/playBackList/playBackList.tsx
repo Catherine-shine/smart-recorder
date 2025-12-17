@@ -1,7 +1,7 @@
 
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useRef } from 'react';
-import { setPlaybackUrl, setDuration, resetPlaybackState,  setWebcamUrl, setAudioUrl, setTrajectoryData } from '../../../store/slices/playbackSlice';
+import { setPlaybackUrl, setDuration, resetPlaybackState,  setWebcamUrl, setAudioUrl, setTrajectoryData, setSelectedLocalRecordingId } from '../../../store/slices/playbackSlice';
 import {  Card, Empty, Typography, Tag, Spin, message,  Button, Modal } from 'antd';
 import { UploadOutlined, DeleteOutlined, } from '@ant-design/icons';
 import React from "react";
@@ -10,6 +10,7 @@ import { uploadRecording } from '../../../api/recording';
 import { getRecordings, deleteRecording as deleteLocalRecording, updateRecordingUploadStatus } from '../../../utils/db';
 import './index.css';
 import { ShareAltOutlined } from '@ant-design/icons';
+import type { RootState } from '../../../store';
 
 
 
@@ -25,8 +26,12 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
   const dispatch = useDispatch();
   const [localRecordings, setLocalRecordings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // 使用Redux状态存储选中的录制ID，而不是组件内部state
+  const selectedId = useSelector((state: RootState) => state.playback?.selectedLocalRecordingId || null);
   const [messageApi, contextHolder] = message.useMessage();
+  
+  // 用于跟踪当前实际选中的录制ID，避免重复选择
+  const [currentSelectedId, setCurrentSelectedId] = useState<string | null>(null);
   
   // 用于跟踪已创建的Blob URL，以便清理
   const createdUrlsRef = useRef<{video?: string, audio?: string, webcam?: string}>({});
@@ -49,6 +54,19 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
       // 按时间倒序排列
       recordings.sort((a, b) => b.timestamp - a.timestamp);
       setLocalRecordings(recordings);
+      
+      // 只有在没有选中视频且首次加载时才默认选中第一个视频
+      // 避免刷新页面后跳回第一个视频
+      if (recordings.length > 0 && !selectedId) {
+        // 没有选中视频时，默认选中第一个视频
+        handleLocalSelect(recordings[0]);
+      } else if (recordings.length > 0 && selectedId) {
+        // 如果有选中的录制ID，尝试找到对应的录制并选择它
+        const selectedRecording = recordings.find(recording => recording.id === selectedId);
+        if (selectedRecording) {
+          handleLocalSelect(selectedRecording);
+        }
+      }
     } catch (error) {
       console.error('获取本地录制列表失败:', error);
       messageApi.error('获取本地录制列表失败');
@@ -57,13 +75,29 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
     }
   };
 
+  // 组件挂载时获取录制列表
   useEffect(() => {
     fetchLocalRecordings();
   }, []);
 
+  // 监听selectedId的变化，当Redux持久化状态恢复后，自动选择对应的录制
+  useEffect(() => {
+    // 只有当selectedId存在、本地录制列表已加载且与当前选中的录制ID不匹配时才执行
+    if (selectedId && localRecordings.length > 0 && selectedId !== currentSelectedId) {
+      const selectedRecording = localRecordings.find(recording => recording.id === selectedId);
+      if (selectedRecording) {
+        handleLocalSelect(selectedRecording);
+      }
+    }
+  }, [selectedId, localRecordings, currentSelectedId]);
+
   // 处理本地录制选择
   const handleLocalSelect = (recording: any) => {
-    setSelectedId(recording.id);
+    // 更新当前选中的录制ID状态
+    setCurrentSelectedId(recording.id);
+    
+    // 使用Redux状态存储选中的录制ID
+    dispatch(setSelectedLocalRecordingId(recording.id));
     
     // 清理旧的URL
     const oldUrls = createdUrlsRef.current;
@@ -170,7 +204,8 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
           fetchLocalRecordings();
           if (selectedId === id) {
             dispatch(resetPlaybackState());
-            setSelectedId(null);
+            // 使用Redux状态存储选中的录制ID
+            dispatch(setSelectedLocalRecordingId(null));
           }
         } catch (error) {
           messageApi.error('删除失败');
@@ -246,11 +281,13 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
   return (
     <div className="playback-list-container">
       {contextHolder}
-      {loading ? (
-        <div className="loading-container"><Spin /></div>
-      ) : (
-        renderLocalList()
-      )}
+      <div className="playback-list-card">
+        {loading ? (
+          <div className="loading-container"><Spin /></div>
+        ) : (
+          renderLocalList()
+        )}
+      </div>
     </div>
   );
 };

@@ -26,6 +26,7 @@ export interface PlaybackState {
     camera: Array<{timestamp: number, isEnabled: boolean}>;
     audio: Array<{timestamp: number, isEnabled: boolean}>;
   };
+  selectedLocalRecordingId: string | null; // 新增：当前选中的本地录制ID
 }
 
 // 2. 初始状态
@@ -50,7 +51,8 @@ const initialState: PlaybackState = {
   mediaTimestamps: { // 新增：预处理的媒体时间戳标记
     camera: [],
     audio: []
-  }
+  },
+  selectedLocalRecordingId: null, // 新增：初始值为null
 }
 
 // 3. 创建切片
@@ -134,6 +136,10 @@ const playbackSlice = createSlice({
       state.currentVideo = action.payload;
     },
     
+    // 设置当前选中的本地录制ID
+    setSelectedLocalRecordingId: (state, action: PayloadAction<string | null>) => {
+      state.selectedLocalRecordingId = action.payload;
+    },
     
     // 播放/暂停切换
     togglePlayback: (state) => {
@@ -181,6 +187,7 @@ export const {
   setCaptions,
   setCurrentCaption,
   setCurrentVideo,
+  setSelectedLocalRecordingId,
   setTrajectoryData
 } = playbackSlice.actions;
 

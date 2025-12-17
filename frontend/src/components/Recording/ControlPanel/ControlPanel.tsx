@@ -63,9 +63,9 @@ const ControlPanel: React.FC = () => {
 
   return (
     <>
-      <Space direction="horizontal" size="small" align="center">
+      <Space orientation="horizontal" size="small" align="center">
         {/* 开始按钮 */}
-        <Tooltip title="开始录制" overlayStyle={{ opacity: 0.8 }}>
+        <Tooltip title="开始录制" styles={{ root: { opacity: 0.8 } }}>
           <Button
             {...baseButtonProps}
             type="primary"
@@ -78,7 +78,7 @@ const ControlPanel: React.FC = () => {
         {/* 暂停/恢复按钮 */}
         <Tooltip
           title={recordingStatus === RECORDING_STATUS.RECORDING ? "暂停录制" : "恢复录制"}
-          overlayStyle={{ opacity: 0.8 }}
+          styles={{ root: { opacity: 0.8 } }}
         >
           <Button
             {...baseButtonProps}
@@ -89,7 +89,7 @@ const ControlPanel: React.FC = () => {
         </Tooltip>
 
         {/* 结束按钮 */}
-        <Tooltip title="结束录制" overlayStyle={{ opacity: 0.8 }}>
+        <Tooltip title="结束录制" styles={{ root: { opacity: 0.8 } }}>
           <Button
             {...baseButtonProps}
             danger
@@ -101,7 +101,7 @@ const ControlPanel: React.FC = () => {
 
         {/* 摄像头控制 */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Tooltip title={isCameraOn ? "关闭摄像头" : "打开摄像头"} overlayStyle={{ opacity: 0.8 }}>
+          <Tooltip title={isCameraOn ? "关闭摄像头" : "打开摄像头"} styles={{ root: { opacity: 0.8 } }}>
             <Button
               {...baseButtonProps}
               style={{ ...baseButtonProps.style, borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
@@ -116,7 +116,7 @@ const ControlPanel: React.FC = () => {
 
         {/* 麦克风控制 */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Tooltip title={isMicOn ? "关闭麦克风" : "打开麦克风"} overlayStyle={{ opacity: 0.8 }}>
+          <Tooltip title={isMicOn ? "关闭麦克风" : "打开麦克风"} styles={{ root: { opacity: 0.8 } }}>
             <Button
               {...baseButtonProps}
               style={{ ...baseButtonProps.style, borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
@@ -132,7 +132,7 @@ const ControlPanel: React.FC = () => {
         {/* 摄像头预览控制 */}
         <Tooltip
           title={isCameraPreviewVisible ? "隐藏摄像头悬浮窗" : "显示摄像头悬浮窗"}
-          overlayStyle={{ opacity: 0.8 }}
+          styles={{ root: { opacity: 0.8 } }}
         >
           <Button
             {...baseButtonProps}

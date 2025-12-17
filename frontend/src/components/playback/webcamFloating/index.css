@@ -1,7 +1,7 @@
 .webcam-floating-container {
   position: fixed;
-  width: 240px;
-  height: 180px;
+  width: 180px;
+  height: 135px;
   background-color: #000;
   border: 2px solid #fff;
   border-radius: 8px;
@@ -59,6 +59,16 @@
 }
 
 /* 移除不再使用的拖动状态选择器 */
+
+/* 最小化时的摄像头图标 */
+.webcam-minimized-icon {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.8);
+}
 
 /* 响应式设计 */
 @media (max-width: 768px) {

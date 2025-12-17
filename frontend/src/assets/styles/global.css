@@ -246,6 +246,105 @@ body.dark .settings-modal .ant-modal-title {
   color: #ffffff;
 }
 
+/* 全局弹窗暗色主题样式 */
+body.dark .ant-modal-content {
+  background: #1a1f2e;
+  border: 1px solid #373f51;
+}
+
+body.dark .ant-modal-header {
+  border-bottom: 1px solid #373f51;
+  background: #1a1f2e;
+}
+
+body.dark .ant-modal-title {
+  color: #ffffff;
+}
+
+body.dark .ant-modal-body {
+  background: #1a1f2e;
+  color: #ffffff;
+}
+
+body.dark .ant-modal-footer {
+  border-top: 1px solid #373f51;
+  background: #1a1f2e;
+}
+
+body.dark .ant-modal-close {
+  color: #86909c;
+}
+
+body.dark .ant-modal-close:hover {
+  color: #ffffff;
+}
+
+/* Drawer 暗色主题样式 */
+body.dark .ant-drawer-content {
+  background: #1a1f2e;
+  border-left: 1px solid #373f51;
+}
+
+body.dark .ant-drawer-header {
+  border-bottom: 1px solid #373f51;
+  background: #1a1f2e;
+}
+
+body.dark .ant-drawer-title {
+  color: #ffffff;
+}
+
+body.dark .ant-drawer-body {
+  background: #1a1f2e;
+  color: #ffffff;
+}
+
+/* Popover 暗色主题样式 */
+body.dark .ant-popover-inner {
+  background: #1a1f2e;
+  border: 1px solid #373f51;
+}
+
+body.dark .ant-popover-title {
+  color: #ffffff;
+  border-bottom: 1px solid #373f51;
+}
+
+body.dark .ant-popover-inner-content {
+  color: #ffffff;
+}
+
+/* Tooltip 暗色主题样式 */
+body.dark .ant-tooltip-inner {
+  background: #1a1f2e;
+  color: #ffffff;
+  border: 1px solid #373f51;
+}
+
+body.dark .ant-tooltip-arrow::before {
+  background: #1a1f2e;
+  border: 1px solid #373f51;
+}
+
+/* Confirm 弹窗暗色主题样式 */
+body.dark .ant-confirm-content {
+  background: #1a1f2e;
+  color: #ffffff;
+}
+
+body.dark .ant-confirm-header {
+  background: #1a1f2e;
+}
+
+body.dark .ant-confirm-title {
+  color: #ffffff;
+}
+
+body.dark .ant-confirm-footer {
+  background: #1a1f2e;
+  border-top: 1px solid #373f51;
+}
+
 /* 添加侧边栏的暗色主题样式 */
 .sidebar {
   background-color: #ffffff;

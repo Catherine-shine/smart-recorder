@@ -192,7 +192,7 @@ const Sidebar: React.FC = () => {
                 }}
               >
                 <div
-                  className={`tool-button ${activeTool === tool.key ? 'active' : ''}`}
+                  className={`tool-button-container ${activeTool === tool.key ? 'active' : ''}`}
                   onClick={() => handleToolClick(tool.key, tool.path)}
                   style={{
                     display: 'flex',
@@ -201,10 +201,6 @@ const Sidebar: React.FC = () => {
                     height: 64,
                     width: 64,
                     cursor: 'pointer',
-                    fontSize: 24,
-                    color: activeTool === tool.key 
-                      ? (isDarkMode ? '#f9fafb' : '#1e293b') 
-                      : (isDarkMode ? '#94a3b8' : '#64748b'),
                     background: activeTool === tool.key 
                       ? (isDarkMode 
                         ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
@@ -221,7 +217,6 @@ const Sidebar: React.FC = () => {
                   }}
                   onMouseEnter={(e) => {
                     const el = e.currentTarget;
-                    el.style.color = isDarkMode ? '#f9fafb' : '#1e293b';
                     el.style.background = isDarkMode 
                       ? 'rgba(59, 130, 246, 0.2)' 
                       : 'rgba(0, 123, 255, 0.1)';
@@ -232,9 +227,6 @@ const Sidebar: React.FC = () => {
                   }}
                   onMouseLeave={(e) => {
                     const el = e.currentTarget;
-                    el.style.color = activeTool === tool.key 
-                      ? (isDarkMode ? '#f9fafb' : '#1e293b') 
-                      : (isDarkMode ? '#94a3b8' : '#64748b');
                     el.style.background = activeTool === tool.key 
                       ? (isDarkMode 
                         ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' 
@@ -252,8 +244,28 @@ const Sidebar: React.FC = () => {
                     className={`tool-button ${activeTool === tool.key ? 'active' : ''}`}
                     onClick={() => handleToolClick(tool.key, tool.path)}
                     aria-label={tool.label}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                      width: '100%',
+                      cursor: 'pointer',
+                      border: 'none',
+                      background: 'transparent',
+                      padding: 0,
+                    }}
                   >
-                    <div className="tool-icon-wrapper">
+                    <div 
+                      className="tool-icon-wrapper"
+                      style={{
+                        fontSize: 24,
+                        color: activeTool === tool.key 
+                          ? (isDarkMode ? '#f9fafb' : '#0f172a') 
+                          : (isDarkMode ? '#94a3b8' : '#334155'),
+                      }}
+                    >
                       {tool.icon}
                     </div>
                     <span className="tool-label">{tool.label}</span>

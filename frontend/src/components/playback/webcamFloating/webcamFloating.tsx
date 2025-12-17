@@ -104,7 +104,7 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({
 
   return (
     <div 
-      className="webcam-floating-container"
+      className={`webcam-floating-container ${isMinimized ? 'minimized' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -112,22 +112,56 @@ const WebcamFloating: React.FC<WebcamFloatingProps> = ({
       }}
       onMouseDown={handleMouseDown}
     >
-      <video 
-        ref={videoRef} 
-        src={webcamUrl} 
-        className="webcam-video"
-        playsInline
-        autoPlay={false} // 明确设置为不自动播放（React中正确的驼峰命名）
-        onError={handleVideoError}
-        onLoadedMetadata={onLoadedMetadata}
-        // 不再在加载完成后暂停视频，让playBackBody控制播放状态
-      />
-      {/* 摄像头未开启时的提示 */}
-      {!webcamActive && (
-        <div className="webcam-inactive-overlay">
-          <VideoCameraOutlined style={{ fontSize: '32px', color: '#ccc', marginBottom: '8px' }} />
-          <div className="webcam-inactive-text">摄像头未开启</div>
+      {/* 控制区域 - 只在非最小化状态下显示 */}
+      {!isMinimized && (
+        <div className="webcam-controls">
+          <Button 
+            type="text" 
+            icon={<MinusOutlined />} 
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation(); // 防止触发拖拽
+              toggleMinimize();
+            }}
+            style={{ 
+              backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+              color: '#fff',
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0
+            }}
+          />
         </div>
+      )}
+      
+      {/* 最小化时显示摄像头图标 */}
+      {isMinimized ? (
+        <div className="webcam-minimized-icon">
+          <VideoCameraOutlined style={{ fontSize: '24px', color: '#fff' }} />
+        </div>
+      ) : (
+        <>
+          <video 
+            ref={videoRef} 
+            src={webcamUrl} 
+            className="webcam-video"
+            playsInline
+            autoPlay={false} // 明确设置为不自动播放（React中正确的驼峰命名）
+            onError={handleVideoError}
+            onLoadedMetadata={onLoadedMetadata}
+            // 不再在加载完成后暂停视频，让playBackBody控制播放状态
+          />
+          {/* 摄像头未开启时的提示 */}
+          {!webcamActive && (
+            <div className="webcam-inactive-overlay">
+              <VideoCameraOutlined style={{ fontSize: '32px', color: '#ccc', marginBottom: '8px' }} />
+              <div className="webcam-inactive-text">摄像头未开启</div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

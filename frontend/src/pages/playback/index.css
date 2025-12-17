@@ -83,6 +83,13 @@
   flex: 1;
 }
 
+/* 列表列容器 */
+.playback-list-col {
+  height: calc(100vh - 80px); /* 固定高度，减去头部和间距 */
+  max-height: calc(100vh - 80px); /* 限制最大高度 */
+  overflow: hidden; /* 隐藏溢出内容 */
+}
+
 /* 列表内部容器 */
 .playback-list-container {
   /* padding-left: 20px; */

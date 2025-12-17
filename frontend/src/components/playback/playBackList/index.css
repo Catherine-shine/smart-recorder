@@ -10,6 +10,28 @@
   /* max-height: 600px; */
   height: 100%;
   padding: 4px; /* 增加内边距，避免阴影被切断 */
+  scroll-behavior: smooth;
+  /* 隐藏滚动条，但保留滚动功能 */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #999;
+  }
+  /* 深色模式滚动条 */
+  body.dark &::-webkit-scrollbar-thumb {
+    background: #555;
+  }
+  body.dark &::-webkit-scrollbar-thumb:hover {
+    background: #777;
+  }
 }
 
 .playback-item {

@@ -25,8 +25,8 @@
   --sidebar-border: #e5e5e5;
   --tool-bg-hover: rgba(0, 0, 0, 0.05);
   --tool-bg-active: rgba(37, 99, 235, 0.1);
-  --text-color: #262626;
-  --text-secondary: #737373;
+  --text-color: #0f172a;
+  --text-secondary: #4b5563;
 }
 
 .sidebar.hidden {
@@ -91,6 +91,17 @@
   text-align: center;
   line-height: 1.2;
 }
+
+/* 亮色模式下选中工具的标签文字为白色 - 提高优先级 */
+.sidebar.light .tool-button.active .tool-label {
+  color: rgba(255, 255, 255, 0.712) !important;
+}
+
+/* 确保深色模式下的颜色不受影响 - 提高优先级 */
+.sidebar.dark .tool-button.active .tool-label {
+  color: white !important;
+}
+
 
 /* 工具提示 */
 .sidebar-tooltip .ant-tooltip-inner {
