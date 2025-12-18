@@ -31,7 +31,7 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
   const [messageApi, contextHolder] = message.useMessage();
   
   // 用于跟踪当前实际选中的录制ID，避免重复选择
-  const [currentSelectedId, setCurrentSelectedId] = useState<string | null>(null);
+  // const [, setCurrentSelectedId] = useState<string | null>(null);
   
   // 用于跟踪已创建的Blob URL，以便清理
   const createdUrlsRef = useRef<{video?: string, audio?: string, webcam?: string}>({});
@@ -96,7 +96,7 @@ const PlaybackList: React.FC<PlaybackListProps> = ({ onSelectLocalRecording}) =>
   // 处理本地录制选择
   const handleLocalSelect = (recording: any) => {
     // 更新当前选中的录制ID状态
-    setCurrentSelectedId(recording.id);
+    // setCurrentSelectedId(recording.id);
     
     // 使用Redux状态存储选中的录制ID
     dispatch(setSelectedLocalRecordingId(recording.id));

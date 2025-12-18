@@ -13,7 +13,6 @@ import {
 } from '@ant-design/icons';
 import { useRecordingScheduler } from '../../../utils/recording/RecordingScheduler';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { selectLastRecordingDuration } from '../../../store/slices/recordingSlice';
 import { setCameraPreviewVisible } from '../../../store/slices/mediastreamSlice';
 import CameraPreview from './cameraPreview';
 import DeviceSelector from './DeviceSelector';

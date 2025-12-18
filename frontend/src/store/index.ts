@@ -34,7 +34,9 @@ const persistConfig = {
             webcamUrl: '',
             audioUrl: '',
             // 移除轨迹数据，避免存储过大的数据
-            trajectoryData: null
+            trajectoryData: null,
+            // 保留recordList，使其可以被持久化
+            // recordList中的PlaybackVideoItem类型都是可序列化的
           };
         }
         return stateCopy;

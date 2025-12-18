@@ -19,6 +19,18 @@ export interface PlayBackBodyProps {
   onTimeUpdate?: (timeInSeconds: number) => void;
 }
 
+export interface WebcamFloatingProps {
+  webcamRef?: React.RefObject<HTMLVideoElement>;
+  webcamActive?: boolean;
+  visible?: boolean;
+  onLoadedMetadata?: () => void;
+  onError?: () => void;
+}
+
+export interface PlayBackBodyProps {
+  onTimeUpdate?: (timeInSeconds: number) => void;
+}
+
 
 export interface PlayButtonProps {
   status: PlayStatus; 

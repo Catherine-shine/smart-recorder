@@ -1,6 +1,6 @@
-//路由配置文件，定义所有可访问的页面路径。
+// 路由配置文件，定义所有可访问的页面路径。
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation, Outlet } from 'react-router-dom';
 import { RouteLayout } from './RouteLayout';
 import { ConfigProvider, theme } from 'antd';
 import { useSelector } from 'react-redux';
@@ -32,6 +32,41 @@ const SimpleLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   );
 };
 
+// 主内容区域组件：保持录制页面挂载，回放页面正常卸载
+const MainContent: React.FC = () => {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  return (
+    <div style={{ height: '100%', position: 'relative' }}>
+      {/* 1. 录制页面：始终挂载，仅在根路径显示 */}
+      <div 
+        style={{
+          display: currentPath === '/' ? 'block' : 'none',
+          height: '100%',
+          width: '100%'
+        }}
+      >
+        <RecordPage />
+      </div>
+      
+      {/* 2. 回放页面：仅在对应路由显示，路由切换时会卸载 */}
+      {currentPath === '/playback' && (
+        <div style={{ height: '100%', width: '100%' }}>
+          <PlaybackPage1 />
+        </div>
+      )}
+      
+      {/* 3. 404页面：仅在未匹配到其他路由时显示 */}
+      {currentPath !== '/' && currentPath !== '/playback' && (
+        <div style={{ height: '100%', width: '100%' }}>
+          <NotFoundPage />
+        </div>
+      )}
+    </div>
+  );
+};
+
 // 路由配置（简化：仅2个核心路由）
 export const AppRouter: React.FC = () => {
   return (
@@ -43,19 +78,10 @@ export const AppRouter: React.FC = () => {
         </SimpleLayout>
       } />
 
-      {/* 其他页面使用 RouteLayout（带侧边栏） */}
+      {/* 根路径和其他页面使用 RouteLayout（带侧边栏） */}
       <Route path="/*" element={
         <RouteLayout>
-          <Routes>
-            {/* 录制页面（默认路由） */}
-            <Route path="/" element={<RecordPage />} />
-            
-            {/* 回放页面（仅保留PlaybackPage1） */}
-            <Route path="/playback" element={<PlaybackPage1 />} />
-            
-            {/* 404页面 */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
+          <MainContent />
         </RouteLayout>
       } />
     </Routes>

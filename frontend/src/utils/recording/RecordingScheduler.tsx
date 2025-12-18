@@ -51,7 +51,6 @@ const globalMediaRecorderRef = {
 window.globalMediaRecorderRef = globalMediaRecorderRef;
 
 
-
 export function useRecordingScheduler() {
   const dispatch = useAppDispatch();
   const recordingStatus = useAppSelector(selectRecordingStatus);
@@ -147,18 +146,17 @@ export function useRecordingScheduler() {
       // 记录开始时间戳
       const startTime = Date.now();
       globalMediaRecorderRef.startTime = startTime;
-      // 以下字段用于旧的分段上传逻辑，已不再需要
       
       
       // 初始化设备状态变化记录 - 默认关闭摄像头和麦克风
       globalMediaRecorderRef.audioStateChanges = [{
-        timestamp: 0, // 录制开始时的时间戳
-        isEnabled: false // 默认关闭麦克风
+        timestamp: 0, 
+        isEnabled: false 
       }];
       
       globalMediaRecorderRef.cameraStateChanges = [{
-        timestamp: 0, // 录制开始时的时间戳
-        isEnabled: false // 默认关闭摄像头
+        timestamp: 0, 
+        isEnabled: false 
       }];
       
       // 2. 请求屏幕捕获授权
@@ -180,7 +178,7 @@ export function useRecordingScheduler() {
         audioStream.getAudioTracks().forEach(track => {
           track.enabled = false;
         });
-        
+         
         // 创建音频 MediaRecorder
         const audioTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp3'];
         let audioSelectedMimeType = 'audio/webm';
@@ -210,7 +208,7 @@ export function useRecordingScheduler() {
       globalMediaRecorderRef.isMicMuted = true;
       dispatch(setMicrophoneEnabled(false));
       
-      // 4. 获取摄像头流，但默认禁用（黑屏）
+      // 获取摄像头流，但默认禁用（黑屏）
       // 这样整个录制过程都会有摄像头文件，黑屏部分也会被录制
       try {
         const cameraConstraints: MediaStreamConstraints = {
@@ -235,7 +233,7 @@ export function useRecordingScheduler() {
       
       globalMediaRecorderRef.stream = captureStream;
 
-      // 5. 创建屏幕录制MediaRecorder实例
+      // 创建屏幕录制MediaRecorder实例
       // 使用webm格式以兼容后端要求
       const videoTypes = ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'];
       let selectedMimeType = 'video/webm;codecs=vp8,opus';
@@ -282,7 +280,7 @@ export function useRecordingScheduler() {
       
       // 音频和摄像头的 ondataavailable 已在上面设置
       
-      // 8. 监听录制结束事件
+      // 监听录制结束事件
       recorder.onstop = async () => {
         console.log('recorder.onstop: 录制结束事件被触发');
         console.log('recorder.onstop: recordedBlobs.length:', globalMediaRecorderRef.recordedBlobs.length);
@@ -332,25 +330,11 @@ export function useRecordingScheduler() {
             });
           }
 
-          // 自动下载（可选）
-          // const videoBlob = new Blob(globalMediaRecorderRef.recordedBlobs, { type: recorder.mimeType });
-          // const url = URL.createObjectURL(videoBlob);
-          // const a = document.createElement('a');
-          // a.style.display = 'none';
-          // a.href = url;
-          // a.download = `录屏_${new Date().toLocaleString().replace(/[/: ]/g, '_')}.${recorder.mimeType.includes('webm') ? 'webm' : 'mp4'}`;
-          // document.body.appendChild(a);
-          // a.click();
-          // setTimeout(() => {
-          //   document.body.removeChild(a);
-          //   URL.revokeObjectURL(url);
-          // }, 100);
-
           // 保存到 IndexedDB
           try {
             const recordingId = uuidv4();
             const timestamp = globalMediaRecorderRef.startTime;
-            const currentCollectedData = collectedDataRef.current;
+            // const currentCollectedData = collectedDataRef.current;
 
             console.log('Saving recording to IndexedDB:', recordingId);
             
@@ -542,9 +526,6 @@ export function useRecordingScheduler() {
       globalMediaRecorderRef.webcamInstance.stop();
     }
     
-    // 注意：这里不再直接调用cleanupRecording()
-    // 清理操作会在MediaRecorder的onstop事件中完成，确保上传逻辑能获取到完整的录制数据
-    // 已移除备份方案（直接停止屏幕共享流的代码），让MediaRecorder自然完成onstop事件
   }, [dispatch]);
 
   // 收集白板数据（供外部组件调用，如白板组件）
@@ -751,7 +732,7 @@ export function useRecordingScheduler() {
     }
   }, [recordingStatus, selectedVideoDeviceId, dispatch]);
 
-  // 1. 使用 useRef 追踪最新的状态，这样我们在 cleanup 中读取时不需要将其作为依赖项
+  // 1. 使用 useRef 追踪最新的状态
   const recordingStatusRef = useRef(recordingStatus);
 
   // 每次渲染都更新 ref，保证它是最新的
