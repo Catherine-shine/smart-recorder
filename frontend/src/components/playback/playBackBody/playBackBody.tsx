@@ -20,6 +20,7 @@ import { Card, Row, Col, Spin, Typography, message, Button } from 'antd';
 import React, { useRef, useEffect, useState } from "react";
 import { VideoCameraOutlined, FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons';
 import WebcamFloating from '../webcamFloating/webcamFloating';
+import SubtitleOverlay from '../subtitleOverlay/SubtitleOverlay';
 import type {PlayBackBodyProps} from '../../../types/playback/playbackbody';
 import './index.css';
 
@@ -927,6 +928,9 @@ const PlayBackBody: React.FC<PlayBackBodyProps> = ({ onTimeUpdate }) => {
             >
               您的浏览器不支持HTML5视频播放，请升级浏览器
             </video>
+            
+            {/* 字幕悬浮层 */}
+            <SubtitleOverlay videoRef={videoRef as React.RefObject<HTMLVideoElement>} />
             
             {/* 隐藏的音频元素，用于播放麦克风音频 */}
             <audio

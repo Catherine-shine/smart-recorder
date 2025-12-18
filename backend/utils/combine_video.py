@@ -70,14 +70,16 @@ def combine_video_with_audio(video_path, audio_path, output_path):
         print(f"音频源: {audio_path}")
         
         # 使用 ffmpeg-python 构建流
-        # input: 输入视频和音频
-        # output: 输出文件，覆盖已存在文件
-        # run: 执行命令
+        # 分别创建视频和音频输入流
+        video_input = ffmpeg.input(video_path)
+        audio_input = ffmpeg.input(audio_path)
+        
+        # 合并视频流和音频流到输出文件
+        # WebM 格式只支持 VP8/VP9/AV1 视频和 Vorbis/Opus 音频
+        # 所以使用 copy 直接复制音频流（保持 opus 编码）
         (
             ffmpeg
-            .input(video_path)
-            .input(audio_path)
-            .output(output_path, vcodec='copy', acodec='aac', strict='experimental')
+            .output(video_input, audio_input, output_path, vcodec='copy', acodec='copy')
             .overwrite_output()
             .run(capture_stdout=True, capture_stderr=True)
         )

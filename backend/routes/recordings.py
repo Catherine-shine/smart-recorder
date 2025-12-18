@@ -134,7 +134,21 @@ def upload_recording():
             print(f"[WARN] 生成字幕失败: {e}")
             subtitle_path = None
 
-    # 9. 保存元数据（状态变化记录，仅用于前端参考）
+    # 9. 合并音频到录屏视频（如果有音频）
+    final_video_path = screen_recording_path  # 默认使用原始录屏
+    if audio_path:
+        merged_video_path = os.path.join(UPLOAD_FOLDER, f'{hash_id}_merged.webm')
+        try:
+            success = combine_video_with_audio(screen_recording_path, audio_path, merged_video_path)
+            if success and os.path.exists(merged_video_path):
+                final_video_path = merged_video_path
+                print(f"[INFO] 音频已合并到视频: {final_video_path}")
+            else:
+                print(f"[WARN] 合并音频失败，使用原始录屏")
+        except Exception as e:
+            print(f"[WARN] 合并音频失败: {e}，使用原始录屏")
+
+    # 10. 保存元数据（状态变化记录，仅用于前端参考）
     trajectory_path = os.path.join(UPLOAD_FOLDER, f'{hash_id}.json')
     trajectory_data = {}
     
@@ -153,12 +167,12 @@ def upload_recording():
     with open(trajectory_path, 'w', encoding='utf-8') as f:
         json.dump(trajectory_data, f, ensure_ascii=False, indent=2)
 
-    # 10. 保存到数据库
+    # 11. 保存到数据库（使用合并后的视频路径）
     cursor.execute(
         '''INSERT INTO recordings 
            (id, trajectory_path, audio_path, screen_recording_path, webcam_recording_path, subtitle_path, created_at) 
            VALUES (?, ?, ?, ?, ?, ?, ?)''',
-        (hash_id, trajectory_path, audio_path, screen_recording_path, webcam_recording_path, subtitle_path, int(time.time() * 1000))
+        (hash_id, trajectory_path, audio_path, final_video_path, webcam_recording_path, subtitle_path, int(time.time() * 1000))
     )
     
     # 同时创建 recording_sessions 记录（用于存储时长）

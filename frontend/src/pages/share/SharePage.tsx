@@ -21,10 +21,12 @@ import {
   setTrajectoryData,
   resetPlaybackState,
   setCurrentTime,
-  setPlaybackStatus
+  setPlaybackStatus,
+  setSubtitleUrl
 } from '../../store/slices/playbackSlice';
 import { toggleTheme } from '../../store/slices/layoutSlice';
 import WebcamFloating from '../../components/playback/webcamFloating/webcamFloating';
+import SubtitleOverlay from '../../components/playback/subtitleOverlay/SubtitleOverlay';
 import './index.css';
 
 const { Title, Text } = Typography;
@@ -91,6 +93,12 @@ const SharePage: React.FC = () => {
         }
         if (recordingData.webcamRecordingUrl) {
           dispatch(setWebcamUrl(recordingData.webcamRecordingUrl));
+        }
+        // 设置字幕URL
+        if (recordingData.subtitleUrl) {
+          dispatch(setSubtitleUrl(recordingData.subtitleUrl));
+        } else {
+          dispatch(setSubtitleUrl(''));
         }
         
         if (recordingData.duration && recordingData.duration > 0) {
@@ -327,6 +335,9 @@ const SharePage: React.FC = () => {
               onClick={togglePlay}
               preload="metadata" // 预加载元数据，有助于更快获取时长
             />
+            
+            {/* 字幕悬浮层 */}
+            <SubtitleOverlay videoRef={videoRef as React.RefObject<HTMLVideoElement>} />
             
             {/* 播放/暂停覆盖按钮 */}
             {!isPlaying && (

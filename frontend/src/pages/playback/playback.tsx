@@ -6,7 +6,7 @@ import PlayBackBody from "../../components/playback/playBackBody/playBackBody";
 import { getRecordingDetail} from "../../api/recording"; // 导入封装的接口
 import type { RecordingDetailResponse } from "../../types/api/apiTypes";
 import { useDispatch } from 'react-redux';
-import { setDuration, setTrajectoryData, setPlaybackUrl, setAudioUrl, setWebcamUrl } from "../../store/slices/playbackSlice";
+import { setDuration, setTrajectoryData, setPlaybackUrl, setAudioUrl, setWebcamUrl, setSubtitleUrl } from "../../store/slices/playbackSlice";
 
 interface RecordingDetailResponseWithWhiteboard extends RecordingDetailResponse {
   whiteboard?: {
@@ -77,6 +77,12 @@ const PlaybackModule: React.FC = () => {
       }
       if (recordingData.webcamRecordingUrl) {
         dispatch(setWebcamUrl(recordingData.webcamRecordingUrl));
+      }
+      // 设置字幕URL
+      if (recordingData.subtitleUrl) {
+        dispatch(setSubtitleUrl(recordingData.subtitleUrl));
+      } else {
+        dispatch(setSubtitleUrl('')); // 清空字幕
       }
       
       message.success('加载录制内容成功');

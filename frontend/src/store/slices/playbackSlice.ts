@@ -13,6 +13,7 @@ export interface PlaybackState {
   playbackUrl: BlobUrlType;
   webcamUrl: string;
   audioUrl: string;
+  subtitleUrl: string; // 新增：字幕文件URL
   volume: number;
   isMuted: boolean;
   playbackRate: number;
@@ -39,6 +40,7 @@ const initialState: PlaybackState = {
   playbackUrl: '' as BlobUrlType,
   webcamUrl: '',
   audioUrl: '',
+  subtitleUrl: '', // 新增：字幕文件URL
   volume: 1,
   isMuted: false,
   playbackRate: 1,
@@ -162,7 +164,10 @@ const playbackSlice = createSlice({
       state.currentCaption = action.payload;
     },
     
-   
+    // 新增：设置字幕URL
+    setSubtitleUrl: (state, action: PayloadAction<string>) => {
+      state.subtitleUrl = action.payload;
+    },
   },
 });
 
@@ -174,6 +179,7 @@ export const {
   setPlaybackUrl,
   setWebcamUrl,
   setAudioUrl,
+  setSubtitleUrl,
   setVolume,
   setIsMuted,
   setPlaybackRate,
